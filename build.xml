@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<project name="db4j" default="all" basedir=".">
+  <!-- emacs config: (setq nxml-child-indent 2) -->
+
+
+
+  
+  <target name="init">
+    <mkdir dir="target/classes"/>
+    <mkdir dir="target/wclasses"/>
+    <mkdir dir="target/testclasses"/>
+    <path id="kilim.classpath">
+      <pathelement location="target/classes/" />
+      <fileset dir="./libs">
+	<include name="**/*.jar"/>
+      </fileset>
+      <pathelement path="${java.class.path}" />
+    </path>
+  </target>
+  
+
+
+
+  <target name="all" depends="clean,weave" />
+  
+  <target name="compile" depends="init">
+    <mkdir dir="target"/>
+    <javac includeantruntime="false" debug="on" srcdir="src" destdir="target/classes" 
+           classpathref="kilim.classpath"/>
+  </target>
+  
+
+  <target name="kilimweave">
+    <java classname="kilim.tools.Weaver" fork ="yes">
+      <classpath refid="kilim.classpath"/>
+      <assertions>
+	<enable/>
+      </assertions>
+      <arg value="-x" />
+       <!-- Skip classes that match ExInvalid. These are negative tests 
+            for the weaver. Also skip tests for this pass-->
+      <arg value="ExInvalid|test" /> 
+      <arg value="-d" />
+      <arg value="./target/classes" />
+      <arg line="./target/classes" />
+    </java>
+  </target>
+    
+  <target name="clean">
+    <delete>
+      <fileset dir="." includes="target/*.jar"/>
+    </delete>
+    <delete dir="./target/classes" />
+    <delete dir="./target/test-classes" />
+  </target>
+  
+  
+  
+
+
+  <target name="jar">
+    <jar jarfile="target/db4j.jar" basedir="target/classes"/>
+  </target>
+
+  <target name="maven" depends="all,jar,doc" description="generate the maven jar"></target>
+
+  <target name="doc" description="generate documentation">
+    <jar compress="true" destfile="target/sources.jar" basedir="src" />
+    <javadoc sourcepath="src" destdir="target/tmp.ant"/>
+    <jar compress="true" destfile="target/javadoc.jar" basedir="target/tmp.ant" />
+    <delete dir="target/tmp.ant" />
+  </target>
+
+
+  <target name="weave" depends="compile">
+      <move file="target/classes" tofile="target/rclasses"/>
+      <move file="target/wclasses" tofile="target/classes"/>
+      <copy preservelastmodified="true" todir="target/classes">
+	  <fileset dir="target/rclasses"/>
+      </copy>
+      <echo message="Weaving files ===================" />
+      <java classname="kilim.tools.Weaver" fork="yes">
+	  <classpath refid="kilim.classpath"/>
+	  <assertions> <enable/> </assertions>
+	  <arg line="-d ./target/classes ./target/rclasses" />
+      </java>
+  </target>
+  <target name="unweave">
+      <mkdir dir="target/classes"/>
+      <mkdir dir="target/rclasses"/>
+      <move file="target/classes" tofile="target/wclasses"/>
+      <move file="target/rclasses" tofile="target/classes"/>
+  </target>
+  <target name="directio">
+      <exec executable="make" dir="directio" failifexecutionfails="false" />
+  </target>
+</project>

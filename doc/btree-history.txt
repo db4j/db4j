@@ -1,0 +1,191 @@
+the history of nqzero btrees
+
+nqzero.btree
+    this predated the hunker, used a randomAccessFile
+    no hunker, no transactions
+
+nqzero.b3.Btree2
+    first hunkerized version (initially in b2, but that became bastardized)
+    uses a provider to provide blocks - either disk based or memory
+    transactions get passed to the provider
+    all operations are wrapped in a worker which stores the txn
+    keys and values are accessed using BtTypes which abstracts the primitives
+
+nqzero.b2.Btree2
+    kilimized version of the b3.Btree2
+    first implementation of splitSupport - handles rollbacks during splits
+
+nqzero.b2.Btree3
+    based on b3.Btree2 but drops the provider, instead
+        subclasses need to provide the access to the data store
+    drops the explicit dependence on BtTypes (gets pushed to subclasses)
+    	the BtTypes depends on the btree, so there are duplicate BtTypes for each btree
+    uses a Context to represent a key/value pair
+    kilim-free
+
+    nqzero.b2.Btree3Mem
+	extends Btree3
+    	backed by a byte array, using BtTypes for access
+	includes a subclass Map that stores the byte arrays in memory
+    nqzero.b2.Btree3Hunk
+	extends Btree3Mem, ie uses BtTypes, gets the bytes from disk
+	it's written as though it would use kilim, but it's actually faked using imports
+	    ie, it won't actually run
+    nqzero.b2.Btree3Array
+	extends Btree3
+	backed by primitive arrays, eg int[], double[]
+	no BtTypes ... each concrete subclass implements the access to the arrays
+	the arrays are stored in memory
+
+nqzero.b4.Btree3 (and everything else in b4)
+    kilimized version of nqzero.b2.Btree3
+    includes splitSupport from b2.Btree2
+    the original intent was to make this package a near copy b2, all apis the same
+    then could swap between the b2 and b4 using imports and get kilim or kilim-free
+
+nqzero.b5.Btree3
+    the b4.Btree3 proved cumbersome
+    keeping the full Btree/Mem/Hunk heirarchy added complexity
+    b5 smooshes the Btree3* stuff into a single class
+    BtTypes are reworked to be independent of the btree
+    BtTypes.Sheet is used: Buffer and size only, embedded into each Btree.Page
+
+    nqzero.b5.StrTree
+	a string subclass of Btree3
+
+
+nqzero.b2.support.BtTests2
+    tested the memory based btrees
+    for the kilim impls, there aren't any yields, so it's just the cost of the stack recording
+        about 10% overhead
+	everything needed to be wrapped in dummy tasks to suppress the weaver
+    kilim.byte: b2.Btree2, only diff is kilim --> 10% slower
+    nokil.byte: b3.Btree2
+    nokil.mem3: b2.Btree3Mem - consistently a bit faster, mabye the lack of the provider abstraction
+    nokil.prim: b2.Btree3Array, without boxing
+    nokil.box :                 with boxing, ie using the interface to set/get
+    TreeMap   : the java map for reference
+
+Statistics:
+-----------
+            |             put                    |            look                    |          totals                   
+kilim.byte  |        1.811136          0.032126  |        1.438836          0.029339  |        3.249972          0.030105 
+nokil.byte  |        1.718040          0.086326  |        1.219745          0.016762  |        2.937785          0.085464 
+nokil.mem3  |        1.540388          0.040079  |        1.200328          0.032264  |        2.740716          0.069338 
+nokil.prim  |        0.927680          0.014754  |        0.637038          0.011229  |        1.564718          0.017783 
+ nokil.box  |        0.959403          0.031610  |        0.599042          0.020569  |        1.558446          0.051548 
+   TreeMap  |        1.619257          0.247348  |        1.192464          0.217988  |        2.811722          0.277237 
+
+
+conclusions/plans
+    based on the performance testing, makes sense to have the primitive array classes
+        byte [] is about 80% slower
+    in-memory, byte[] backed classes (b2.Btree3Mem)
+    	aren't faster than TreeMap, but do have the potential to use less memory
+	are somewhat easier to use than the prim-array (less custom code)
+	still uses the old BtTypes that is tied to the particular btree
+	    should be updated if it's ever used for something real
+    the kilim stuff is invasive enough that there's no point in trying to maintain
+           source code similarity with the non-kilim stuff
+    that leaves a prim-array version and the hunker/kilim/byte[] version
+    will tag last version that has everything as: btree3.dual
+    going to delete:
+        nqzero.b[23].Btree2 -- the old provider/worker based approach is cumbersome
+	nqzero.b3 -- there's nothing else there
+	nqzero.b4 -- kilimized versions that have been superceded by nqzero.b5
+	nqzero.b2.Btree3Hunk -- superceded by b5
+    leaving with the intent to delete eventually if not used
+	nqzero.b2.Btree3Mem -- could be useful, but out of date and narrow use case
+    cleanup:
+	nqzero.b2.Btree3 -- drop the "Pausable" pretense
+
+
+
+srlutils.btree
+    this package used to be an older version with more abstraction (recently removed)
+    the contents of this package used to live in srlutils.data
+      but have been moved here now that the old version is removed
+  Btree - a conventional btree using unsafe to access the pages and the keys/vals accessed thru a context object
+  Bmeta - variable length key/val support
+  Bstring - string support
+  
+
+nqzero.b6
+    based closely on the srlutils.btree stuff
+  Btree - a copy of srlutils.btree.Btree with support for kilim
+    Bhunk - subclass with Hunker support
+      Bmeta - subclass with variable length key/val support
+              mostly a copy of srlutils.btree.Bmeta with mods to integrate with b6 and support kilim/hunker
+
+
+
+___the great db4j rename shoah___
+
+the Soup namespace is a mess
+- chowder (base classes and arrays) and b6 (btree)
+- flathunk is a monster that all gets exposed, need a list of what should be
+    - hunker.offer
+- hunkarray, hunkcount are odd names (should be analogous to arraylist)
+- Bface is purely for testing
+- Btree should be the primary namespace instead of the base class
+    - need to expose Range and Path
+- Bhunk is the hunkable variant, again a base class
+    - needs to be exposed to make new primitive subclasses
+    - Context
+    - II, DF, Idiv, etc ... are end user classes
+- Bmeta is the base class for a variant with generics-based keys and values
+    - keys/values can be variable sized
+    - for fixed size, easier to extend than Bhunk, so likely used for primitives too
+    - TODO: remove stream imports (accidental from kilim-streams work) and rebase
+    - Context, Range
+    - IS, IO, IA, SI, etc ... (specifications)
+    - needs to be exposed for additional user subclasses
+- srlutils.btree.Bstring - a variable-sized Vals provider
+    - ValsString, ValsBytes are used to make new btree specificities
+    - looks like ValsCheese is for testing only
+    - ValsFace, ValsVar, Cmpr are needed for additional Vals types
+- srlutils.btree.Bpage - a storage page of a btree
+    - Page - the base page
+    - Sheet - the unsafe variant, needs to be exposed for additional types etc
+- srlutils.btree.Btypes - types for btrees
+    - needs to be exposed, widely used for btree specificities
+- srlutils.btree.Butil - utils, widely used though just a convenience
+
+- srlutils.btree (other stuff)
+    - Bface is testing only
+    - Bparr, Bplus, Btree, Bmarr, Bmeta are in-memory btrees, don't need to be exposed
+
+
+
+_the plan_
+
+move all end-user classes into db4j.Btree
+  specificities
+  Path, Range
+
+move base-class stuff into public but less visible names
+  BtreeBase or similar
+
+HunkArray is ok, end-users maybe only need the primitive specificities
+HunkCount is end-user
+HunkLocals isn't end-user
+
+FlatHunk needs to be refactored to only expose the needed API (it's huge)
+
+Command, Database are end-user
+
+
+
+end-user:
+  refactored FlatHunk.Hunker (minimal, API only)
+  HunkCount, HunkArray (with primitives)
+  Btree (re-homed from Bmeta and Bhunk)
+  Command
+  Database
+
+
+questions:
+  rename srlutils.btree.Bmeta (etc) too ???
+  
+
+

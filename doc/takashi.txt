@@ -1,0 +1,610 @@
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+Mon Feb 02 23:59:16 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        7.186000        3.667000        5.627000        3.151000        0.414000        0.033000 
+Iter     1:        6.251000        3.751000        5.526000        3.118000        0.081000        0.022000 
+Iter     2:        6.402000        3.755000        5.703000        3.172000        0.068000        0.022000 
+Iter     3:        6.219000        3.799000        5.559000        3.142000        0.064000        0.021000 
+Iter     4:        6.081000        3.762000        5.729000        3.150000        0.064000        0.023000 
+Average   :        6.234000        3.772000        5.663667        3.154667        0.065333        0.022000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         6.234000          0.131476   ||         3.772000          0.019305 
+         IntInt   ||         5.663667          0.074768   ||         3.154667          0.012684 
+      StringInt   ||         0.065333          0.001886   ||         0.022000          0.000816 
+
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+Tue Feb 03 00:08:19 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        7.399000        3.808000        5.657000        3.443000        0.467000        0.036000 
+Iter     1:        6.300000        3.765000        5.582000        3.238000        0.083000        0.029000 
+Iter     2:        6.561000        3.808000        5.598000        3.293000        0.073000        0.027000 
+Iter     3:        5.911000        3.801000        5.516000        3.295000        0.072000        0.022000 
+Iter     4:        6.371000        3.867000        5.749000        3.367000        0.070000        0.024000 
+Average   :        6.281000        3.825333        5.621000        3.318333        0.071667        0.024333 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         6.281000          0.272886   ||         3.825333          0.029601 
+         IntInt   ||         5.621000          0.096502   ||         3.318333          0.034422 
+      StringInt   ||         0.071667          0.001247   ||         0.024333          0.002055 
+
+this entry (with pandora + yahoo) and the previous one (java only) have similar times, which shows that i don't need to stop pandora or close firefox to get reasonable accuracy with benchmarks (single threaded ones, at least)
+
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+Tue Feb 03 00:14:23 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        1.847000        0.659000        1.311000        0.646000        0.603000        0.054000 
+Iter     1:        1.064000        0.576000        0.983000        0.514000        0.078000        0.018000 
+Iter     2:        1.089000        0.588000        0.986000        0.494000        0.066000        0.018000 
+Iter     3:        1.116000        0.611000        0.986000        0.493000        0.071000        0.017000 
+Iter     4:        1.118000        0.619000        1.027000        0.522000        0.067000        0.019000 
+Average   :        1.107667        0.606000        0.999667        0.503000        0.068000        0.018000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         1.107667          0.013225   ||         0.606000          0.013140 
+         IntInt   ||         0.999667          0.019328   ||         0.503000          0.013441 
+      StringInt   ||         0.068000          0.002160   ||         0.018000          0.000816 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+Tue Feb 03 00:18:29 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        1.819000        0.706000        1.171000        0.608000        0.428000        0.037000 
+Iter     1:        1.161000        0.608000        1.047000        0.517000        0.088000        0.023000 
+Iter     2:        1.020000        0.580000        0.949000        0.497000        0.068000        0.022000 
+Iter     3:        1.018000        0.568000        0.942000        0.479000        0.066000        0.022000 
+Iter     4:        0.999000        0.567000        0.945000        0.483000        0.066000        0.023000 
+Average   :        1.012333        0.571667        0.945333        0.486333        0.066667        0.022333 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         1.012333          0.009463   ||         0.571667          0.005907 
+         IntInt   ||         0.945333          0.002867   ||         0.486333          0.007717 
+      StringInt   ||         0.066667          0.000943   ||         0.022333          0.000471 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 00:25:09 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        1.620000        0.659000        1.049000        0.582000        0.487000        0.048000 
+Iter     1:        1.084000        0.583000        1.065000        0.501000        0.096000        0.023000 
+Iter     2:        1.052000        0.588000        0.936000        0.503000        0.066000        0.021000 
+Iter     3:        1.027000        0.592000        0.928000        0.497000        0.065000        0.022000 
+Iter     4:        0.997000        0.575000        0.945000        0.510000        0.065000        0.021000 
+Average   :        1.025333        0.585000        0.936333        0.503333        0.065333        0.021333 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         1.025333          0.022485   ||         0.585000          0.007257 
+         IntInt   ||         0.936333          0.006944   ||         0.503333          0.005312 
+      StringInt   ||         0.065333          0.000471   ||         0.021333          0.000471 
+
+just moved the dex stuff to use Element<Integer> -- no major impact
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 11:07:26 EST 2009
+Number of iterations: 10000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        0.735000        0.165000        0.290000        0.142000        0.536000        0.041000 
+Iter     1:        0.147000        0.042000        0.085000        0.038000        0.086000        0.022000 
+Iter     2:        0.091000        0.040000        0.084000        0.038000        0.077000        0.023000 
+Iter     3:        0.086000        0.038000        0.082000        0.047000        0.072000        0.025000 
+Iter     4:        0.089000        0.047000        0.081000        0.039000        0.069000        0.026000 
+Average   :        0.088667        0.041667        0.082333        0.041333        0.072667        0.024667 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         0.088667          0.002055   ||         0.041667          0.003859 
+         IntInt   ||         0.082333          0.001247   ||         0.041333          0.004028 
+      StringInt   ||         0.072667          0.003300   ||         0.024667          0.001247 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 11:07:35 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        1.511000        0.697000        1.133000        0.651000        0.546000        0.057000 
+Iter     1:        1.068000        0.577000        1.013000        0.558000        0.093000        0.027000 
+Iter     2:        1.297000        0.567000        0.996000        0.498000        0.066000        0.022000 
+Iter     3:        1.122000        0.603000        1.066000        0.508000        0.063000        0.026000 
+Iter     4:        1.162000        0.616000        1.005000        0.480000        0.067000        0.024000 
+Average   :        1.193667        0.595333        1.022333        0.495333        0.065333        0.024000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         1.193667          0.074870   ||         0.595333          0.020726 
+         IntInt   ||         1.022333          0.031095   ||         0.495333          0.011585 
+      StringInt   ||         0.065333          0.001700   ||         0.024000          0.001633 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 11:10:24 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 11:10:33 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        1.537000        0.659000        1.267000        0.704000        0.498000        0.042000 
+Iter     1:        1.064000        0.564000        0.961000        0.519000        0.079000        0.023000 
+Iter     2:        1.033000        0.574000        0.957000        0.500000        0.076000        0.023000 
+Iter     3:        1.026000        0.603000        1.056000        0.549000        0.066000        0.022000 
+Iter     4:        1.001000        0.554000        0.970000        0.508000        0.066000        0.021000 
+Average   :        1.020000        0.577000        0.994333        0.519000        0.069333        0.022000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         1.020000          0.013736   ||         0.577000          0.020116 
+         IntInt   ||         0.994333          0.043927   ||         0.519000          0.021463 
+      StringInt   ||         0.069333          0.004714   ||         0.022000          0.000816 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 16:45:20 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        1.696000        0.705000        1.092000        0.670000        0.530000        0.067000 
+Iter     1:        1.074000        0.628000        1.044000        0.543000        0.110000        0.028000 
+Iter     2:        1.080000        0.621000        0.972000        0.504000        0.070000        0.021000 
+Iter     3:        1.051000        0.611000        0.965000        0.506000        0.069000        0.023000 
+Iter     4:        1.019000        0.591000        0.927000        0.491000        0.066000        0.024000 
+Average   :        1.050000        0.607667        0.954667        0.500333        0.068333        0.022667 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         1.050000          0.024913   ||         0.607667          0.012472 
+         IntInt   ||         0.954667          0.019771   ||         0.500333          0.006650 
+      StringInt   ||         0.068333          0.001700   ||         0.022667          0.001247 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 16:45:59 EST 2009
+Number of iterations: 100000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        1.588000        0.685000        1.106000        0.664000        0.569000        0.082000 
+Iter     1:        1.018000        0.562000        0.900000        0.468000        0.088000        0.018000 
+Iter     2:        0.954000        0.592000        0.939000        0.494000        0.065000        0.019000 
+Iter     3:        1.001000        0.586000        0.946000        0.489000        0.063000        0.019000 
+Iter     4:        0.983000        0.576000        0.922000        0.484000        0.063000        0.020000 
+Average   :        0.979333        0.584667        0.935667        0.489000        0.063667        0.019333 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         0.979333          0.019362   ||         0.584667          0.006600 
+         IntInt   ||         0.935667          0.010077   ||         0.489000          0.004082 
+      StringInt   ||         0.063667          0.000943   ||         0.019333          0.000471 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 16:46:43 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        7.450000        3.538000        5.065000        3.707000        0.522000        0.063000 
+Iter     1:        6.157000        3.854000        5.606000        3.346000        0.114000        0.023000 
+Iter     2:        5.758000        3.809000        5.690000        3.539000        0.082000        0.031000 
+Iter     3:        6.132000        3.846000        5.762000        3.342000        0.062000        0.021000 
+Iter     4:        5.751000        3.811000        5.210000        3.369000        0.061000        0.023000 
+Average   :        5.880333        3.822000        5.554000        3.416667        0.068333        0.025000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         5.880333          0.177978   ||         3.822000          0.016990 
+         IntInt   ||         5.554000          0.245014   ||         3.416667          0.087202 
+      StringInt   ||         0.068333          0.009672   ||         0.025000          0.004320 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 20:42:41 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        7.038000        3.758000        5.315000        3.693000        0.592000        0.063000 
+Iter     1:        6.923000        3.870000        5.788000        3.298000        0.085000        0.020000 
+Iter     2:        5.963000        3.783000        5.460000        3.304000        0.067000        0.021000 
+Iter     3:        5.971000        3.722000        5.383000        3.252000        0.064000        0.021000 
+Iter     4:        6.180000        3.907000        5.552000        3.263000        0.064000        0.020000 
+Average   :        6.038000        3.804000        5.465000        3.273000        0.065000        0.020667 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         6.038000          0.100462   ||         3.804000          0.076972 
+         IntInt   ||         5.465000          0.069084   ||         3.273000          0.022376 
+      StringInt   ||         0.065000          0.001414   ||         0.020667          0.000471 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 20:45:24 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        6.987000        3.844000        5.600000        3.673000        0.587000        0.051000 
+Iter     1:        5.895000        3.625000        5.323000        3.265000        0.082000        0.025000 
+Iter     2:        5.492000        3.545000        5.054000        3.186000        0.070000        0.022000 
+Iter     3:        5.533000        3.591000        5.073000        3.129000        0.061000        0.020000 
+Iter     4:        5.704000        3.568000        5.277000        3.291000        0.062000        0.020000 
+Average   :        5.576333        3.568000        5.134667        3.202000        0.064333        0.020667 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         5.576333          0.091813   ||         3.568000          0.018779 
+         IntInt   ||         5.134667          0.100943   ||         3.202000          0.067097 
+      StringInt   ||         0.064333          0.004028   ||         0.020667          0.000943 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 20:48:52 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        6.765000        3.780000        5.687000        3.553000        0.579000        0.058000 
+Iter     1:        5.737000        3.450000        5.468000        3.105000        0.082000        0.040000 
+Iter     2:        5.787000        3.697000        5.216000        3.096000        0.065000        0.020000 
+Iter     3:        5.703000        3.514000        5.266000        3.089000        0.065000        0.021000 
+Iter     4:        5.775000        3.540000        5.241000        3.099000        0.064000        0.019000 
+Average   :        5.755000        3.583667        5.241000        3.094667        0.064667        0.020000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         5.755000          0.037094   ||         3.583667          0.080839 
+         IntInt   ||         5.241000          0.020412   ||         3.094667          0.004190 
+      StringInt   ||         0.064667          0.000471   ||         0.020000          0.000816 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 20:53:03 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        7.357000        3.961000        5.605000        3.819000        0.552000        0.072000 
+Iter     1:        5.821000        3.689000        5.277000        3.165000        0.078000        0.023000 
+Iter     2:        5.673000        3.772000        5.194000        3.207000        0.063000        0.022000 
+Iter     3:        5.874000        3.654000        5.532000        3.318000        0.065000        0.024000 
+Iter     4:        5.895000        3.736000        5.346000        3.392000        0.066000        0.023000 
+Average   :        5.814000        3.720667        5.357333        3.305667        0.064667        0.023000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         5.814000          0.100070   ||         3.720667          0.049378 
+         IntInt   ||         5.357333          0.138220   ||         3.305667          0.076028 
+      StringInt   ||         0.064667          0.001247   ||         0.023000          0.000816 
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 20:55:26 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        7.351000        3.591000        5.537000        3.617000        0.603000        0.094000 
+Iter     1:        5.710000        3.584000        5.359000        3.144000        0.091000        0.028000 
+Iter     2:        5.632000        3.663000        5.128000        3.255000        0.062000        0.021000 
+Iter     3:        5.800000        3.739000        5.340000        3.206000        0.064000        0.022000 
+Iter     4:        5.753000        3.689000        5.450000        3.156000        0.061000        0.020000 
+Average   :        5.728333        3.697000        5.306000        3.205667        0.062333        0.021000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         5.728333          0.070769   ||         3.697000          0.031538 
+         IntInt   ||         5.306000          0.133636   ||         3.205667          0.040417 
+      StringInt   ||         0.062333          0.001247   ||         0.021000          0.000816 
+
+the last two runs were without final elements, the 3 before that were with final -- doesn't seem to make a difference
+
+java: /usr/lib/jvm/java-6-sun
+------------------------------------------------------------------------
+date: Tue Feb 03 21:05:17 EST 2009
+Number of iterations: 500000
+
+Iter   0:  DoubleFloat,IntInt,StringInt,
+Iter   1:  DoubleFloat,IntInt,StringInt,
+Iter   2:  DoubleFloat,IntInt,StringInt,
+Iter   3:  DoubleFloat,IntInt,StringInt,
+Iter   4:  DoubleFloat,IntInt,StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        7.143000        3.938000        5.417000        3.811000        0.631000        0.062000 
+Iter     1:        5.804000        3.612000        5.337000        3.123000        0.096000        0.037000 
+Iter     2:        5.612000        3.519000        5.055000        3.039000        0.059000        0.018000 
+Iter     3:        5.513000        3.568000        4.927000        3.001000        0.058000        0.018000 
+Iter     4:        5.666000        3.525000        4.984000        3.019000        0.059000        0.018000 
+Average   :        5.597000        3.537333        4.988667        3.019667        0.058667        0.018000 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         5.597000          0.063356   ||         3.537333          0.021823 
+         IntInt   ||         4.988667          0.052360   ||         3.019667          0.015521 
+      StringInt   ||         0.058667          0.000471   ||         0.018000          0.000000 
+
+this run is without the constructor args ie moved to setup -- doesn't seem to make a difference either
+
+java: /usr/lib/jvm/java-6-sun
+seed: -6109834922204695561
+------------------------------------------------------------------------
+date: Sun Mar 08 12:48:05 EDT 2009
+Number of iterations: 500000
+
+StringInt,
+StringInt,
+
+
+StringInt,
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        4.394598        1.293716        4.372920        1.225033        0.557518        0.044786 
+Iter     1:        4.022877        1.292979        3.865124        0.979885        0.070416        0.019220 
+Iter     2:        4.048279        1.352893        3.717142        0.982627        0.065342        0.017561 
+Iter     3:        4.020426        1.271700        3.925377        1.017000        0.068131        0.018337 
+Iter     4:        4.676208        1.335650        3.907528        1.163039        0.064906        0.018825 
+Average   :        4.248304        1.320081        3.850016        1.054222        0.066126        0.018241 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         4.248304          0.302787   ||         1.320081          0.034927 
+         IntInt   ||         3.850016          0.094238   ||         1.054222          0.078214 
+      StringInt   ||         0.066126          0.001429   ||         0.018241          0.000520 
+
+without cache backing
+java: /usr/lib/jvm/java-6-sun
+seed: 1698137495002444180
+------------------------------------------------------------------------
+date: Sun Mar 08 12:50:03 EDT 2009
+Number of iterations: 500000
+
+
+StringInt,
+StringInt,
+
+
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        5.499780        1.418261        3.915720        0.991092        0.533379        0.096583 
+Iter     1:        4.216366        1.244676        4.028044        0.956887        0.068653        0.016973 
+Iter     2:        4.119651        1.257141        3.860815        1.011729        0.065440        0.017274 
+Iter     3:        4.159795        1.281402        3.769679        1.008562        0.061637        0.017128 
+Iter     4:        4.179287        1.247441        3.913009        0.983916        0.065183        0.017412 
+Average   :        4.152911        1.261995        3.847834        1.001402        0.064086        0.017271 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         4.152911          0.024828   ||         1.261995          0.014283 
+         IntInt   ||         3.847834          0.059230   ||         1.001402          0.012432 
+      StringInt   ||         0.064086          0.001736   ||         0.017271          0.000116 
+
+with cache backing. both this and the last have default max vm memory
+java: /usr/lib/jvm/java-6-sun
+seed: 3523201540863593822
+------------------------------------------------------------------------
+date: Sun Mar 08 12:56:22 EDT 2009
+Number of iterations: 500000
+
+
+
+
+
+
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        4.951495        1.743997        4.495785        1.214173        0.766019        0.130399 
+Iter     1:        4.132272        1.769882        4.334745        1.152189        0.100219        0.019873 
+Iter     2:        4.304131        1.860634        3.956861        1.133470        0.078201        0.022557 
+Iter     3:        4.335227        1.665786        3.924428        1.099758        0.071260        0.017258 
+Iter     4:        4.162890        1.702783        3.923873        1.019250        0.068760        0.017351 
+Average   :        4.267416        1.743068        3.935054        1.084159        0.072740        0.019055 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         4.267416          0.074993   ||         1.743068          0.084493 
+         IntInt   ||         3.935054          0.015421   ||         1.084159          0.047917 
+      StringInt   ||         0.072740          0.003994   ||         0.019055          0.002476 
+
+without cache backing. -Xmx50m
+java: /usr/lib/jvm/java-6-sun
+seed: -1368068160965960541
+------------------------------------------------------------------------
+date: Sun Mar 08 12:58:39 EDT 2009
+Number of iterations: 500000
+
+
+
+
+
+
+
+
+              DoubleFloat.0   DoubleFloat.1        IntInt.0        IntInt.1     StringInt.0     StringInt.1 
+Iter     0:        4.861624        1.748710        4.528242        1.222518        0.714315        0.141854 
+Iter     1:        4.226276        1.432307        4.152979        1.105915        0.094216        0.017969 
+Iter     2:        4.144807        1.508708        3.901476        1.096840        0.066889        0.016464 
+Iter     3:        4.494440        1.760894        3.941773        1.145827        0.066171        0.016389 
+Iter     4:        4.423049        1.692277        4.111233        1.152209        0.068173        0.017186 
+Average   :        4.354099        1.653959        3.984827        1.131625        0.067078        0.016680 
+
+
+
+Average   : 
+
+    DoubleFloat   ||         4.354099          0.150834   ||         1.653959          0.106460 
+         IntInt   ||         3.984827          0.090884   ||         1.131625          0.024735 
+      StringInt   ||         0.067078          0.000828   ||         0.016680          0.000360 
+

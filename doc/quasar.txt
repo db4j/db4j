@@ -1,0 +1,48 @@
+the database is built around the concept of fibers
+  - cooperative thread-like constructs
+  - each database query is a fiber, allowing 1000s of concurrent queries with minimal resources
+
+the fiber implementation was initially, and is currently, based on kilim
+  - it's very well done and flexible
+  - hasn't embraced new java features quickly
+  - in addition to queries, the kilim http server is used for a demo
+
+quasar is another fiber implementation
+  - newer, but more corporate support atm
+  - culture is not as supportive as kilim
+  - has embraced new java features more quickly
+
+i've ported the database to quasar
+  - git branch: quasar
+
+at this time, at least on grant, this branch can be checked out and run
+  - java -javaagent:alt/quasar-core-0.7.4-jdk8.jar -cp "build/classes:dist/lib/*" tutorial.Hello
+
+
+
+note
+  - this file (and the quasar pom) has been back-dated to before the quasar branch
+  - the alt directory contains (on grant) a .gitx that's a simple demo of quasar
+
+
+(cd alt; mvn dependency:copy-dependencies -DoutputDirectory=.)
+ln -s ~/.m2/repository/co/paralleluniverse/quasar-core/0.7.4/quasar-core-0.7.4-sources.jar alt
+(cd ../t2; jar -xf ../alt/quasar-core-0.7.4-sources.jar)
+
+here are some of the commands used to do the port
+-------------------------------------------------
+
+grep -rl "throws kilim.Pausable" src | xargs -l sed -i -e "s/throws kilim.Pausable/throws Pausable/g"
+git commit -am "quasar.prep - don't use the fqcn kilim.Pausable"
+git commit --amend -a
+grep -rl "import kilim.Pausable" src | xargs -l sed -i -e "/import kilim.Pausable;/ d"
+grep -rl Pausable src | xargs -l sed -i -e "s/kilim.Pausable/co.paralleluniverse.fibers.SuspendExecution/g" -e "s/Pausable/SuspendExecution/g"
+git checkout -- src/nqzero/b6/readme.txt 
+git checkout -- src/tutorial/Chat.java 
+git commit -am "quasar - replace Pausable with SuspendExecution"
+find src -name "*.java" | xargs grep -l kilim | xargs -l sed -i "s/kilim.Task.yield/co.paralleluniverse.fibers.Fiber.park/g"
+git commit -am "quasar - replace kilim.Task.yield() with Fiber.park()"
+grep -rl NotSuspendExecution src | xargs -l sed -i "s/NotSuspendExecution/NotPausable/g"
+git commit -am "quasar - undo the incorrect replacements of NotPausable with NotSuspendExecution"
+
+

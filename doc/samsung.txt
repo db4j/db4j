@@ -1,0 +1,136 @@
+takashi after the 2010 rebuild, still using the hitachi disk ... numbers are close to the pre-rebuild
+
+write 1/512  of  16384MB (2^34), bs: 4096, skip:128 blocks, in  34.74s -->  117.892MB/s,    0.921MB/s real,  235.784 seeks/sec
+modify 1/512  of  16384MB (2^34), bs: 4096, skip:128 blocks, in  91.97s -->   44.535MB/s,    0.348MB/s real,   89.070 seeks/sec
+write 1/512  of  16384MB (2^34), bs: 4096, skip:128 blocks, in  34.53s -->  118.605MB/s,    0.927MB/s real,  237.210 seeks/sec
+
+
+samsung 1T, single platter (2-sides * 512G / side)
+
+testing with dd (and initializing the test file)
+dd /data/users (ie, ext4): 17179869184 bytes (17 GB) copied, 117.62 s, 146 MB/s
+dd /dev/sdb2   (ie, raw ): 17179869184 bytes (17 GB) copied, 139.8 s, 123 MB/s
+dd /dev/sdb2   (ie, raw ): 17179869184 bytes (17 GB) copied, 307.216 s, 55.9 MB/s, oflag=direct
+dd /data/users (ie, ext4): 17179869184 bytes (17 GB) copied, 388.696 s, 44.2 MB/s, oflag=direct
+dd /dev/sdb2   (ie, raw ): 17179869184 bytes (17 GB) copied, 139.899 s, 123 MB/s, oflag=direct, bs=1M
+dd /data/users (ie, ext4): 17179869184 bytes (17 GB) copied, 119.041 s, 144 MB/s, oflag=direct, bs=1M
+dd /dev/raw  (ie, rawctl): 17179869184 bytes (17 GB) copied, 138.722 s, 124 MB/s, oflag=direct, bs=1M
+dd /dev/raw  (ie, rawctl): 17179869184 bytes (17 GB) copied, 140.178 s, 123 MB/s, bs=64k
+
+
+
+
+note: dd seems to hit buffers even when using a raw partition, but doesn't if oflag=direct is given
+
+
+writing the whole "file" matches the dd results
+ext: write 1/1    of  16384MB (2^34), bs: 4096, skip: 1 blocks, in 120.72s -->  135.717MB/s,  135.717MB/s real,    0.000 seeks/sec
+ext: read  1/1    of  16384MB (2^34), bs: 4096, skip: 1 blocks, in 117.89s -->  138.974MB/s,  138.974MB/s real,    0.000 seeks/sec
+raw: write 1/1    of  16384MB (2^34), bs: 4096, skip: 1 blocks, in 139.45s -->  117.487MB/s,  117.487MB/s real,    0.000 seeks/sec
+raw: read  1/1    of  16384MB (2^34), bs: 4096, skip: 1 blocks, in 135.95s -->  120.514MB/s,  120.514MB/s real,    0.000 seeks/sec
+
+ext: write 1/512  of  16384MB (2^34), bs: 4096, skip:128 blocks, in  19.62s -->  208.739MB/s,    1.631MB/s real,  417.477 seeks/sec
+raw: write 1/512  of  16384MB (2^34), bs: 4096, skip:128 blocks, in  28.67s -->  142.857MB/s,    1.116MB/s real,  285.713 seeks/sec
+
+fixed vs not fixes
+raw: read  1/64   of  16384MB (2^34), bs: 4096, skip:128 blocks, in 272.11s -->  120.424MB/s,    0.941MB/s real,  240.848 seeks/sec, fixed
+raw: read  1/64   of  16384MB (2^34), bs: 4096, skip:128 blocks, in 271.60s -->  120.647MB/s,    0.943MB/s real,  241.295 seeks/sec, not fixed
+ext: read  1/64   of  16384MB (2^34), bs: 4096, skip:128 blocks, in 233.99s -->  140.043MB/s,    1.094MB/s real,  280.086 seeks/sec, fixed
+ext: read  1/64   of  16384MB (2^34), bs: 4096, skip:128 blocks, in 233.79s -->  140.161MB/s,    1.095MB/s real,  280.322 seeks/sec, not fixed
+
+
+
+
+offset0:0, access:false, fixed:false, val:false
+ext: read  1/64   of  16384MB (2^34), bs: 4096, skip:128 blocks, in  14.76s --> 2219.514MB/s,   17.340MB/s real, 4439.029 seeks/sec
+ext: read  1/64   of  16384MB (2^34), bs: 4096, skip:256 blocks, in  24.06s --> 2724.404MB/s,   10.642MB/s real, 2724.404 seeks/sec
+ext: read  1/64   of  16384MB (2^34), bs: 4096, skip:1024 blocks, in  22.30s --> 11757.233MB/s,   11.482MB/s real, 2939.308 seeks/sec
+ext: read  1/64   of  16384MB (2^34), bs: 4096, skip:4096 blocks, in  23.48s --> 44651.498MB/s,   10.901MB/s real, 2790.719 seeks/sec
+
+
+offset0:0, access:false, fixed:false, val:false
+raw: read  1/64   of  16384MB (2^34), bs: 4096, skip:64 blocks, in 136.16s -->  120.327MB/s,    1.880MB/s real,  481.306 seeks/sec
+raw: read  1/128  of  16384MB (2^34), bs: 4096, skip:128 blocks, in 135.99s -->  120.481MB/s,    0.941MB/s real,  240.961 seeks/sec
+raw: read  1/256  of  16384MB (2^34), bs: 4096, skip:256 blocks, in  95.99s -->  170.693MB/s,    0.667MB/s real,  170.693 seeks/sec
+raw: read  1/1024 of  16384MB (2^34), bs: 4096, skip:256 blocks, in  24.23s -->  169.049MB/s,    0.660MB/s real,  169.049 seeks/sec
+raw: read  1/1024 of  16384MB (2^34), bs: 4096, skip:1024 blocks, in  22.29s -->  735.026MB/s,    0.718MB/s real,  183.757 seeks/sec
+raw: read  1/1024 of  16384MB (2^34), bs: 4096, skip:4096 blocks, in  22.77s --> 2877.656MB/s,    0.703MB/s real,  179.853 seeks/sec
+raw: read  1/1024 of  16384MB (2^34), bs: 4096, skip:16384 blocks, in  26.11s --> 10041.845MB/s,    0.613MB/s real,  156.904 seeks/sec
+raw: read  1/1024 of  16384MB (2^34), bs: 4096, skip:65536 blocks, in  28.86s --> 36330.993MB/s,    0.554MB/s real,  141.918 seeks/sec
+raw: read  1/1024 of  16384MB (2^34), bs: 4096, skip:262144 blocks, in  31.71s --> 132270.063MB/s,    0.505MB/s real,  129.170 seeks/sec
+
+
+offset0:0, access:false, fixed:false, val:false
+ext: read  1/64   of  16384MB (2^34), bs: 4096, skip:64 blocks, in 119.95s -->  136.591MB/s,    2.134MB/s real,  546.364 seeks/sec
+ext: read  1/128  of  16384MB (2^34), bs: 4096, skip:128 blocks, in 119.61s -->  136.982MB/s,    1.070MB/s real,  273.963 seeks/sec
+ext: read  1/256  of  16384MB (2^34), bs: 4096, skip:256 blocks, in  95.39s -->  171.754MB/s,    0.671MB/s real,  171.754 seeks/sec
+ext: read  1/1024 of  16384MB (2^34), bs: 4096, skip:256 blocks, in  23.96s -->  170.948MB/s,    0.668MB/s real,  170.948 seeks/sec
+ext: read  1/1024 of  16384MB (2^34), bs: 4096, skip:1024 blocks, in  23.23s -->  705.269MB/s,    0.689MB/s real,  176.317 seeks/sec
+ext: read  1/1024 of  16384MB (2^34), bs: 4096, skip:4096 blocks, in  24.42s --> 2684.083MB/s,    0.655MB/s real,  167.755 seeks/sec
+ext: read  1/1024 of  16384MB (2^34), bs: 4096, skip:16384 blocks, in  29.19s --> 8979.115MB/s,    0.548MB/s real,  140.299 seeks/sec
+ext: read  1/1024 of  16384MB (2^34), bs: 4096, skip:65536 blocks, in  32.43s --> 32332.399MB/s,    0.493MB/s real,  126.298 seeks/sec
+ext: read  1/1024 of  16384MB (2^34), bs: 4096, skip:262144 blocks, in  35.21s --> 119116.206MB/s,    0.454MB/s real,  116.324 seeks/sec
+
+
+offset0:0, access:false, fixed:false, val:false
+raw: read  1/16   of  16384MB (2^34), bs:1048576, skip: 1 blocks, in   8.46s -->  121.042MB/s,  121.042MB/s real,    0.000 seeks/sec
+raw: read  1/1    of  16384MB (2^34), bs:1048576, skip: 1 blocks, in 136.08s -->  120.402MB/s,  120.402MB/s real,    0.000 seeks/sec
+
+
+// ext4 is 10% faster for bulk access, and raw is 10% faster for (long) skips ...
+//     crossover is at skips of 1M (ext4 === raw)
+// raw with O_DIRECT is much slower (50%) for normal block sizes, but the same for large block sizes
+//     this might be an artifact of dd, but not easy to test with java
+
+dd if=/dev/sdb2 of=/dev/null     bs=1M count=4k              ... 4294967296 bytes (4.3 GB) copied, 34.1914 s, 126 MB/s
+dd if=/dev/sdb2 of=/dev/null     bs=1M count=4k iflag=direct ... 4294967296 bytes (4.3 GB) copied, 33.8726 s, 127 MB/s
+dd if=/dev/raw/raw1 of=/dev/null bs=1M count=4k iflag=direct ... 4294967296 bytes (4.3 GB) copied, 33.8868 s, 127 MB/s
+dd if=/dev/raw/raw1 of=/dev/null bs=4k count=1M iflag=direct ... 4294967296 bytes (4.3 GB) copied, 72.741 s, 59.0 MB/s
+
+
+
+dd if=/data/user/lytles/t2_0.mmap of=/dev/null bs=4k count=1M iflag=direct ... 4294967296 bytes (4.3 GB) copied, 76.2697 s, 56.3 MB/s
+dd if=/data/user/lytles/t2_0.mmap of=/dev/null bs=1M count=4k iflag=direct ... 4294967296 bytes (4.3 GB) copied, 30.5826 s, 140 MB/s
+dd if=/data/user/lytles/t2_0.mmap of=/dev/null bs=4k count=1M              ... 4294967296 bytes (4.3 GB) copied, 30.4189 s, 141 MB/s
+ext: read  1/4    of  16384MB (2^34), bs: 4096, skip: 1 blocks, in  30.21s -->  135.570MB/s,  135.570MB/s real,    0.000 seeks/sec
+ext: read  1/4    of  16384MB (2^34), bs:1048576, skip: 1 blocks, in  30.34s -->  135.008MB/s,  135.008MB/s real,    0.000 seeks/sec
+raw: read  1/4    of  16384MB (2^34), bs:1048576, skip: 1 blocks, in  33.97s -->  120.589MB/s,  120.589MB/s real,    0.000 seeks/sec
+raw: read  1/4    of  16384MB (2^34), bs: 4096, skip: 1 blocks, in  33.92s -->  120.753MB/s,  120.753MB/s real,    0.000 seeks/sec
+
+
+realized that sdb2 was perhaps the inner half of the disk
+  had been thinking that it was one complete surface of the platter ... dumb
+recreated /dev/sdb2 as an ext4 (/data/raw)
+
+dd if=/data/raw/lytles/t2_0.mmap of=/dev/null bs=4k count=4M              ... 17179869184 bytes (17 GB) copied, 136.407 s, 126 MB/s
+dd if=/data/raw/lytles/t2_0.mmap of=/dev/null bs=1M count=4k iflag=direct ... 4294967296 bytes (4.3 GB) copied, 33.9847 s, 126 MB/s
+dd if=/data/raw/lytles/t2_0.mmap of=/dev/null bs=4k count=1M iflag=direct ... 4294967296 bytes (4.3 GB) copied, 73.6909 s, 58.3 MB/s
+ext: read  1/4    of  16384MB (2^34), bs: 4096, skip: 1 blocks, in  34.12s -->  120.039MB/s,  120.039MB/s real,    0.000 seeks/sec, /data/raw
+
+
+
+dd if=/dev/sdb2 of=/dev/null bs=16k count=256k iflag=direct      ... 4294967296 bytes (4.3 GB) copied, 47.6836 s, 90.1 MB/s
+dd if=/dev/sdb2 of=/dev/null bs=32k count=128k iflag=direct      ... 4294967296 bytes (4.3 GB) copied, 39.2056 s, 110 MB/s
+dd if=/dev/sdb2 of=/dev/null bs=64k count=64k iflag=direct       ... 4294967296 bytes (4.3 GB) copied, 33.8759 s, 127 MB/s
+dd if=/dev/sdb2 of=/dev/null bs=256k count=16k iflag=direct      ... 4294967296 bytes (4.3 GB) copied, 33.8775 s, 127 MB/s
+dd if=/dev/sdb2 of=/dev/null bs=1M count=4k iflag=direct         ... 4294967296 bytes (4.3 GB) copied, 33.8867 s, 127 MB/s
+
+
+
+which matches the performance that i was seeing with /dev/sdb2
+also, dd numbers are reported using 1MB = 1,000,000 bytes ... i'm using 1MB = 2^20 bytes ... so everything matches up
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
