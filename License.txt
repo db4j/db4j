@@ -12,3 +12,7 @@ this program and accompanying materials are offered under the terms of the PUPL 
 to purchase a use-license, see https://github.com/db4j/db4j
 
 
+
+a copy of all licenses are available in: src/main/resources/META-INF
+
+
