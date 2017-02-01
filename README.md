@@ -6,7 +6,7 @@ db4j is a transactional database engine
 - green threads for effectively unlimited concurrency
 - primitive arrays, POJOs and indexes
 
-## quickstart demo
+## a quick example
 
 a simple persistent RESTful "mailbox" app
 
@@ -52,24 +52,8 @@ this implements a simple persistent RESTful "mailbox" app
 - uses the webserver built-in to kilim, but jetty or another server can be used instead
 - data is stored persistently in the file `chat.db`
 - `trampoline` causes kilim to convert to green threads
-
-the app can be accessed in a browser or with wget:
-```
-localhost:8080/new/john doe/software professional with an interest in java and linux
-localhost:8080/new/barack obama/44th president of the united states
-localhost:8080/msg/1/hi barack, would you try using my new database ?
-localhost:8080/msg/1/yo barack, thanks for all the fish
-localhost:8080/list/1
-```
-
-this demo is included in the repository in `demos/diary-kws`. 
-to run it execute `mvn package exec:java -Dexec.mainClass=tutorial.Chat`
-
-
-
-
-
-
+- `localhost:8080/new/john doe/software professional with an interest in java and linux`
+- this demo is included in the repository in `demos/diary-kws`
 
 
 ## installation
@@ -78,7 +62,7 @@ to run it execute `mvn package exec:java -Dexec.mainClass=tutorial.Chat`
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>db4j</artifactId>
-            <version>0.9.0</version>
+            <version>0.9.2</version>
         </dependency>
 ```
 
