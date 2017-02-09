@@ -7,7 +7,7 @@ public class Hello extends Chat {
     
     public static void main(String[] args) throws Exception {
         Hello hello = new Hello();
-        hello.start("./db_files/hunk2.mmap",args.length==0);
+        hello.start("./db_files/chat.mmap",args.length==0);
         
         new kilim.Task() { public void execute() throws Pausable {
             hello.route("/new/hello/world");

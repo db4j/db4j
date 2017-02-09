@@ -46,7 +46,7 @@ public class Chat extends Database {
     }
     public static void main(String[] args) throws Exception {
         Chat chat = new Chat();
-        chat.start("../db_files/hunk2.mmap",args.length > 0);
+        chat.start("../db_files/chat.mmap",args.length > 0);
         new kilim.http.HttpServer(8080, req -> chat.route(req.uriPath)+"\n");
         System.in.read();
         System.exit(0);
