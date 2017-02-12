@@ -6,6 +6,7 @@ import kilim.Pausable;
 import java.io.Serializable;
 import org.db4j.Bmeta.Itoast;
 import org.db4j.Db4j;
+import org.srlutils.DynArray;
 import org.srlutils.Types;
 import org.srlutils.btree.Bpage;
 import org.srlutils.btree.Bstring;
@@ -84,6 +85,13 @@ public class Btrees {
         }
         public int compare(Bpage.Sheet page,int index,Data data) {
             return keys.compare( data.key, page, index, data.keydata );
+        }
+        /** return a Join for entries that match all terms */
+        public Join<Btrees.SI.Data> search(Db4j.Transaction tid,String ... terms) throws Pausable {
+            Btree.Range<Btrees.SI.Data> [] ranges = new Btree.Range[terms.length];
+            for (int ii=0; ii < terms.length; ii++)
+                ranges[ii] = findPrefix(context().set(tid).set(terms[ii],null));
+            return join(tid,ranges);
         }
     }
     
@@ -338,4 +346,83 @@ public class Btrees {
             return k1;
         }
     }    
+
+
+    /** the join of several monotonic ranges */
+    public static class Join<CC extends Bmeta.Context<?,Integer,?>> {
+        public Btree.Range<? extends Bmeta.Context<?,Integer,?>> [] ranges;
+        public CC cc;
+
+        Db4j.Transaction tid;
+        int num, max=-1, neq;
+        int [] vals;
+        boolean remain = true;
+        boolean first = true;
+        
+        /**
+         * join several monotonic ranges (note: prefix searches will not be monotonic). 
+         * must call init() before usage
+         * @param tid
+         * @param ranges must be monotonic
+         */
+        Join(Db4j.Transaction tid,Btree.Range<CC> ... ranges) {
+            this.tid = tid;
+            this.ranges = ranges;
+            num = ranges.length;
+            vals = new int[num];
+            if (ranges.length > 0)
+                cc = ranges[0].cc;
+        }
+        /** initialize the join */
+        Join<CC> init() throws Pausable {
+            for (int ii=0; ii < num; ii++) {
+                if (ranges[ii].init()) calc(ii);
+                else remain = false;
+            }
+            return this;
+        }
+        void calc(int ii) {
+            int val = vals[ii] = ranges[ii].cc.val;
+            if (val > max) { max = val; neq = 1; }
+            else if (val==max) neq++;
+        }
+        /** return an array of matching values */
+        public int [] dump() throws Pausable {
+            DynArray.ints r2 = new DynArray.ints();
+            r2.grow(16);
+            while (next())
+                r2.add(vals[0]);
+            return r2.trim();
+        }
+        /** advance to the next match and return true if it exists */
+        public boolean next() throws Pausable {
+            hasnext();
+            first = true;
+            return remain;
+        }
+        /** advance to the next match but do not consume it, and return true if it exists */
+        public boolean hasnext() throws Pausable {
+            if (first & remain) remain = gonext();
+            first = false;
+            return remain;
+        }
+        boolean gonext() throws Pausable {
+            for (int ii=0; neq < num; ii = (++ii==num) ? 0:ii)
+                while (vals[ii] < max)
+                    if (! ranges[ii].next()) return false;
+                    else calc(ii);
+            neq = 0;
+            max++;
+            return true;
+        }
+    }
+    
+    
+    /** return an initialized Join for the monotonic ranges */
+    public static <CC extends Bmeta.Context<?,Integer,?>> Join<CC> join
+            (Db4j.Transaction tid,Btree.Range<CC>... ranges) throws Pausable {
+        Join joiner = new Join(tid,ranges).init();
+        return joiner;
+    }
+    
 }

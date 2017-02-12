@@ -571,6 +571,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             return cnt;
         }
         public CC refresh() throws Pausable { btree.getccx(p1.page,cc,p1.ko); return cc; }
+        public boolean valid() { return p1 != null && (p2==null || !p1.same(p2)); }
+        public boolean init() throws Pausable {
+            boolean valid = valid();
+            if (valid) refresh();
+            return valid;
+        }
         public boolean hasnext() throws Pausable {
             if (!first) p1 = btree.next(p1,cc);
             first = true;
