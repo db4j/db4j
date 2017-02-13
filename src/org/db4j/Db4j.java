@@ -264,19 +264,10 @@ public class Db4j {
                     arrays.add( null );
                     offerTask( cts[ii] = new CompTask(ii) );
                 }
-                int ii = 0;
-                while (count < ncomp) {
-                    System.out.format( "Hunker.load -- waiting %d of %d\n", count, ncomp );
-                    if (ii++ == 10) {
-                        CompTask ct = (CompTask) qrunner.tasks.head;
-                        if (ct != null) {
-                            System.out.format( "CompTask: %d\n", ct.ii );
-                            ct.reason();
-                        }
-                        System.out.format( "CompTask: \n" );
-                        cts[0].reason();
-                    }
-                    Simple.sleep(10);
+                for (int ii=0; ii < ncomp; ii++) {
+                    CompTask task = cts[ii];
+                    task.await(10);
+                    // fixme - call reasons() on delay
                 }
                 kryoMap = (Btrees.IS) lookup(PATH_KRYOMAP);
                 logStore = (HunkLog) lookup(PATH_LOGSTORE);
