@@ -793,16 +793,6 @@ public class Db4j {
                 return (TT) this;
             }
         }
-        // wrapper to allow place()
-        // fixme - merge with Tasky
-        public static abstract class Taskx extends Tasky {
-            Hunker hunker;
-            public Taskx(Hunker $hunker) { hunker = $hunker; }
-            public void place() throws Pausable {
-                hunker.offerTask(this);
-                mbx.get();
-            }
-        }
         
         
         /** task has completed (or been cancelled???) - clean up the accounting info */
