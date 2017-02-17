@@ -724,7 +724,7 @@ public class Db4j {
             return task;
         }
 
-        
+
 
         public interface InvokeAble<TT> {
             TT execute(Db4j.Transaction tid) throws Pausable;
@@ -764,35 +764,6 @@ public class Db4j {
             Implore<TT> implore = new Implore(body);
             return offerTask(implore);
         }
-        public static abstract class Tasky<TT> extends Task {
-            kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
-            public boolean postRun(boolean pre) {
-                mbx.putnb(0);
-                return false;
-            }
-            /** pausing wait for the task to complete, if the task thru an exception, rethrow it */
-            public TT await() throws Pausable {
-                mbx.get();
-                if (ex != null) throw ex;
-                return (TT) this;
-            }
-            /** blocking wait for the task to complete, if the task thru an exception, rethrow it */
-            public TT awaitb() {
-                mbx.getb();
-                if (ex != null) throw ex;
-                return (TT) this;
-            }
-            /** pausing wait for the task to complete, suppressing any task exception */
-            public TT join() throws Pausable {
-                mbx.get();
-                return (TT) this;
-            }
-            /** blocking wait for the task to complete, suppressing any task exception */
-            public TT joinb() {
-                mbx.getb();
-                return (TT) this;
-            }
-        }
         
         
         /** task has completed (or been cancelled???) - clean up the accounting info */
@@ -802,6 +773,39 @@ public class Db4j {
             qrunner.state.completedTasks++;
         }
     }
+
+    public static abstract class Tasky<TT> extends Task {
+        kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
+        public boolean postRun(boolean pre) {
+            mbx.putnb(0);
+            return false;
+        }
+        /** pausing wait for the task to complete, if the task thru an exception, rethrow it */
+        public TT await() throws Pausable {
+            mbx.get();
+            if (ex != null) throw ex;
+            return (TT) this;
+        }
+        /** blocking wait for the task to complete, if the task thru an exception, rethrow it */
+        public TT awaitb() {
+            mbx.getb();
+            if (ex != null) throw ex;
+            return (TT) this;
+        }
+        /** pausing wait for the task to complete, suppressing any task exception */
+        public TT join() throws Pausable {
+            mbx.get();
+            return (TT) this;
+        }
+        /** blocking wait for the task to complete, suppressing any task exception */
+        public TT joinb() {
+            mbx.getb();
+            return (TT) this;
+        }
+    }
+    
+    
+    
     private static final long GENC_MAX_VALUE = Long.MAX_VALUE;
     private static final int GENC_MARGIN    = 1 <<  8;
     /**
