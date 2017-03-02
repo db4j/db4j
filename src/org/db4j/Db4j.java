@@ -774,12 +774,13 @@ public class Db4j {
         }
     }
 
-    public static abstract class Tasky<TT> extends Task {
+    public static abstract class Tasky<TT extends Tasky> extends Task {
         kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
         public boolean postRun(boolean pre) {
             mbx.putnb(0);
             return false;
         }
+        public TT offer(Hunker hunker) { return (TT) hunker.offerTask(this); }
         /** pausing wait for the task to complete, if the task thru an exception, rethrow it */
         public TT await() throws Pausable {
             mbx.get();
@@ -2882,6 +2883,8 @@ public class Db4j {
         static kilim.Task dummyKilimTask = new DummyKilimTask();
         int dogyears;
         RuntimeException ex;
+
+        public Task() {}
 
         /**
          *  an optional user method that is run once (or twice) after task completion

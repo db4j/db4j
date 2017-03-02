@@ -127,9 +127,9 @@ public class DemoEntropy {
     int count, limit = 1<<14;
     int bseed;
     public void build() {
-        new Db4j.Task() { public void task() throws Pausable {
+        new Db4j.Tasky() { public void task() throws Pausable {
             bseed = buildSeed.get(tid);
-        } }.place(hunker);
+        } }.offer(hunker).awaitb();
         build(bseed);
         System.out.println("build loaded: " + bseed);
     }
@@ -208,7 +208,7 @@ public class DemoEntropy {
         public static void main(String [] args) {
             Simple.Scripts.cpufreqStash( 2300000 );
             DemoEntropy test = new DemoEntropy();
-            if (false | args.length > 0 & "init".equals(args[0])) {
+            if (false | args.length > 0 && "init".equals(args[0])) {
                 test.doinit();
             }
             else {

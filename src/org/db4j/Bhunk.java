@@ -563,7 +563,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         double ko = 7.1;
         int nb = 0;
         
-        class PutTask extends Task {
+        class PutTask extends Db4j.Tasky {
             double k1;
             float v1;
             int i1;
@@ -572,7 +572,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 lt.insert(lt.context().set(tid).set(k1,v1));
             };
         }
-        class GetTask extends Task {
+        class GetTask extends Db4j.Tasky {
             DF.Data cc = lt.context();
             double k1;
             float v1;
@@ -586,7 +586,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                                 bad ? "  ------bad------" : "" );
             };
         }
-        class CheckTask extends Task {
+        class CheckTask extends Db4j.Tasky {
             public void task() throws Pausable {
                 lt.check( lt.context().set(tid).set(-1d,-1f) );
             };
@@ -599,15 +599,16 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             lt.init("Bushy Tree");
             int nn = 1347-7;
             hunker.create();
+            // break out the final iter to allow tracing in the debugger
             for (int ii = 0; ii < nn; ii++)
                 new PutTask(ii,ii+ko,ii+vo).offer(hunker);
             hunker.fence(null,100);
-            new PutTask(nn,nn+ko,nn+vo).place(hunker);
+            new PutTask(nn,nn+ko,nn+vo).offer(hunker).awaitb();
             for (int ii = 0; ii < nn; ii++) 
                 new GetTask(ii+ko,ii+vo).offer(hunker);
-            new GetTask(nn+ko,nn+vo).place(hunker);
+            new GetTask(nn+ko,nn+vo).offer(hunker);
             hunker.fence(null,100);
-            new CheckTask().place(hunker);
+            new CheckTask().offer(hunker).awaitb();
             lt.hunker.shutdown();
         }
         public static void auto(int passes,int npp,TaskTimer.Runner ... runners) throws Exception {

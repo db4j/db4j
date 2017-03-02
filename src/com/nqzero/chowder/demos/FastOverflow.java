@@ -40,16 +40,15 @@ public class FastOverflow {
         asum = 0;
         for (int ii = 0; ii < np; ii++) {
             final int kplayer = ii;
-            new Db4j.Task() {
+            new Db4j.Tasky() {
                 public void task() throws Pausable {
                     int [] data = new int[nv];
                     map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);
 //                    yield();
 //                    asum += sum(data);
                 }
-            }.offer(hunker);
+            }.offer(hunker).awaitb();
         }
-        hunker.fence(null,10);
         System.out.format("FastOverflow: %12d\n", asum);
     }
     long asum = 0;

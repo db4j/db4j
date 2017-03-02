@@ -562,7 +562,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         void check(int nn) {
             for (int ii=0; ii < nn; ii++) {
                 final int i2 = ii;
-                class Check extends Task { public void task() throws Pausable {
+                class Check extends Db4j.Tasky { public void task() throws Pausable {
                     int key = keys[i2];
                     Btrees.IA.Data data = lt.context().set(tid).set(key,null).find(lt);
                     int val = Command.Page.wrap(data.val).getInt(0);
@@ -608,7 +608,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 final float v1 = 0.01f*jj;
                 final int jo = 1000000, step = 1;
                 final boolean chk = stage==2 && jj >= jo && (jj%step==0);
-                Task task = new Task() { public void task() throws Pausable {
+                Db4j.Tasky task = new Db4j.Tasky() { public void task() throws Pausable {
                     DF2.Data context = lt.context().set(tid).set(keys[jj],stage==0 ? v1:-1f);
                     if (jj==0 && stage==2) check(1,tc.nn,1);
                     if (chk && stage==2)
@@ -641,8 +641,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                     }
                 }
                 };
-                if (chk) task.place(hunker);
-                else task.offer(hunker);
+                task.offer(hunker);
+                if (chk) task.awaitb();
             }
             hunker.fence(null,10);
         }
