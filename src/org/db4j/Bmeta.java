@@ -8,9 +8,8 @@ import org.srlutils.btree.BtTests2;
 import org.srlutils.btree.Btypes.Element;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
-import org.db4j.Command;
 import org.db4j.Db4j.Hunker;
-import org.db4j.Db4j.Task;
+import org.db4j.Db4j.Tasky;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
@@ -536,7 +535,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             keys = Rand.source.rand( new int[len], 0, 1<<30 );
             for (int ii=0; ii < keys.length; ii += ipt) {
                 final int i2 = ii;
-                class Insert extends Task { public void task() throws Pausable {
+                class Insert extends Tasky { public void task() throws Pausable {
                     for (int jj = 0; jj < ipt; jj++) {
                         int nn = 4 + Rand.source.rand(0,bpe);
                         byte [] bytes = new byte[nn];

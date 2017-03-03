@@ -7,8 +7,7 @@ import java.io.File;
 import kilim.Pausable;
 import org.db4j.Command;
 import org.db4j.Db4j.Hunker;
-import org.db4j.Db4j.Task;
-import org.db4j.Db4j.Task;
+import org.db4j.Db4j.Tasky;
 import org.db4j.Db4j.Transaction;
 import org.db4j.HunkArray;
 import org.srlutils.Simple;
@@ -145,9 +144,9 @@ public class DemoHunker {
     
     public static class DemoInfo extends Demo<DemoInfo> {
         public void test() {
-            new Task() { public void task() throws Pausable {
+            new Tasky() { public void task() throws Pausable {
                 arrays[0].info2(tid);
-            }}.place(hunker);
+            }}.offer(hunker).awaitb();
         }
     }
 
@@ -169,7 +168,7 @@ public class DemoHunker {
 
         public interface Taskable {
             String report();
-            Task set(int $ii,long [] $offsets,int [] $kv);
+            Tasky set(int $ii,long [] $offsets,int [] $kv);
             boolean success();
         }
         public void report(double tc,String report) {
@@ -178,7 +177,7 @@ public class DemoHunker {
                     taskKlass.getSimpleName(), tc, 1.0*ios/tc, 1.0*ios/nn, report );
         }
         
-        public abstract class BaseKask extends Task implements Taskable {
+        public abstract class BaseKask extends Tasky implements Taskable {
             public int ii;
             public Command.RwLong cmd;
             public long [] offsets;
@@ -192,6 +191,7 @@ public class DemoHunker {
             public String report() { return ""; }
             public boolean success() { return true; }
             public boolean postRun(boolean pre) {
+                super.postRun(pre);
                 done++;
                 return false;
             }
@@ -236,9 +236,9 @@ public class DemoHunker {
             timer.tic();
             for (int ii = 0; ii < niter; ii++) {
                 task = Simple.Reflect.newInner( taskKlass, this );
-                Task t2;
+                Tasky t2;
                 hunker.offerTask( t2 = task.set(ii,offsets,kv) );
-                if (! async) t2.await(1);
+                if (! async) t2.awaitb();
             }
             while (done < niter) Simple.sleep(100);
             hunker.sync();
@@ -246,9 +246,9 @@ public class DemoHunker {
             report( tc, task.report() );
             hunker.dontneed();
             if (taskKlass==WriteTask.class && false)
-                new Task() { public void task() throws Pausable {
+                new Tasky() { public void task() throws Pausable {
                     arrays[0].info2(tid);
-                }}.place(hunker);
+                }}.offer(hunker).awaitb();
         }
     }
 
@@ -412,30 +412,6 @@ public class DemoHunker {
         r2.init(false,size,nstores).prep(nn,seed);
         
         
-        if (false) {
-            Timer.timer.tic();
-            rb.start();
-            Hunker hunker = rb.hunker;
-            for (int kk = 0; kk < 10; kk++) {
-                for (int ii = 0; ii < 10; ii++) {
-                    final long jj = (long) ii;
-                    new Task() {
-                        public void task() throws Pausable {
-                            System.out.format( "start\n" );
-                            for (int gg = 0; gg < nstores; gg++)
-                                rb.arrays[gg].set( tid, jj, -jj );
-                            yield();
-                            System.out.format( "done\n" );
-                        }
-                    }.offer(hunker);
-                }
-                hunker.fence(null,100);
-                Timer.timer.toc();
-            }
-            return;
-        }
-        
-
         if (write) {
             w1 = rw.dup().set(aa.write).run();
 //            DemoWithTasks y2 = r2.dup().set(aa.count).run();

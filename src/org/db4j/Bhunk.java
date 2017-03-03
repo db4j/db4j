@@ -9,11 +9,10 @@ import org.db4j.Db4j.Hunkable;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
-import org.db4j.Command;
 import org.db4j.Db4j.Hunker;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
-import org.db4j.Db4j.Task;
+import org.db4j.Db4j.Tasky;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
 import org.srlutils.Types;
@@ -525,7 +524,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 final float v1 = 0.01f*jj, goal = stage==3 ? -1f:v1;
                 final float vo = stage==0 ? v1:-1f;
                 final double key = rand.nextDouble();
-                new Task() { public void task() throws Pausable {
+                new Tasky() { public void task() throws Pausable {
                     CC cc = map.context().set(key,vo);
                     cc.set(tid);
                     if      (stage==0) map.insert  (cc);

@@ -292,7 +292,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
         final int type = type(magic);
         counts[type]++;
         // look verify insert remove
-        class Task extends Db4j.Task {
+        class Task extends Db4j.Tasky {
             int index;
             long key, stored;
             // the keys manipulation (add,del) isn't thread safe
@@ -329,6 +329,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
             }
             // fixme:correctness -- on rollback, need to undo preadd, predel
             public boolean postRun(boolean pre) {
+                super.postRun(pre);
                 if (type==2) add(index,key);
                 if (type==3) del(index);
                 return false;

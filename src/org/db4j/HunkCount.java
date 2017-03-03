@@ -9,7 +9,6 @@ import org.db4j.Db4j.Hunkable;
 import org.db4j.Db4j.Hunker;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
-import org.db4j.Db4j.Task;
 import org.db4j.Db4j.Transaction;
 
 public class HunkCount implements Hunkable<HunkCount>, Serializable {
@@ -72,7 +71,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         Hunker hunker;
         String name = "./db_files/hunk2.mmap";
         
-        public class Task extends Db4j.Task {
+        public class Task extends Db4j.Tasky {
             public void task() throws Pausable {
                 int val = lt.get(tid);
                 lt.set(tid,val+1);

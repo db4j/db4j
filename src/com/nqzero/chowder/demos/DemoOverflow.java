@@ -66,7 +66,7 @@ public class DemoOverflow {
                 vals[jj] -= delta;
             vals[2] -= sum;
             Simple.softAssert(sum(vals)==0);
-            new Db4j.Task() {
+            new Db4j.Tasky() {
                 public void task() throws Pausable {
                     map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
@@ -108,7 +108,7 @@ public class DemoOverflow {
         final int kplayer = ii;
         final int [] vals = r1.rand(new int[2],1,nv);
         if (vals[0]==vals[1]) return;
-        new Db4j.Task() {
+        new Db4j.Tasky() {
             public void task() throws Pausable {
                 int [] data = new int[nv];
                 map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);
