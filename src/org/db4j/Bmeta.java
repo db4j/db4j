@@ -580,6 +580,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         String filename = "./db_files/b6.mmap";
         Hunker hunker;
         boolean ok = true;
+        boolean nocheck = true;
         boolean reopen = false;
         { sntext = "put get rem chk"; }
         public void init2() {
@@ -606,7 +607,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 final int jj = ii;
                 final float v1 = 0.01f*jj;
                 final int jo = 1000000, step = 1;
-                final boolean chk = stage==2 && jj >= jo && (jj%step==0);
+                final boolean chk = !nocheck && stage==2 && jj >= jo && (jj%step==0);
                 Db4j.Tasky task = new Db4j.Tasky() { public void task() throws Pausable {
                     DF2.Data context = lt.context().set(tid).set(keys[jj],stage==0 ? v1:-1f);
                     if (jj==0 && stage==2) check(1,tc.nn,1);
@@ -631,6 +632,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                     }
                 }
                 public void check(int ko,int nn,int delta) throws Pausable {
+                    if (nocheck) return;
                     for (int kk = ko; kk < nn; kk += delta) {
                         DF2.Data context = lt.context().set(tid).set(keys[kk],-1f).find(lt);
                         float goal = (kk <= jj) ? -1f : 0.01f*kk;
@@ -664,7 +666,9 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 tt.autoTimer(runners);
         }
         public static void main(String [] args) throws Exception {
-            auto( 1, 1, new Mindir2() );
+            Mindir2 mindir = new Mindir2();
+            if (args.length > 0) mindir.nocheck = false;
+            auto(1,1,mindir);
         }
     }
     
