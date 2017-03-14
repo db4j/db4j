@@ -264,11 +264,8 @@ public class Db4j {
                     arrays.add( null );
                     offerTask( cts[ii] = new CompTask(ii) );
                 }
-                for (int ii=0; ii < ncomp; ii++) {
-                    CompTask task = cts[ii];
-                    task.await(10);
-                    // fixme - call reasons() on delay
-                }
+                for (int ii=0; ii < ncomp; ii++)
+                    cts[ii].awaitb();
                 kryoMap = (Btrees.IS) lookup(PATH_KRYOMAP);
                 logStore = (HunkLog) lookup(PATH_LOGSTORE);
                 
@@ -285,7 +282,7 @@ public class Db4j {
                 }
                 { done = true; }
             }
-            public class CompTask extends Task {
+            public class CompTask extends Tasky {
                 public Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
                 byte [] rdata, ldata;
                 int ii;
@@ -711,7 +708,8 @@ public class Db4j {
             while (true) {
                 OldestTask ot = new OldestTask();
                 offerTask( ot );
-                ot.await(delay);
+                while (! ot.done())
+                    Simple.sleep(delay);
                 oldest = ot.oldest;
                 if (task==null) task = ot;
                 if (oldest==null || oldest.id >= task.id) break;
@@ -2915,8 +2913,6 @@ public class Db4j {
             }
         }
         public Task offer(Hunker hunker) { return hunker.offerTask(this); }
-        public Task place(Hunker hunker) { offer(hunker); this.await(10); return this; }
-        public void await(int delay) { while (! done()) Simple.sleep(delay); }
         public boolean done() {
             if (ex != null) throw ex;
             return done && !alive;
