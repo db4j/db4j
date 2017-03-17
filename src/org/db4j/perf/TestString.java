@@ -292,7 +292,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
         final int type = type(magic);
         counts[type]++;
         // look verify insert remove
-        class Task extends Db4j.Tasky {
+        class Task extends Db4j.Query {
             int index;
             long key, stored;
             // the keys manipulation (add,del) isn't thread safe

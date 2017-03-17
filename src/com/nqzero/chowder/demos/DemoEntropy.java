@@ -57,7 +57,7 @@ public class DemoEntropy {
         init();
         final int bs = (int) r1.nextLong();
         build(bs);
-        new Db4j.Tasky() { public void task() throws Pausable {
+        new Db4j.Query() { public void task() throws Pausable {
             buildSeed.set(tid,bs);
         } }.offer(hunker);
         System.out.println("build complete: " + bs);
@@ -70,7 +70,7 @@ public class DemoEntropy {
                 vals[jj] -= delta;
             vals[2] -= sum;
             Simple.softAssert(sum(vals)==0);
-            new Db4j.Tasky() {
+            new Db4j.Query() {
                 public void task() throws Pausable {
                     map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
@@ -127,7 +127,7 @@ public class DemoEntropy {
     int count, limit = 1<<14;
     int bseed;
     public void build() {
-        new Db4j.Tasky() { public void task() throws Pausable {
+        new Db4j.Query() { public void task() throws Pausable {
             bseed = buildSeed.get(tid);
         } }.offer(hunker).awaitb();
         build(bseed);
@@ -158,7 +158,7 @@ public class DemoEntropy {
         final int kplayer = r1.rand(0,np);
         final int nt = complex(0,5,12,.1);
         final int [] items = r1.rand(new int[nt+1],1,nv);
-        new Db4j.Tasky() {
+        new Db4j.Query() {
             public void task() throws Pausable {
                 int [] data = new int[nv], d2;
                 map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);
@@ -182,7 +182,7 @@ public class DemoEntropy {
         suma = 0;
         for (int ii = 0; ii < np; ii++) {
             final int kplayer = ii;
-            new Db4j.Tasky() {
+            new Db4j.Query() {
                 public void task() throws Pausable {
                     int [] data = new int[nv];
                     map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);

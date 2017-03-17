@@ -283,7 +283,7 @@ public class Db4j {
                 }
                 { done = true; }
             }
-            public class CompTask extends Tasky {
+            public class CompTask extends Query {
                 public Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
                 byte [] rdata, ldata;
                 int ii;
@@ -731,13 +731,13 @@ public class Db4j {
         public interface ImploreAble {
             void execute(Db4j.Transaction tid) throws Pausable;
         }
-        public class Invoke<TT> extends Tasky<Invoke<TT>> {
+        public class Invoke<TT> extends Query<Invoke<TT>> {
             InvokeAble<TT> body;
             public TT val;
             public Invoke(InvokeAble body) { this.body = body; }
             public void task() throws Pausable { val = body.execute(tid); }
         }
-        public class Implore<XX extends ImploreAble> extends Tasky<Implore<XX>> {
+        public class Implore<XX extends ImploreAble> extends Query<Implore<XX>> {
             XX body;
             public Implore(XX body) { this.body = body; }
             public void task() throws Pausable { body.execute(tid); }
@@ -783,7 +783,7 @@ public class Db4j {
      * timeout and observer join variants may result in non-completion and should call either getCommitted or checkCommitted
      * @param <TT> the task type or a super type
      */
-    public static abstract class Tasky<TT extends Tasky> extends Task {
+    public static abstract class Query<TT extends Query> extends Task {
         kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
         boolean diskCommit, committed;
         public boolean postRun(boolean pre) {

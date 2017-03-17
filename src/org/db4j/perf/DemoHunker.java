@@ -7,7 +7,7 @@ import java.io.File;
 import kilim.Pausable;
 import org.db4j.Command;
 import org.db4j.Db4j.Hunker;
-import org.db4j.Db4j.Tasky;
+import org.db4j.Db4j.Query;
 import org.db4j.Db4j.Transaction;
 import org.db4j.HunkArray;
 import org.srlutils.Simple;
@@ -144,7 +144,7 @@ public class DemoHunker {
     
     public static class DemoInfo extends Demo<DemoInfo> {
         public void test() {
-            new Tasky() { public void task() throws Pausable {
+            new Query() { public void task() throws Pausable {
                 arrays[0].info2(tid);
             }}.offer(hunker).awaitb();
         }
@@ -168,7 +168,7 @@ public class DemoHunker {
 
         public interface Taskable {
             String report();
-            Tasky set(int $ii,long [] $offsets,int [] $kv);
+            Query set(int $ii,long [] $offsets,int [] $kv);
             boolean success();
         }
         public void report(double tc,String report) {
@@ -177,7 +177,7 @@ public class DemoHunker {
                     taskKlass.getSimpleName(), tc, 1.0*ios/tc, 1.0*ios/nn, report );
         }
         
-        public abstract class BaseKask extends Tasky implements Taskable {
+        public abstract class BaseKask extends Query implements Taskable {
             public int ii;
             public Command.RwLong cmd;
             public long [] offsets;
@@ -236,7 +236,7 @@ public class DemoHunker {
             timer.tic();
             for (int ii = 0; ii < niter; ii++) {
                 task = Simple.Reflect.newInner( taskKlass, this );
-                Tasky t2;
+                Query t2;
                 hunker.offerTask( t2 = task.set(ii,offsets,kv) );
                 if (! async) t2.awaitb();
             }
@@ -246,7 +246,7 @@ public class DemoHunker {
             report( tc, task.report() );
             hunker.dontneed();
             if (taskKlass==WriteTask.class && false)
-                new Tasky() { public void task() throws Pausable {
+                new Query() { public void task() throws Pausable {
                     arrays[0].info2(tid);
                 }}.offer(hunker).awaitb();
         }

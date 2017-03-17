@@ -71,7 +71,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         Hunker hunker;
         String name = "./db_files/hunk2.mmap";
         
-        public class Task extends Db4j.Tasky {
+        public class Task extends Db4j.Query {
             public void task() throws Pausable {
                 int val = lt.get(tid);
                 lt.set(tid,val+1);

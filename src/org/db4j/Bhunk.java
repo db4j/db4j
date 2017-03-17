@@ -12,7 +12,7 @@ import kilim.Pausable;
 import org.db4j.Db4j.Hunker;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
-import org.db4j.Db4j.Tasky;
+import org.db4j.Db4j.Query;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
 import org.srlutils.Types;
@@ -524,7 +524,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 final float v1 = 0.01f*jj, goal = stage==3 ? -1f:v1;
                 final float vo = stage==0 ? v1:-1f;
                 final double key = rand.nextDouble();
-                new Tasky() { public void task() throws Pausable {
+                new Query() { public void task() throws Pausable {
                     CC cc = map.context().set(key,vo);
                     cc.set(tid);
                     if      (stage==0) map.insert  (cc);
@@ -562,7 +562,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         double ko = 7.1;
         int nb = 0;
         
-        class PutTask extends Db4j.Tasky {
+        class PutTask extends Db4j.Query {
             double k1;
             float v1;
             int i1;
@@ -571,7 +571,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 lt.insert(lt.context().set(tid).set(k1,v1));
             };
         }
-        class GetTask extends Db4j.Tasky {
+        class GetTask extends Db4j.Query {
             DF.Data cc = lt.context();
             double k1;
             float v1;
@@ -585,7 +585,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                                 bad ? "  ------bad------" : "" );
             };
         }
-        class CheckTask extends Db4j.Tasky {
+        class CheckTask extends Db4j.Query {
             public void task() throws Pausable {
                 lt.check( lt.context().set(tid).set(-1d,-1f) );
             };

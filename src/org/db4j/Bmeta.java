@@ -9,7 +9,7 @@ import org.srlutils.btree.Btypes.Element;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
 import org.db4j.Db4j.Hunker;
-import org.db4j.Db4j.Tasky;
+import org.db4j.Db4j.Query;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
@@ -535,7 +535,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             keys = Rand.source.rand( new int[len], 0, 1<<30 );
             for (int ii=0; ii < keys.length; ii += ipt) {
                 final int i2 = ii;
-                class Insert extends Tasky { public void task() throws Pausable {
+                class Insert extends Query { public void task() throws Pausable {
                     for (int jj = 0; jj < ipt; jj++) {
                         int nn = 4 + Rand.source.rand(0,bpe);
                         byte [] bytes = new byte[nn];
@@ -561,7 +561,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         void check(int nn) {
             for (int ii=0; ii < nn; ii++) {
                 final int i2 = ii;
-                class Check extends Db4j.Tasky { public void task() throws Pausable {
+                class Check extends Db4j.Query { public void task() throws Pausable {
                     int key = keys[i2];
                     Btrees.IA.Data data = lt.context().set(tid).set(key,null).find(lt);
                     int val = Command.Page.wrap(data.val).getInt(0);
@@ -608,7 +608,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 final float v1 = 0.01f*jj;
                 final int jo = 1000000, step = 1;
                 final boolean chk = !nocheck && stage==2 && jj >= jo && (jj%step==0);
-                Db4j.Tasky task = new Db4j.Tasky() { public void task() throws Pausable {
+                Db4j.Query task = new Db4j.Query() { public void task() throws Pausable {
                     DF2.Data context = lt.context().set(tid).set(keys[jj],stage==0 ? v1:-1f);
                     if (jj==0 && stage==2) check(1,tc.nn,1);
                     if (chk && stage==2)

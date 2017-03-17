@@ -96,7 +96,7 @@ public class Database {
     public void close() {
         for (Table table : tables) table.close();
     }
-    public abstract class Task<TT extends Task> extends Db4j.Tasky<TT> {
+    public abstract class Task<TT extends Task> extends Db4j.Query<TT> {
         // fixme -- report bug in kilim. if task() is added here as abstract, weave fails
         public TT offer() { return (TT) hunker.offerTask(this); }
     }
