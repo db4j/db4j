@@ -20,6 +20,7 @@ import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import kilim.EventSubscriber;
 import kilim.Pausable;
 import org.srlutils.data.TreeDisk.Entry;
 import org.srlutils.DynArray;
@@ -772,33 +773,98 @@ public class Db4j {
         }
     }
 
+    /** 
+     * base class for userspace queries
+     * providing several forms of join: blocking, pausing, timeouts and observers
+     * the variants correspond to kilim mailbox primitives
+     * commit mode by default is pre-disk-commit, but post-disk can be enabled
+     * await convenience methods throw any exception captured from the task run, or checkEx can do the same
+     * most methods return this (type param TT must match) allowing fluent api
+     * timeout and observer join variants may result in non-completion and should call either getCommitted or checkCommitted
+     * @param <TT> the task type or a super type
+     */
     public static abstract class Tasky<TT extends Tasky> extends Task {
         kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
+        boolean diskCommit, committed;
         public boolean postRun(boolean pre) {
-            mbx.putnb(0);
-            return false;
+            if (!diskCommit || !pre) mbx.putnb(0);
+            return diskCommit;
         }
-        public TT offer(Hunker hunker) { return (TT) hunker.offerTask(this); }
-        /** pausing wait for the task to complete, if the task thru an exception, rethrow it */
+        public TT offer(Hunker hunker) { return hunker.offerTask((TT) this); }
+        /** pausing wait for the task to complete, if the task threw an exception, rethrow it */
         public TT await() throws Pausable {
-            mbx.get();
+            Integer msg = mbx.get();
+            if (msg != null) committed = true;
             if (ex != null) throw ex;
             return (TT) this;
         }
-        /** blocking wait for the task to complete, if the task thru an exception, rethrow it */
+        /** blocking wait for the task to complete, if the task threw an exception, rethrow it */
         public TT awaitb() {
-            mbx.getb();
+            Integer msg = mbx.getb();
+            if (msg != null) committed = true;
             if (ex != null) throw ex;
+            return (TT) this;
+        }
+        /** don't consider the task completed until the commit to disk has occurred, return this */
+        public TT setCommitMode() { diskCommit = true; return (TT) this; }
+
+        /**
+         * get the exception
+         * @return if the task threw an exception, return it (wrapped if needed), otherwise null
+         */
+        public RuntimeException getEx() {
+            return ex;
+        }
+        /** if the task threw an exception, rethrow it, otherwise return this */
+        public TT checkEx() {
+            if (ex != null) throw ex;
+            return (TT) this;
+        }
+        /** return true if the task has been committed */
+        public boolean isCommitted() {
+            return committed;
+        }
+        /** the task has not yet been committed */
+        public static class UncommittedException extends RuntimeException {}
+        /** throw an exception if the task has not committed */
+        public TT checkCommitted() {
+            if (!committed) throw new UncommittedException();
             return (TT) this;
         }
         /** pausing wait for the task to complete, suppressing any task exception */
         public TT join() throws Pausable {
             mbx.get();
+            committed = true;
             return (TT) this;
         }
-        /** blocking wait for the task to complete, suppressing any task exception */
+        /**
+         * Non-blocking, non-pausing join, registering the observer if the task has not already completed.
+         * 
+         * @param eo. If non-null, registers this observer and calls it with a MessageAvailable event when
+         *  the task completes.
+         * @return this
+         */
+        public TT join(EventSubscriber eo) throws Pausable {
+            Integer msg = mbx.get(eo);
+            if (msg != null) committed = true;
+            return (TT) this;
+        }
+        /** pausing wait for the task to complete or timeoutMillis */
+        public TT join(long timeoutMillis) throws Pausable {
+            Integer msg = mbx.get(timeoutMillis);
+            if (msg != null) committed = true;
+            return (TT) this;
+        }
+        /** blocking wait for the task to complete */
         public TT joinb() {
             mbx.getb();
+            committed = true;
+            return (TT) this;
+        }
+        /** blocking wait for the task to complete or timeoutMillis */
+        public TT joinb(long timeoutMillis) {
+            Integer msg = mbx.getb(timeoutMillis);
+            if (msg != null) committed = true;
             return (TT) this;
         }
     }
