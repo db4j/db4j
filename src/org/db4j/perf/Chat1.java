@@ -25,7 +25,7 @@ public class Chat1 extends Database {
     public String route(String query) throws Pausable {
         String cmds[]=query.split("/"), cmd=cmds.length > 1 ? cmds[1]:"none";
         Integer id = parse(cmds,2);
-        return offer(tid -> { switch (cmd) {
+        return future(tid -> { switch (cmd) {
             case "dir" : return users.getall(tid).vals().stream().map(User::format).collect(Collectors.joining("\n"));
             case "get" : return users.context().set(tid).set(id,null).get(users).val.format();
             case "list": return messages.findPrefix(tid,id).vals().stream().collect(Collectors.joining("\n"));
@@ -43,7 +43,8 @@ public class Chat1 extends Database {
                     messages.insert(tid,rid,RandomStringUtils.randomAscii(33));
                 return "random insert";
             default: return "";
-        }});
+        }
+        }).await().val;
     }
     
     public static void main(String[] args) {

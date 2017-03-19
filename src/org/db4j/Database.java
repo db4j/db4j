@@ -21,7 +21,9 @@ public class Database {
         return field.getDeclaringClass().getSimpleName() + "/";
     }
 
-    public <TT> TT offer(Hunker.InvokeAble<TT> body) throws Pausable { return hunker.offer( body ); }
+    public <TT> Hunker.Invoke<TT> future(Hunker.InvokeAble<TT> body) throws Pausable {
+        return hunker.future(body);
+    }
 
     
     

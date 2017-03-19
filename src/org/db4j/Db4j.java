@@ -742,19 +742,6 @@ public class Db4j {
             public Implore(ImploreAble body) { this.body = body; }
             public void task() throws Pausable { body.execute(tid); }
         }
-        public <TT> TT offer(InvokeAble<TT> body) throws Pausable {
-            Invoke<TT> invoke = new Invoke(body);
-            offerTask(invoke);
-            invoke.mbx.get();
-            if (invoke.ex != null) throw invoke.ex;
-            return invoke.val;
-        }
-        public void offerx(ImploreAble body) throws Pausable {
-            Implore implore = new Implore(body);
-            offerTask(implore);
-            implore.mbx.get();
-            if (implore.ex != null) throw implore.ex;
-        }
         public <TT> Invoke<TT> future(InvokeAble<TT> body) {
             Invoke<TT> invoke = new Invoke(body);
             return offerTask(invoke);
