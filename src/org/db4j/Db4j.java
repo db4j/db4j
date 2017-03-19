@@ -717,7 +717,7 @@ public class Db4j {
                 Simple.sleep( delay );
             }
         }
-        /** offer a new task */
+        /** offer a new task and return it */
         public <TT extends Queable> TT offerTask(TT task) {
             qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
             return task;
@@ -737,9 +737,9 @@ public class Db4j {
             public Invoke(InvokeAble body) { this.body = body; }
             public void task() throws Pausable { val = body.execute(tid); }
         }
-        public class Implore<XX extends ImploreAble> extends Query<Implore<XX>> {
-            XX body;
-            public Implore(XX body) { this.body = body; }
+        public class Implore extends Query<Implore> {
+            ImploreAble body;
+            public Implore(ImploreAble body) { this.body = body; }
             public void task() throws Pausable { body.execute(tid); }
         }
         public <TT> TT offer(InvokeAble<TT> body) throws Pausable {
@@ -759,8 +759,8 @@ public class Db4j {
             Invoke<TT> invoke = new Invoke(body);
             return offerTask(invoke);
         }
-        public <TT extends ImploreAble> Implore<TT> futurex(TT body) {
-            Implore<TT> implore = new Implore(body);
+        public Implore futurex(ImploreAble body) {
+            Implore implore = new Implore(body);
             return offerTask(implore);
         }
         
