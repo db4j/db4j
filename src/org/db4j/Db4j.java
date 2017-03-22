@@ -750,7 +750,9 @@ public class Db4j {
             Implore implore = new Implore(body);
             return offerTask(implore);
         }
-        
+        public <TT extends Query> TT submit(TT query) {
+            return offerTask(query);
+        }
         
         /** task has completed (or been cancelled???) - clean up the accounting info */
         public void cleanupTask(Db4j.Task task) {

@@ -85,7 +85,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
             lt.set( hunker );
             lt.init("Hunk Count");
             hunker.create();
-            for (int ii = 0; ii < 10; ii++) hunker.offerTask( new Task() );
+            for (int ii = 0; ii < 10; ii++) hunker.submit( new Task() );
             hunker.fence( null, 10 );
             lt.hunker.shutdown();
         }

@@ -100,7 +100,7 @@ public class Database {
     }
     public abstract class Task<TT extends Task> extends Db4j.Query<TT> {
         // fixme -- report bug in kilim. if task() is added here as abstract, weave fails
-        public TT offer() { return (TT) hunker.offerTask(this); }
+        public TT offer() { return (TT) hunker.submit(this); }
     }
 
     
