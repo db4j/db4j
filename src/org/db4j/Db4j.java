@@ -2967,7 +2967,6 @@ public class Db4j {
                 return ex==null ? fiber.end() : false;
             }
         }
-        public Task offer(Hunker hunker) { return hunker.offerTask(this); }
         public boolean done() {
             if (ex != null) throw ex;
             return done && !alive;
