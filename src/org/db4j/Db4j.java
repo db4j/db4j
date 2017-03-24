@@ -731,13 +731,13 @@ public class Db4j {
         public interface ImploreAble {
             void execute(Db4j.Transaction tid) throws Pausable;
         }
-        public class Invoke<TT> extends Query<Invoke<TT>> {
+        public static class Invoke<TT> extends Query<Invoke<TT>> {
             InvokeAble<TT> body;
             public TT val;
             public Invoke(InvokeAble body) { this.body = body; }
             public void task() throws Pausable { val = body.execute(tid); }
         }
-        public class Implore extends Query<Implore> {
+        public static class Implore extends Query<Implore> {
             ImploreAble body;
             public Implore(ImploreAble body) { this.body = body; }
             public void task() throws Pausable { body.execute(tid); }
