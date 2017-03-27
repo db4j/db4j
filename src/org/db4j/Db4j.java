@@ -725,32 +725,32 @@ public class Db4j {
 
 
 
-        public interface InvokeAble<TT> {
+        public interface Queryable<TT> {
             TT execute(Db4j.Transaction tid) throws Pausable;
         }
-        public interface ImploreAble {
+        public interface QueryCallable {
             void execute(Db4j.Transaction tid) throws Pausable;
         }
-        public static class Invoke<TT> extends Query<Invoke<TT>> {
-            InvokeAble<TT> body;
+        public static class LambdaQuery<TT> extends Query<LambdaQuery<TT>> {
+            Queryable<TT> body;
             public TT val;
-            public Invoke(InvokeAble body) { this.body = body; }
+            public LambdaQuery(Queryable body) { this.body = body; }
             public void task() throws Pausable { val = body.execute(tid); }
         }
-        public static class Implore extends Query<Implore> {
-            ImploreAble body;
-            public Implore(ImploreAble body) { this.body = body; }
+        public static class LambdaCallQuery extends Query<LambdaCallQuery> {
+            QueryCallable body;
+            public LambdaCallQuery(QueryCallable body) { this.body = body; }
             public void task() throws Pausable { body.execute(tid); }
         }
-        public <TT> Invoke<TT> future(InvokeAble<TT> body) {
-            Invoke<TT> invoke = new Invoke(body);
+        public <TT> LambdaQuery<TT> submit(Queryable<TT> body) {
+            LambdaQuery<TT> invoke = new LambdaQuery(body);
             return offerTask(invoke);
         }
-        public Implore futurex(ImploreAble body) {
-            Implore implore = new Implore(body);
+        public LambdaCallQuery submitCall(QueryCallable body) {
+            LambdaCallQuery implore = new LambdaCallQuery(body);
             return offerTask(implore);
         }
-        public <TT extends Query> TT submit(TT query) {
+        public <TT extends Query> TT submitQuery(TT query) {
             return offerTask(query);
         }
         

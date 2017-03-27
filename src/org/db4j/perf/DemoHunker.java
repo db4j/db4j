@@ -237,7 +237,7 @@ public class DemoHunker {
             for (int ii = 0; ii < niter; ii++) {
                 task = Simple.Reflect.newInner( taskKlass, this );
                 Query t2;
-                hunker.submit( t2 = task.set(ii,offsets,kv) );
+                hunker.submitQuery( t2 = task.set(ii,offsets,kv) );
                 if (! async) t2.awaitb();
             }
             while (done < niter) Simple.sleep(100);

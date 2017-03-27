@@ -181,7 +181,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
         }
         
         public void route() {
-            hunker.futurex(tid -> {
+            hunker.submitCall(tid -> {
                 int num = count.get(tid);
                 users.insert(tid,num,randUser());
                 count.plus(tid,1);
@@ -191,7 +191,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
         
         public String info() {
             String val =
-            hunker.future(tid -> {
+            hunker.submit(tid -> {
                 String last = null;
                 User [] all = users.getall(tid).vals().toArray(new User[0]);
                 for (User user : all) {

@@ -11,14 +11,14 @@ public class Demox extends Database {
     
     void addUser() {
         byte [] user = new byte[usize];
-        hunker.futurex(tid -> {
+        hunker.submitCall(tid -> {
             int index = count.plus(tid,1);
             users.insert(tid,index,user);
             if (index%10 == 0) System.out.println("user: " + index);
         });
     }
     void getUser() {
-        hunker.futurex(tid -> {
+        hunker.submitCall(tid -> {
             int index = 9;
             byte[] find = users.find(tid,index);
             System.out.println("user: " + find.length);

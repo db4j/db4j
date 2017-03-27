@@ -17,7 +17,7 @@ public class DemoStringx {
 
         public void route() {
             String bio = RandomStringUtils.randomAlphanumeric(src.nextInt(8000));
-            hunker.futurex(tid -> {
+            hunker.submitCall(tid -> {
                 int num = count.get(tid);
                 users.insert(tid,num,bio);
                 count.plus(tid,1);
@@ -27,7 +27,7 @@ public class DemoStringx {
         
         public String info() {
             String val =
-            hunker.future(tid -> {
+            hunker.submit(tid -> {
                 String last = null;
                 String [] all = users.getall(tid).vals().toArray(new String[0]);
                 for (String user : all) {

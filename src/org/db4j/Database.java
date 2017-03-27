@@ -21,8 +21,8 @@ public class Database {
         return field.getDeclaringClass().getSimpleName() + "/";
     }
 
-    public <TT> Hunker.Invoke<TT> future(Hunker.InvokeAble<TT> body) throws Pausable {
-        return hunker.future(body);
+    public <TT> Hunker.LambdaQuery<TT> future(Hunker.Queryable<TT> body) throws Pausable {
+        return hunker.submit(body);
     }
 
     
@@ -100,7 +100,7 @@ public class Database {
     }
     public abstract class Task<TT extends Task> extends Db4j.Query<TT> {
         // fixme -- report bug in kilim. if task() is added here as abstract, weave fails
-        public TT offer() { return (TT) hunker.submit(this); }
+        public TT offer() { return (TT) hunker.submitQuery(this); }
     }
 
     
