@@ -725,31 +725,75 @@ public class Db4j {
 
 
 
+        /**
+         * a functonal interface, with a return value, that can be called during query execution by the db4j execution engine,
+         * accepting a transaction and returning a value
+         * @param <TT> the type of the return value
+         */
         public interface Queryable<TT> {
-            TT execute(Db4j.Transaction tid) throws Pausable;
+            TT query(Db4j.Transaction tid) throws Pausable;
         }
+        /**
+         * a functional interface without a return value that can be called during query execution by the db4j execution engine,
+         * accepting a transaction and not returning a value
+         */
         public interface QueryCallable {
-            void execute(Db4j.Transaction tid) throws Pausable;
+            /**
+             * the query to execute
+             * @param tid the transaction tied to the query
+             * @throws Pausable 
+             */
+            void query(Db4j.Transaction tid) throws Pausable;
         }
+        /**
+         * a query that delegates to a functional interface with a return value, ie wrapping a lambda
+         * @param <TT> the type of the lambda return value
+         */
         public static class LambdaQuery<TT> extends Query<LambdaQuery<TT>> {
             Queryable<TT> body;
+            /** the captured return value from the wrapped lambda, valid after query completion */
             public TT val;
+            /**
+             * create a new query wrapping body
+             * @param body the lambda to delegate to during query task execution
+             */
             public LambdaQuery(Queryable body) { this.body = body; }
-            public void task() throws Pausable { val = body.execute(tid); }
+            public void task() throws Pausable { val = body.query(tid); }
         }
+        /**
+         * a query that delegates to a functional interface with a return value, ie wrapping a lambda
+         * @param <TT> the type of the lambda return value
+         */
         public static class LambdaCallQuery extends Query<LambdaCallQuery> {
             QueryCallable body;
             public LambdaCallQuery(QueryCallable body) { this.body = body; }
-            public void task() throws Pausable { body.execute(tid); }
+            public void task() throws Pausable { body.query(tid); }
         }
+        /**
+         * create a new query that delegates to body, capturing the return value, and submit it to the execution engine
+         * @param <TT> the return type of body
+         * @param body a lambda or equivalent that is called during the query task execution, with a return value
+         * @return the new query
+         */
         public <TT> LambdaQuery<TT> submit(Queryable<TT> body) {
             LambdaQuery<TT> invoke = new LambdaQuery(body);
             return offerTask(invoke);
         }
+        /**
+         * create a new query that delegates to return-value-less body, and submit it to the execution engine
+         * @param body a lambda or equivalent that is called during the query task execution, without a return value
+         * @return the new query
+         */
         public LambdaCallQuery submitCall(QueryCallable body) {
             LambdaCallQuery implore = new LambdaCallQuery(body);
             return offerTask(implore);
         }
+        /**
+         * submit query to the dbms execution engine
+         * @param <TT> the type of the query, which is used for the return value to allow chaining
+         * @param query the query to execute
+         * @return query, preserving the type to allow chaining
+         */
         public <TT extends Query> TT submitQuery(TT query) {
             return offerTask(query);
         }
