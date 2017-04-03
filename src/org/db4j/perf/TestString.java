@@ -16,7 +16,7 @@ import org.db4j.Bmeta;
 import org.db4j.Btree;
 import org.db4j.Btree;
 import org.db4j.Db4j;
-import org.db4j.Db4j.Hunker;
+import org.db4j.Db4j.Xunkerx;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage;
 
@@ -277,9 +277,9 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
     }
     abstract CC ccset(CC cc,long key,int index);
     String filename = "./db_files/b6.mmap";
-    Hunker hunker;
+    Xunkerx hunker;
     public void init() {
-        hunker = new Hunker().init( filename, null ); // 1L << 32 );
+        hunker = new Xunkerx().init( filename, null ); // 1L << 32 );
         map.set( hunker );
         map.init("Bushy Tree");
         hunker.create();

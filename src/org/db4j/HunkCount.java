@@ -6,7 +6,7 @@ import java.io.Serializable;
 import kilim.Pausable;
 import org.db4j.Command.RwInt;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.Hunker;
+import org.db4j.Db4j.Xunkerx;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
@@ -18,7 +18,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         public final LocalInt2 count = new LocalInt2( locals );
     }
     transient public Vars loc;
-    transient public Hunker hunker;
+    transient public Xunkerx hunker;
     public String name;
 
     public String info() {
@@ -51,7 +51,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
     }
     public void createCommit(long locBase) { loc.locals.set( hunker, locBase ); }
     public String name() { return name; }
-    public HunkCount set(Hunker $hunker) {
+    public HunkCount set(Xunkerx $hunker) {
         hunker = $hunker;
         loc = new Vars();
         return this;
@@ -68,7 +68,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
     
     public static class Demo {
         HunkCount lt;
-        Hunker hunker;
+        Xunkerx hunker;
         String name = "./db_files/hunk2.mmap";
         
         public class Task extends Db4j.Query {
@@ -80,7 +80,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         }
         
         public void demo() {
-            hunker = new Hunker().init( name, null );
+            hunker = new Xunkerx().init( name, null );
             lt = new HunkCount();
             lt.set( hunker );
             lt.init("Hunk Count");

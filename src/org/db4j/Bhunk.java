@@ -9,7 +9,7 @@ import org.db4j.Db4j.Hunkable;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
-import org.db4j.Db4j.Hunker;
+import org.db4j.Db4j.Xunkerx;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Query;
@@ -28,7 +28,7 @@ import org.srlutils.btree.TestDF;
 public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet> 
     implements Serializable, Hunkable<Bhunk>
 {
-    transient public Hunker hunker;
+    transient public Xunkerx hunker;
     transient public Vars loc;
     transient byte [][] pages = new byte[1<<16][];
     int knext = 1;
@@ -157,7 +157,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         InsertCommand set(int $ko,Sheet $page,CC $cc) { ko=$ko; page=$page; cc=$cc; return this; }
         public void read(Page buf,int offset) { throw Simple.Exceptions.rte(null,"cmd is write only"); }
         public void write(Page buf,int offset) {}
-        public void run(int offset,Page buf,Hunker hunker,boolean defer) {
+        public void run(int offset,Page buf,Xunkerx hunker,boolean defer) {
             if (defer) buf.dupify();
             page.buf = buf.data;
             page.load();
@@ -258,7 +258,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         hunker.register( this );
         return this;
     }
-    public Bhunk set(Hunker $hunker) {
+    public Bhunk set(Xunkerx $hunker) {
         hunker = $hunker;
         loc = new Vars();
         return this;
@@ -498,7 +498,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             rand.init(seedSeed,true);
         }
         String filename = "./db_files/b6.mmap";
-        Hunker hunker;
+        Xunkerx hunker;
         boolean ok = true;
         boolean reopen = false;
         public Mindir(int $nn,TT $map) { nn=$nn; map=$map; }
@@ -507,7 +507,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         void close() { hunker.shutdown(); hunker.close(); }
         public void init() {
             seed = rand.setSeed(null,false);
-            hunker = new Hunker().init( filename, null ); // 1L << 32 );
+            hunker = new Xunkerx().init( filename, null ); // 1L << 32 );
             map.set( hunker );
             map.init("Bushy Tree");
             hunker.create();
@@ -517,7 +517,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         public void run(final int stage) throws Exception {
             rand.setSeed(seed,false);
-            if (reopen) hunker = Hunker.load(filename);
+            if (reopen) hunker = Xunkerx.load(filename);
             map = (TT) hunker.arrays.get(0);
             for (int ii = 0; ii < nn; ii++) {
                 final int jj = ii;
@@ -557,7 +557,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     public static class Demo {
         DF lt;
         String name = "./db_files/b6.mmap";
-        Hunker hunker;
+        Xunkerx hunker;
         float val, vo = 97f;
         double ko = 7.1;
         int nb = 0;
@@ -592,7 +592,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         
         public void demo() {
-            hunker = new Hunker().init( name, null ); // 1L << 32 );
+            hunker = new Xunkerx().init( name, null ); // 1L << 32 );
             lt = new DF();
             lt.set( hunker );
             lt.init("Bushy Tree");

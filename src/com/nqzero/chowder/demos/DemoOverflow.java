@@ -5,7 +5,7 @@ package com.nqzero.chowder.demos;
 import kilim.Pausable;
 import org.db4j.Command;
 import org.db4j.Db4j;
-import org.db4j.Db4j.Hunker;
+import org.db4j.Db4j.Xunkerx;
 import org.db4j.HunkArray;
 import org.srlutils.Simple;
 import org.srlutils.Util;
@@ -25,14 +25,14 @@ import org.srlutils.Util;
  */
 public class DemoOverflow {
     String filename = "./db_files/b6.mmap";
-    Hunker hunker;
+    Xunkerx hunker;
     HunkArray.I map;
     void load() {
-        hunker = Hunker.load(filename);
+        hunker = Xunkerx.load(filename);
         map = (HunkArray.I) hunker.arrays.get(0);
     }
     public void init() {
-        hunker = new Hunker().init( filename, null );
+        hunker = new Xunkerx().init( filename, null );
         map = new HunkArray.I();
         map.set( hunker );
         map.init("Player Overflow");

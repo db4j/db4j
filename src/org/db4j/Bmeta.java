@@ -8,7 +8,7 @@ import org.srlutils.btree.BtTests2;
 import org.srlutils.btree.Btypes.Element;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
-import org.db4j.Db4j.Hunker;
+import org.db4j.Db4j.Xunkerx;
 import org.db4j.Db4j.Query;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.Rand;
@@ -516,7 +516,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     public static class Demo {
         Btrees.IA lt;
         String filename = "./db_files/b6.mmap";
-        Hunker hunker;
+        Xunkerx hunker;
         int [] keys;
         public static void main2(String [] args) {
             Long seed = null;
@@ -524,7 +524,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             new Demo().demo();
         }
         public void demo() {
-            hunker = new Hunker().init( filename, null );
+            hunker = new Xunkerx().init( filename, null );
             lt = new Btrees.IA();
             lt.set( hunker );
             lt.init("Bushy Tree");
@@ -551,7 +551,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             hunker.fence(null,100);
             hunker.shutdown();
             hunker.close();
-            hunker = Hunker.load(filename);
+            hunker = Xunkerx.load(filename);
             lt = (Btrees.IA) hunker.arrays.get(0);
             check(keys.length);
             hunker.shutdown();
@@ -578,13 +578,13 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     public static class Mindir2 extends BtTests2 {
         DF2 lt;
         String filename = "./db_files/b6.mmap";
-        Hunker hunker;
+        Xunkerx hunker;
         boolean ok = true;
         boolean nocheck = true;
         boolean reopen = false;
         { sntext = "put get rem chk"; }
         public void init2() {
-            hunker = new Hunker().init( filename, null ); // 1L << 32 );
+            hunker = new Xunkerx().init( filename, null ); // 1L << 32 );
             lt = new DF2();
             lt.set( hunker );
             lt.init("Bushy Tree");
@@ -594,7 +594,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
         public void run(int stage) throws Exception {
             if (reopen)
-                hunker = Hunker.load(filename);
+                hunker = Xunkerx.load(filename);
             lt = (DF2) hunker.arrays.get(0);
             stage(stage);
             if (reopen) {

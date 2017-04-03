@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 import kilim.Pausable;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.Hunker;
+import org.db4j.Db4j.Xunkerx;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
@@ -22,7 +22,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
 //    static final long serialVersionUID;
 
     
-    transient public Hunker hunker;
+    transient public Xunkerx hunker;
     public String name;
     transient public long hunksBase;
     transient public Vars loc;
@@ -43,11 +43,11 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
 
 
     public interface Loggable {
-        public void restore(Hunker hunker);
+        public void restore(Xunkerx hunker);
     }
     
 
-    public HunkLog set(Hunker _hunker) {
+    public HunkLog set(Xunkerx _hunker) {
         hunker = _hunker;
         loc = new Vars();
         return this;

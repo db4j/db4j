@@ -37,7 +37,7 @@ import org.srlutils.data.Listee;
 import org.srlutils.data.Quetastic;
 import org.srlutils.data.TreeDisk;
 import org.srlutils.hash.LongHash;
-import static org.db4j.Db4j.Hunker.debug;
+import static org.db4j.Db4j.Xunkerx.debug;
 import org.srlutils.Callbacks.Cleanable;
 
 
@@ -71,11 +71,11 @@ public class Db4j {
 
 
     public static class Locals {
-        public Hunker hunker;
+        public Xunkerx hunker;
         public int size;
         public long base;
         public Locals() { size = 0; }
-        public Locals set(Hunker hunker,long base) {
+        public Locals set(Xunkerx hunker,long base) {
             this.hunker = hunker;
             this.base = base;
             return this;
@@ -118,7 +118,7 @@ public class Db4j {
         public int create();
         public void createCommit(long locBase);
         public String name();
-        public TT set(Hunker hunker);
+        public TT set(Xunkerx hunker);
         public TT init(String $name);
         public void postInit(Transaction tid) throws Pausable;
         public void postLoad(Transaction tid) throws Pausable;
@@ -134,7 +134,7 @@ public class Db4j {
      * needs to store the structure info for each component
      *
      */
-    public static class Hunker implements Serializable {
+    public static class Xunkerx implements Serializable {
         static final long serialVersionUID = 3365051556209870876L;
         transient public RandomAccessFile raf;
         /** bits per block        */  public           int  bb = Db4j.blockSize;
@@ -220,9 +220,9 @@ public class Db4j {
         }
 
         /** load the Composite from the name'd file */
-        public static Hunker load(String name) {
+        public static Xunkerx load(String name) {
             DiskObject disk = org.srlutils.Files.load(name);
-            Hunker ld = (Hunker) disk.object;
+            Xunkerx ld = (Xunkerx) disk.object;
             ld.init( name, null );
             ld.load( (int) disk.size );
             return ld;
@@ -254,7 +254,7 @@ public class Db4j {
                 c2 = compLocals.create();
                 long rawlen = Rounder.rup(start,align);
                 long pcomp = rawlen + loc.locals.size();
-                loc.locals.set( Hunker.this, rawlen );
+                loc.locals.set(Xunkerx.this, rawlen );
                 compRaw.createCommit(pcomp);
                 compLocals.createCommit(pcomp+c1);
                 long base = Rounder.rup(pcomp+c1+c2,align);
@@ -300,7 +300,7 @@ public class Db4j {
                         Command.RwInt cmd = compLocals.get(tid,ii);
                         yield();
                         long kloc = cmd.val;
-                        ha.set( Hunker.this ).createCommit(kloc);
+                        ha.set(Xunkerx.this ).createCommit(kloc);
                         ha.postLoad(tid);
                         arrays.set( ii, ha );
                         System.out.format( "Hunker.load.comp -- %d done, %s local:%d cmd:%d\n",
@@ -413,10 +413,10 @@ public class Db4j {
         public class CreateTask extends Task {
             public void task() throws Pausable {
                 live = true;
-                byte [] raw = org.srlutils.Files.save( Hunker.this );
+                byte [] raw = org.srlutils.Files.save(Xunkerx.this );
                 int rawlen = Rounder.rup(raw.length,align);
                 int pcomp = rawlen+loc.locals.size();
-                loc.locals.set( Hunker.this, rawlen );
+                loc.locals.set(Xunkerx.this, rawlen );
                 int ncomp = arrays.size();
                 System.out.format( "Hunker.create -- %d\n", ncomp );
                 long nblocks = runner.journalBase;
@@ -435,7 +435,7 @@ public class Db4j {
                 compLocals.createCommit( pcomp+c1 );
                 compRaw.init( compRaw.context().set(tid) );
                 long base = Rounder.rup(pcomp+c1+c2,align);
-                Simple.softAssert( base < 1L*Hunker.this.bs*runner.journalBase );
+                Simple.softAssert(base < 1L*Xunkerx.this.bs*runner.journalBase );
                 for (Hunkable ha : arrays)
                     create(tid,ha);
             }
@@ -471,7 +471,7 @@ public class Db4j {
             Command.RwInt cmd = compLocals.get(tid,index);
             tid.submitYield();
             long kloc = cmd.val;
-            ha.set( Hunker.this ).createCommit(kloc);
+            ha.set(Xunkerx.this ).createCommit(kloc);
             arrays.set(index,ha);
             return ha;
         }
@@ -500,7 +500,7 @@ public class Db4j {
          * initialize all the transient fields
          * called for both initial creation and after loading from disk
          */
-        public Hunker init(String name,Long fileSize) {
+        public Xunkerx init(String name,Long fileSize) {
             try {
                 bs = 1<<bb;
                 bm = bs-1;
@@ -580,7 +580,7 @@ public class Db4j {
         public static class RegPair implements HunkLog.Loggable {
             public int id;
             public String name;
-            public void restore(Hunker hunker) {
+            public void restore(Xunkerx hunker) {
                 try {
                     System.out.format("RegPair.restore: %4d %s\n",id,name);
                     Class type = Class.forName(name);
@@ -823,7 +823,7 @@ public class Db4j {
             if (!diskCommit || !pre) mbx.putnb(0);
             return diskCommit;
         }
-        public TT offer(Hunker hunker) { return hunker.offerTask((TT) this); }
+        public TT offer(Xunkerx hunker) { return hunker.offerTask((TT) this); }
         /** pausing wait for the task to complete, if the task threw an exception, rethrow it */
         public TT await() throws Pausable {
             Integer msg = mbx.get();
@@ -912,7 +912,7 @@ public class Db4j {
      * writes all become visible in the following generation
      */
     public static class QueRunner implements Runnable {
-        public Hunker hunker;
+        public Xunkerx hunker;
         public boolean finished = false;
         /**
          *  the generation counter
@@ -954,7 +954,7 @@ public class Db4j {
          */
         public static int gencUsageMarker(int val) { return val; }
 
-        public QueRunner(Hunker $hunker) {
+        public QueRunner(Xunkerx $hunker) {
             hunker = $hunker;
             int qtb = 12;
             quetastic = new Quetastic().setCap( 1<<qtb, 1<<(qtb+1) );
@@ -1172,7 +1172,7 @@ public class Db4j {
                         if (cmd == null) {
                             if (debug.que > 1)
                                 System.out.format( "QueRunner:take -- returned null\n" );
-                            Simple.sleep(Hunker.sleeptime);
+                            Simple.sleep(Xunkerx.sleeptime);
                         }
                         else {
                             ntxn++;
@@ -1293,7 +1293,7 @@ public class Db4j {
             if (buf==null) {
                 if (c2==null) {
                     c2 = dc.putCache(cmd.offset,0,gen2,false);
-                    if (Hunker.debug.eeeread)
+                    if (Xunkerx.debug.eeeread)
                         System.out.format("preRead.put -- %5d\n",cmd.offset/hunker.bs);
                 }
                 return new PreRead(cmd,alloc,c2);
@@ -1392,7 +1392,7 @@ public class Db4j {
      *  thread that handles disk io
      */
     public static class Runner implements Runnable {
-        public Hunker hunker;
+        public Xunkerx hunker;
         public Timer timer = new Timer();
         public boolean finished = false;
         public ByteBuffer buf;
@@ -1400,7 +1400,7 @@ public class Db4j {
         public int totalWrites = 0;
         public int nwait = 0;
         public double diskTime = 0, waitTime = 0;
-        public Runner(Hunker $hunker) {
+        public Runner(Xunkerx $hunker) {
             hunker = $hunker;
             buf = ByteBuffer.allocate( hunker.bs );
             buf.order(byteOrder);
@@ -1415,7 +1415,7 @@ public class Db4j {
                 while ( ! current.isInterrupted() && !finished ) {
                     // fixme::spinlock -- use a que ???
                     if (hunker.pending == null) {
-                        org.srlutils.Simple.sleep(Hunker.sleeptime);
+                        org.srlutils.Simple.sleep(Xunkerx.sleeptime);
                         nwait++;
                     }
                     else {
@@ -1487,7 +1487,7 @@ public class Db4j {
             long magic = 115249; // could use any non-zero, but the largest cuban prime is cool
             buf.putLong(magic);
             buf.putLong(gen.nwrite);
-            if (Hunker.debug.disk)
+            if (Xunkerx.debug.disk)
                 Simple.softAssert( buf.position() == gen.ntitle*Types.Enum._long.size);
             for (BlockNode block : gen.blocks)
                 if (block.writ) {
@@ -1505,7 +1505,7 @@ public class Db4j {
             if (generation.nwrite==0) return;
             java.util.Arrays.fill( buf.array(), (byte) 0xff );
             journal(kk++); // footer
-            if (Hunker.debug.disk)
+            if (Xunkerx.debug.disk)
                 Simple.softAssert(Generation.nfooter==1);
         }
         public void process(Generation generation) {
@@ -1617,7 +1617,7 @@ public class Db4j {
          */
         public int journalSize() { return nwrite==0 ? 0:nwrite + nheader + nfooter; }
         /** the upper bound on the size of the journal after adding nw writes */
-        public int journalBound(Hunker hunker,int nw) {
+        public int journalBound(Xunkerx hunker,int nw) {
             // worst case is every write adds a block
             int nlongs = nwrite + ntitle + nw;
             int nh = Simple.Rounder.divup2( nlongs << bitsHeader, hunker.bb );
@@ -1632,7 +1632,7 @@ public class Db4j {
             System.gc();
         }
 
-        public void addWrite(Hunker hunker,BlockNode block,Command cmd) {
+        public void addWrite(Xunkerx hunker,BlockNode block,Command cmd) {
             if (!block.writ) {
                 long mask = hunker.bm >> bitsHeader;
                 int nlongs = nwrite + ntitle; // the magic, count and kblock for each block
@@ -1641,7 +1641,7 @@ public class Db4j {
             }
             block.addWrite(cmd);
         }
-        public void handle(Hunker hunker) {
+        public void handle(Xunkerx hunker) {
             hunker.qrunner.lastgen = gen2;
             hunker.qrunner.dc.scrub();
             hunker.qrunner.sendGen = true;
@@ -1696,19 +1696,19 @@ public class Db4j {
             qr.dc.submitCache();
             qr.map.put( this );
         }
-        public boolean runBlock(Hunker hunker,byte [] data) { return false; }
+        public boolean runBlock(Xunkerx hunker,byte [] data) { return false; }
         // fixme:ssd -- should really wait till the containing map is handle'd
         //   they're in kblock order for now, so good enough
         //   if an elevator-free map is used, ie unsorted, should fix this
-        public void handle(Hunker hunker) { done = true; }
+        public void handle(Xunkerx hunker) { done = true; }
         public boolean dontRead() { return true; }
     }
     
     /** a placeholder to allow making the iotree non-empty */
     public static class DummyBlock extends BlockNode {
         { kblock = -1; writ = false; }
-        public boolean runBlock(Hunker hunker,byte [] data) { return true; }
-        public void handle(Hunker hunker) {}
+        public boolean runBlock(Xunkerx hunker,byte [] data) { return true; }
+        public void handle(Xunkerx hunker) {}
         public boolean dontRead() { return true; }
     }
     /** 
@@ -1724,12 +1724,12 @@ public class Db4j {
             gen = qr.map.genc;
             qr.map.shutdown = true;
         }
-        public boolean runBlock(Hunker hunker,byte [] data) { return false; }
-        public void postRun(Hunker hunker) throws IOException {
+        public boolean runBlock(Xunkerx hunker,byte [] data) { return false; }
+        public void postRun(Xunkerx hunker) throws IOException {
             hunker.runner.finished = true;
         }
 
-        public void handle(Hunker hunker) {
+        public void handle(Xunkerx hunker) {
             hunker.qrunner.finished = true;
         }
         public boolean dontRead() { return true; }
@@ -1774,7 +1774,7 @@ public class Db4j {
             return dont;
         }
         /** run the block - executed in the Runner thread */
-        public boolean runBlock(Hunker hunker,byte [] data) throws IOException {
+        public boolean runBlock(Xunkerx hunker,byte [] data) throws IOException {
             if (full())
                 Simple.softAssert(false,"not implemented yet");
             
@@ -1804,18 +1804,18 @@ public class Db4j {
 
             return !writ;
         }
-        void doWrite(Hunker hunker,byte [] data) throws IOException {
+        void doWrite(Xunkerx hunker,byte [] data) throws IOException {
             if (data==null) Simple.softAssert(false);
             hunker.runner.write( kblock, ByteBuffer.wrap(data) );
             hunker.runner.totalWrites++;
         }
-        public void postRun(Hunker hunker) throws IOException {
+        public void postRun(Xunkerx hunker) throws IOException {
             if (writ && commit) {
                 doWrite(hunker, writeCache.data );
             }
         }
 
-        public void handle(Hunker hunker) {
+        public void handle(Xunkerx hunker) {
             if (diskAnomaly != null) {
                 System.out.format( "BlockNode.anomaly -- kblock:%d, num\n", kblock, diskAnomaly.numRead );
                 Command.print(hunker,true,cmds);
@@ -1866,7 +1866,7 @@ public class Db4j {
          *  note: there can only be 1 cache entry that's not up to date since the pending generation
          *    is held until the current generations Marker is seen, ie all current blocks are handled
          */
-        public void onReady(Hunker hunker,byte [] data) {
+        public void onReady(Xunkerx hunker,byte [] data) {
             DynArray.Objects<Command> c2 = cmds;
             cmds = new DynArray.Objects().init( Command.class );
             
@@ -2048,7 +2048,7 @@ public class Db4j {
         /** number of cmds that tried the cache, current decade     */  public int tryCount;
         /** number of blocks hit by the cache, current decade       */  public int nhit;
         /** maximum allowed size of the cache                       */  public int maxsize = 1 << nbb;
-        public Hunker hunker;
+        public Xunkerx hunker;
         public int incsize = 1 << 8;
         /** list of cached blocks, ordered by update, 
          *    head is the oldest, tail is most recently updated */
@@ -2227,7 +2227,7 @@ public class Db4j {
             scrub();
         }
 
-        public Cache set(Hunker $hunker) {
+        public Cache set(Xunkerx $hunker) {
             hunker = $hunker;
             return this;
         }
@@ -2246,7 +2246,7 @@ public class Db4j {
             if (ios >= decsize) {
                 hitRatio = 1.0 * nhit / tree.size();
                 int iosize = hunker.qrunner.map.iotree.size();
-                if (Hunker.debug.cache) System.out.format(
+                if (Xunkerx.debug.cache) System.out.format(
                         "CT:done try:%6d, miss:%4d, cache:%4d, io:%4d, ",
                         tryCount, tryCount-hitCount, tree.size(), iosize );
                 Transaction txn = txns.head;
@@ -2254,7 +2254,7 @@ public class Db4j {
                 Command cmd = null;
                 //      cmd = covered.head.val.val.writs.get(0);
                 long oldWrite = cmd==null ? -1 : cmd.gen; // fixme:bogus - printed but otherwise unused
-                if (Hunker.debug.cache)
+                if (Xunkerx.debug.cache)
                     System.out.format( "gen:%4d, t0:%4d, w0:%4d, ncover:%4d, out:%4d -- %s\n",
                         gen, oldest, oldWrite, covered.size, outstanding,
                         txn==null || txn.task==null ? null : txn.task
@@ -2590,7 +2590,7 @@ public class Db4j {
 
     public interface Predicable {
         /** Runner has completed processing */
-        public void handle(Hunker hunker);
+        public void handle(Xunkerx hunker);
     }
     /** a cooperatively latch a page, ie first caller is owner, later callers are deferred */
     public static class Latch {
@@ -2600,10 +2600,10 @@ public class Db4j {
         /** initialize storage if needed */
         public void init() { if (tasks==null) tasks = DynArray.Objects.neww(Db4j.Task.class ); }
         /** restart the deferred tasks */
-        public void restart(Hunker hunker) {
+        public void restart(Xunkerx hunker) {
             if (tasks != null) {
                 for (Db4j.Task task : tasks) {
-                    if (Hunker.debug.reason) task.pure().reason( "BlockNode.restartLatches" );
+                    if (Xunkerx.debug.reason) task.pure().reason( "BlockNode.restartLatches" );
                     hunker.qrunner.backlog.put(task);
                 }
             }
@@ -2650,7 +2650,7 @@ public class Db4j {
         public Listee.Lister<Rollbacker> rollbackers;
         DynArray.Objects<Cleanable> cleaners;
 
-        public Hunker hunker;
+        public Xunkerx hunker;
         public Task task;
         /** a list of 1-generation latches */
         public Latch latches;
@@ -2668,7 +2668,7 @@ public class Db4j {
             cleaners.add(cleaner);
         }
 
-        public Transaction set(Hunker $hunker) { hunker = $hunker; return this; }
+        public Transaction set(Xunkerx $hunker) { hunker = $hunker; return this; }
 
         /** add a latch for kpage, ie if that page isn't held become the owner, otherwise defer */
         public void addLatch(int kpage) {
@@ -2725,7 +2725,7 @@ public class Db4j {
                 if (cmd.tasks != null) continue;
                 Latch owner = qr.latchMap.get( cmd.kpage );
                 if (owner==null) continue;
-                if (Hunker.debug.reason)
+                if (Xunkerx.debug.reason)
                     task.pure().reason(
                             "latch already held ... appending block:%s, owner:%s", cmd.kpage, owner );
                 if (owner.tasks != null) for (Task t2 : owner.tasks) {
@@ -2741,7 +2741,7 @@ public class Db4j {
                 cleanup(); // fixme -- isn't this already happening in rollback() ???
                 return true;
             }
-            if (Hunker.debug.reason)
+            if (Xunkerx.debug.reason)
                 task.pure().reason( "successfully latching" );
             for (cmd = latches; cmd != null; cmd = cmd.next) {
                 cmd.init();
@@ -2820,7 +2820,7 @@ public class Db4j {
             uptodate = true;
             if (! inuse) hunker.qrunner.register( this );
             boolean found = entreeReads( hunker.qrunner );
-            if (Hunker.debug.reason) task.pure().reason( "txn.submit -- found:%b", found );
+            if (Xunkerx.debug.reason) task.pure().reason( "txn.submit -- found:%b", found );
             if (found)
                 return false;
             else {
@@ -2935,7 +2935,7 @@ public class Db4j {
     public static class OldestTask extends Task {
         public Task oldest;
         public void task() throws Pausable {}
-        public void runTask(Hunker hunker) {
+        public void runTask(Xunkerx hunker) {
             oldest = hunker.qrunner.tasks.head;
             hunker.cleanupTask( this );
         }
@@ -3031,17 +3031,17 @@ public class Db4j {
             status( Status.None );
         }
         public void init2() { done = false; alive = true; kask = new Kask(); }
-        public void init(Hunker hunker) {
+        public void init(Xunkerx hunker) {
             init2();
             tid = hunker.getTransaction();
             tid.task = this;
             status = Status.Init;
             dogyears = 0;
             hunker.qrunner.state.addedTasks++;
-            if (Hunker.debug.reason) pure().reason( "task.init" );
+            if (Xunkerx.debug.reason) pure().reason( "task.init" );
         }
 
-        public void preRun(Hunker hunker) {
+        public void preRun(Xunkerx hunker) {
             if (!tid.committed) {
                 if (hunker.qrunner.clearout) {
                     rollback(hunker,true);
@@ -3071,13 +3071,13 @@ public class Db4j {
             return false;
         }
         
-        public void runTask(Hunker hunker) {
+        public void runTask(Xunkerx hunker) {
             status( Status.Runn );
             boolean found = true;
             boolean defer = false;
             try {
                 while (found) {
-                if (Hunker.debug.reason) pure().reason( "runTask" );
+                if (Xunkerx.debug.reason) pure().reason( "runTask" );
                 tid.uptodate = false;
                 if (!done) {
                     if (useRestart) {
@@ -3097,7 +3097,7 @@ public class Db4j {
                             System.out.println( "NotDone: " + this );
                 }
                 alive = ! tid.committed;
-                if (Hunker.debug.reason)
+                if (Xunkerx.debug.reason)
                     pure().reason( "runTask.resolve -- done:%b, alive:%b", done, alive );
                 if (alive) {
                     // fixme -- should have a programmatic way of distinguishing
@@ -3108,7 +3108,7 @@ public class Db4j {
                     found = tid.entree( hunker.qrunner );
                     if (tid==null) return;                                       // the task has been rolled back
                     if (! found && ! tid.rollback) {
-                        if (Hunker.debug.reason) pure().reason( "runTask.moveToBlock" );
+                        if (Xunkerx.debug.reason) pure().reason( "runTask.moveToBlock" );
                         status( Status.Blok );
                     }
                 }
@@ -3122,14 +3122,14 @@ public class Db4j {
                 if (done && !alive) {
                     if (tid.nwrits==0) postRun(true);
                     hunker.cleanupTask( this );
-                    if (Hunker.debug.reason) pure().reason( "runTask.finished" );
+                    if (Xunkerx.debug.reason) pure().reason( "runTask.finished" );
                     return;
                 }
                 }
                 dogyears++;
             }
             catch (DropOutstandingException ex) {
-                if (Hunker.debug.reason) pure().reason( "runTask.dropOutstanding: " + ex.toString() );
+                if (Xunkerx.debug.reason) pure().reason( "runTask.dropOutstanding: " + ex.toString() );
                 // fixme -- ensure that we're not in the middle of a write !!!
                 rollback( hunker, true );
                 throw ex;
@@ -3137,7 +3137,7 @@ public class Db4j {
             /* the task has been deferred and the deferree will handle restarting it */
             catch (ClosedException ex) {
                 System.out.println( "Closed: " + this );
-                if (Hunker.debug.reason) pure().reason( "runTask.closed: " + ex.toString() );
+                if (Xunkerx.debug.reason) pure().reason( "runTask.closed: " + ex.toString() );
                 rollback( hunker, true );
             }
             // not obvious what should be done with an exception in production
@@ -3151,19 +3151,52 @@ public class Db4j {
             //            }
             //            throw ex;
             //        }
+            // not obvious what should be done with an exception in production
+            //   but for debugging during developing, it's convenient to be able to attach
+            //   and continue where we left off, uncomment the following ...
+            //        catch (RuntimeException ex) {
+            //            boolean stop = true;
+            //            while (stop) {
+            //                System.out.format( "Task3.runTask -- exception: %s, %s\n", ex, this );
+            //                Simple.sleep( 1000 );
+            //            }
+            //            throw ex;
+            //        }
+            // not obvious what should be done with an exception in production
+            //   but for debugging during developing, it's convenient to be able to attach
+            //   and continue where we left off, uncomment the following ...
+            //        catch (RuntimeException ex) {
+            //            boolean stop = true;
+            //            while (stop) {
+            //                System.out.format( "Task3.runTask -- exception: %s, %s\n", ex, this );
+            //                Simple.sleep( 1000 );
+            //            }
+            //            throw ex;
+            //        }
+            // not obvious what should be done with an exception in production
+            //   but for debugging during developing, it's convenient to be able to attach
+            //   and continue where we left off, uncomment the following ...
+            //        catch (RuntimeException ex) {
+            //            boolean stop = true;
+            //            while (stop) {
+            //                System.out.format( "Task3.runTask -- exception: %s, %s\n", ex, this );
+            //                Simple.sleep( 1000 );
+            //            }
+            //            throw ex;
+            //        }
         }
-        public void rollback(Hunker hunker,boolean restart) {
+        public void rollback(Xunkerx hunker,boolean restart) {
             status( Status.Roll );
             // fixme -- cleanup txn ???
             if (! tid.restart)
                 hunker.qrunner.nback++;
-            if (Hunker.debug.reason) pure().reason( "Transaction.handle.rollback" );
+            if (Xunkerx.debug.reason) pure().reason( "Transaction.handle.rollback" );
             if (tid.rollbackers != null)
                 for (Rollbacker rb : tid.rollbackers) rb.runRollback(tid);
             tid.cancelReads();
             tid.cleanup();
             clear();
-            if (Hunker.debug.checkTasksList) {
+            if (Xunkerx.debug.checkTasksList) {
                 Task old = hunker.qrunner.backlog.get( this );
                 if (old != null)
                     Simple.softAssert(old==null);

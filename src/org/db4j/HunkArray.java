@@ -5,7 +5,7 @@ package org.db4j;
 import java.io.Serializable;
 import kilim.Pausable;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.Hunker;
+import org.db4j.Db4j.Xunkerx;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
@@ -20,7 +20,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     // transient public int hunks[];
     /** block size, entry size (fixme -- needs to be calc'd based on type), entries per hunk */
     public int bs, es = 8, eph;
-    transient public Hunker hunker;
+    transient public Xunkerx hunker;
     public String name;
     transient public long hunksBase;
     transient public Vars loc;
@@ -80,7 +80,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
 
     
 
-    public ZZ set(Hunker _hunker) {
+    public ZZ set(Xunkerx _hunker) {
         hunker = _hunker;
         loc = new Vars();
         bs = hunker.bs;
