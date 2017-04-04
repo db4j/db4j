@@ -5,11 +5,12 @@ package org.db4j;
 import kilim.Pausable;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Transaction;
+import org.db4j.Db4j.Xunkerx;
 
 public class HunkLocals extends HunkArray.I {
     public transient LocalInt2 last;
 
-    public HunkLocals set(Db4j.Xunkerx $hunker) {
+    public HunkLocals set(Xunkerx $hunker) {
         super.set($hunker);
         last = new LocalInt2( loc.locals );
         return this;
