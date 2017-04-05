@@ -1,0 +1,25 @@
+the user visible entrypoint used to access the database used to be Db4j.Hunker
+    this referred to the fact that the database converts between objects in RAM
+    and disk storage in blocks, ie hunks
+
+however, for the end user, that function isn't immediately obvious
+    so it would be better for the entrypoint to be the database itself
+    hence, i want to promote all the Db4j.Hunker.* fields/methods to Db4j
+
+
+7052c08 soup.Hunker.promote - promote the Hunker fields/methods to the top level Db4j, working
+06d3dd5 soup.Hunker.promote - prep: rename Util to BlocksUtil
+dbd6eaa soup.Hunker.promote - WIP: Xunkerx renamed to Db4j (sed only)
+585f775 soup.Hunker.promote - prep: import Xunkerx
+bf892a1 soup.Hunker.promote - prep, rename to Xunkerx
+
+
+semi automated process for promoting Db4j.Hunker to Db4j
+    using netbeans, refactored Hunker -> Xunkerx (to make it unique)
+    then in bash:
+	 git grep -l "import.*Xunkerx;" * | xargs git grep -L "import.*Db4j;" | xargs sed -i "s/\.Xunkerx;/;/g"
+	 git grep -l "import.*Xunkerx;" * | xargs sed -i "/^import.*Xunker/d"
+	 git grep -l "Xunkerx" * | xargs sed -i "s/Xunkerx/Db4j/g"
+
+    and then just delete the now-unused Hunker class
+
