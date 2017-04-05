@@ -188,8 +188,8 @@ public class Db4j {
             System.gc();
         }
 
-        transient public Util util;
-        public class Util {
+        transient public BlocksUtil util;
+        public class BlocksUtil {
             /** return the number of blocks needed for size bytes */
             public int nblocks(int size) { return (size+bs-1) >> bb; }
             /** return the offset corresponding to kblock */
@@ -508,7 +508,7 @@ public class Db4j {
                 raf = new RandomAccessFile( name, "rw" );
                 ufd = DioNative.systemFD( raf.getFD() );
                 loc = new Loc();
-                util = new Util();
+                util = new BlocksUtil();
                 long cs = raf.length();
                 long nbytes;
                 if (fileSize == null) nbytes = cs;
