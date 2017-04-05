@@ -37,7 +37,7 @@ import org.srlutils.data.Listee;
 import org.srlutils.data.Quetastic;
 import org.srlutils.data.TreeDisk;
 import org.srlutils.hash.LongHash;
-import static org.db4j.Db4j.Db4j.debug;
+import static org.db4j.Db4j.debug;
 import org.srlutils.Callbacks.Cleanable;
 
 
@@ -55,7 +55,7 @@ import org.srlutils.Callbacks.Cleanable;
 
 
 
-public class Db4j {
+public class Db4j implements Serializable {
     
     /** don't drop cache that's newer than the last iogen that's completed */
     public static final boolean useLastgen = false;
@@ -134,7 +134,6 @@ public class Db4j {
      * needs to store the structure info for each component
      *
      */
-    public static class Db4j implements Serializable {
         static final long serialVersionUID = 3365051556209870876L;
         transient public RandomAccessFile raf;
         /** bits per block        */  public           int  bb = Db4j.blockSize;
@@ -804,7 +803,6 @@ public class Db4j {
             qrunner.ntask++;
             qrunner.state.completedTasks++;
         }
-    }
 
     /** 
      * base class for userspace queries
