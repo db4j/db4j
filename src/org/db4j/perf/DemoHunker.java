@@ -6,7 +6,7 @@ import com.nqzero.directio.DioNative;
 import java.io.File;
 import kilim.Pausable;
 import org.db4j.Command;
-import org.db4j.Db4j.Xunkerx;
+import org.db4j.Db4j;
 import org.db4j.Db4j.Query;
 import org.db4j.Db4j.Transaction;
 import org.db4j.HunkArray;
@@ -82,7 +82,7 @@ public class DemoHunker {
             long [] ko = new long[ni];
             
 
-            public void rollback(Xunkerx hunker,boolean restart) {
+            public void rollback(Db4j hunker,boolean restart) {
                 nback++;
                 if (dbg) System.out.format( "demo.roll -- %5d %5d --> %5d %5d\n", i1, i2, k1, k2 );
                 super.rollback(hunker,restart);
@@ -254,7 +254,7 @@ public class DemoHunker {
 
     
     public static abstract class Demo<TT> implements Cloneable {
-        public Xunkerx hunker;
+        public Db4j hunker;
         public HunkArray.L [] arrays;
         public org.srlutils.rand.Source source = new org.srlutils.rand.Source();
         public int nstores, nn, niter;
@@ -311,7 +311,7 @@ public class DemoHunker {
         public void start() {
             String name = mapFilename;
             //            name = "/dev/sdb2";
-            hunker = new Xunkerx();
+            hunker = new Db4j();
             File file = new File( name );
             if ( ! file.exists() || force ) {
                 // don't auto delete the file ... it takes forever to recreate it (limit of linux/ext3)
@@ -324,7 +324,7 @@ public class DemoHunker {
                 hunker.create();
             }
             else {
-                hunker = Xunkerx.load( name );
+                hunker = Db4j.load( name );
                 arrays = new HunkArray.L[ nstores ];
                 for (int ii = 0; ii < nstores; ii++)
                     arrays[ii] = (HunkArray.L) hunker.arrays.get( ii );
@@ -349,7 +349,7 @@ public class DemoHunker {
         public int check(Transaction tid,int val,int goal,int alt,int ii,int jj) throws Pausable {
             long offset2 = (alt < 0 || alt >= offsets.length) ? -1 : offsets[alt];
             if ( val != goal && offsets[ii] != offset2 ) {
-                if ( Xunkerx.debug.test ) System.out.format(
+                if ( Db4j.debug.test ) System.out.format(
                             "testRead: %5d, %8d --> %8d --> %8d v %8d -- %s\n",
                             jj, ii, val, offsets[ii], offset2,
                             arrays[jj].offsetInfo( tid, offsets[ii] ) );

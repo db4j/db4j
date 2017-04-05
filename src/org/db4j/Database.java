@@ -5,15 +5,15 @@ package org.db4j;
 import java.lang.reflect.Field;
 import kilim.Pausable;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.Xunkerx;
+import org.db4j.Db4j;
 import org.srlutils.DynArray;
 import org.srlutils.Simple;
 
 /** a generic database that takes it's configuration from it's variables */
 public class Database {
-    public Xunkerx hunker;
+    public Db4j hunker;
     public Table [] tables;
-    public Database init(Xunkerx $hunker) { hunker = $hunker; return this; }
+    public Database init(Db4j $hunker) { hunker = $hunker; return this; }
     public static class Self extends Table {}
     public Self self = new Self();
 
@@ -21,7 +21,7 @@ public class Database {
         return field.getDeclaringClass().getSimpleName() + "/";
     }
 
-    public <TT> Xunkerx.LambdaQuery<TT> future(Xunkerx.Queryable<TT> body) throws Pausable {
+    public <TT> Db4j.LambdaQuery<TT> future(Db4j.Queryable<TT> body) throws Pausable {
         return hunker.submit(body);
     }
 
@@ -63,7 +63,7 @@ public class Database {
     }
     Thread shutdownThread;
     public Database start(String base,boolean init) {
-        hunker = init ? new Xunkerx() : Xunkerx.load( base );
+        hunker = init ? new Db4j() : Db4j.load( base );
         hunker.userClassLoader = this.getClass().getClassLoader();
         if (init) {
             hunker.init( base, -(2L<<30) );
@@ -109,9 +109,9 @@ public class Database {
     /** a colection of columns */
     public static class Table {
         String root;
-        public Xunkerx hunker;
+        public Db4j hunker;
         public Hunkable [] columns;
-        public Table init(String _root,Xunkerx hunker) {
+        public Table init(String _root,Db4j hunker) {
             this.hunker = hunker;
             root = _root;
             return this;
