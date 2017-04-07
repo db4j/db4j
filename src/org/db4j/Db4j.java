@@ -129,682 +129,677 @@ public class Db4j implements Serializable {
     /** the hunker block size */
     public static int blockSize = 12;
 
+    static final long serialVersionUID = 3365051556209870876L;
+    transient RandomAccessFile raf;
+    /** bits per block        */            int  bb = Db4j.blockSize;
+    /** block size            */  transient int  bs;
+    /** block offset bit mask */  transient long bm;
+    long size;
+    transient Runner runner;
+    transient QueRunner qrunner;
+    transient Thread thread, qthread;
+    transient volatile Generation pending;
+    transient FileChannel chan;
+    /** the unix file descriptor */  transient int ufd;
+    transient public ArrayList<Hunkable> arrays;
+    transient String name;
+    transient Loc loc;
+    transient boolean live;
+    transient Btrees.IA compRaw;
+    transient HunkLocals compLocals;
+    transient Btrees.IS kryoMap;
+    transient HunkLog logStore;
+
+    transient Example.MyKryo kryo;
+    transient KryoFactory kryoFactory;
+    transient KryoPool kryoPool;
+    Example.MyKryo kryo() { return ((Example.MyKryo) kryoPool.borrow()).pool(kryoPool); }
+
+    public static final Debug debug = new Debug();
+    static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
+    static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
+
+    static int sleeptime = 10;
+    transient FileLock flock;
+    transient ClassLoader userClassLoader;
+
+    /** for each field, null it out and call gc() -- use -verbose:gc to find deltas */
+    void checkLeaks() {
+        System.out.println( "gc^10" );
+        for (int ii = 0; ii < 10; ii++) System.gc();
+        System.out.println( "thread" );
+        thread = null;
+        System.gc();
+        System.out.println( "qthread" );
+        qthread = null;
+        System.gc();
+        qrunner.checkLeaks();
+        System.out.println( "qrunner" );
+        qrunner = null;
+        System.gc();
+        System.out.println( "runner" );
+        runner = null;
+        System.gc();
+    }
+
+    transient BlocksUtil util;
+    class BlocksUtil {
+        /** return the number of blocks needed for size bytes */
+        int nblocks(int size) { return (size+bs-1) >> bb; }
+        /** return the offset corresponding to kblock */
+        long address(int kblock) { return ((long) kblock) << bb; }
+    }
+
+    public static class Debug {
+        public final boolean test = true, intp = false, alloc = false;
+        public final boolean cache = false, disk = false;
+        /** print out reads that miss cache */
+        public final boolean eeeread = false;
+        /** QueRunner info, 0:none, 1:per-pass-info, 2:everything */
+        public final int que = 0;
+        /** Runner info, 0:none, 1:per-gen summary, 2:1+start, 3:2+dots */
+        public final int tree = 0;
+        public final boolean reason = false;
+        /** record timing info for the disk loop */
+        public final boolean dtime = false;
+        public final boolean checkTasksList = false;
+    }
+
+    static class Loc {
+        Locals locals = new Locals();
+        /** number of allocated blocks - stored on disk */
+        final LocalInt2 nblocks = new LocalInt2( locals );
+        /** number of allocated components */
+        LocalInt2 ncomp = new LocalInt2( locals );
+    }
+
+    /** load the Composite from the name'd file */
+    public static Db4j load(String name) {
+        DiskObject disk = org.srlutils.Files.load(name);
+        Db4j ld = (Db4j) disk.object;
+        ld.init( name, null );
+        ld.load( (int) disk.size );
+        return ld;
+    }
+    public void register(Hunkable ha) {
+        arrays.add( ha );
+    }
+    /** read the range [k1, k2), values are live, ie must be fenced */
+    byte [] readRange(Transaction tid,long k1,long k2) {
+        int len = (int) (k2 - k1);
+        byte [] araw = new byte[ len ];
+        iocmd( tid, k1, araw, false );
+        return araw;
+    }
+    public void info() {
+        for (Hunkable array : arrays)
+            System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
+    }
+    class LoadTask extends Task {
+        volatile int count;
+        int ncomp;
+        boolean done;
+        Command.RwInt nbc, ncc;
+        int c1, c2;
+        long start;
+        public void load(long $start) {
+            start = $start;
+            c1 = compRaw.create();
+            c2 = compLocals.create();
+            long rawlen = Rounder.rup(start,align);
+            long pcomp = rawlen + loc.locals.size();
+            loc.locals.set(Db4j.this, rawlen );
+            compRaw.createCommit(pcomp);
+            compLocals.createCommit(pcomp+c1);
+            long base = Rounder.rup(pcomp+c1+c2,align);
+            offerTask(this);
+            while (done==false) Simple.sleep(10);
+            CompTask [] cts = new CompTask[ncomp];
+            for (int ii = 0; ii < ncomp; ii++) {
+                arrays.add( null );
+                offerTask( cts[ii] = new CompTask(ii) );
+            }
+            for (int ii=0; ii < ncomp; ii++)
+                cts[ii].awaitb();
+            kryoMap = (Btrees.IS) lookup(PATH_KRYOMAP);
+            logStore = (HunkLog) lookup(PATH_LOGSTORE);
+
+            System.out.format( "Hunker.load -- %d\n", ncomp );
+        }
+        public void task() throws Pausable {
+            { 
+                nbc = put( tid, loc.nblocks.read() );
+                ncc = put( tid, loc.ncomp.read() );
+                yield();
+            }
+            {
+                ncomp = ncc.val;
+            }
+            { done = true; }
+        }
+        class CompTask extends Query {
+            public Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
+            byte [] rdata, ldata;
+            int ii;
+            public CompTask(int $ii) { ii = $ii; }
+            public void reason(Db4j.Reason reason) { reasons.append( reason ); }
+            public void reason() {
+                for (Db4j.Reason reason : reasons)
+                    System.out.println( reason );
+            }
+            public void task() throws Pausable {
+                {
+                    byte [] b2 = compRaw.context().set(tid).set(ii,null).get(compRaw).val;
+                    Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
+                    Command.RwInt cmd = compLocals.get(tid,ii);
+                    yield();
+                    long kloc = cmd.val;
+                    ha.set(Db4j.this ).createCommit(kloc);
+                    ha.postLoad(tid);
+                    arrays.set( ii, ha );
+                    System.out.format( "Hunker.load.comp -- %d done, %s local:%d cmd:%d\n",
+                            ii, ha.name(), kloc, cmd.val );
+                    count++;
+                }
+            }
+        }
+    }
+    public void load(long start) {
+        start();
+        live = true;
+        new LoadTask().load(start);
+    }
+    /** if doWrite then write, else read, data from tid at offset */
+    Command.RwBytes [] iocmd(Transaction tid,long offset,byte [] data,boolean doWrite) {
+        return write( tid, offset, data, Types.Enum._byte.size(), data.length,
+                new Command.RwBytes().init(doWrite) );
+    }
+    /** if doWrite then write, else read, data from tid at offset */
+    Command.RwInts  [] iocmd(Transaction tid,long offset,int [] data,boolean doWrite) {
+        return write( tid, offset, data, Types.Enum._int.size(), data.length,
+                new Command.RwInts().init(doWrite) );
+    }
+    /** if doWrite then write, else read, data from tid at offset */
+    Command.RwLongs [] iocmd(Transaction tid,long offset,long [] data,boolean doWrite) {
+        return write( tid, offset, data, Types.Enum._long.size(), data.length,
+                new Command.RwLongs().init(doWrite) );
+    }
     /**
-     * a class that manages a file and multiplexes io
-     * needs to store the structure info for each component
+     * use cmd as a template for an array-based action
+     * apply it to data[0:length)
+     * siz is the element size of data
+     * add it to tid (if non-null) at offset
+     * return the array of commands that have been created and added to tid
+     */
+    <TT,SS extends Command.RwArray<TT,SS>> SS []
+            write(Transaction tid,long offset,TT data,int siz,int length,SS cmd) {
+        long end = offset + length * siz;
+        long blockEnd = (offset&~bm)+bs;
+        // fixme:dry -- should be able to extract siz from cmd
+        // fixme:api -- should be able to use a non-0 base or get length from cmd
+
+        // blocks [b1,b2)
+        long b1 =     offset >> bb;
+        long b2 = (end+bs-1) >> bb;
+        int nhunks = (int) (b2 - b1);
+        SS [] cmds = org.srlutils.Array.newArrayLike( cmd, nhunks );
+        int kc = 0;
+
+        for (long start = offset; start < end; start = blockEnd, blockEnd += bs) {
+            long back = Math.min( blockEnd, end );
+            int k1 = (int) (start - offset)/siz, k2 = (int) (back - offset)/siz;
+            SS dup = cmd.dup();
+            dup.set( data );
+            dup.range( k1, k2-k1 );
+            if (tid==null) put(     start, dup);
+            else           put(tid, start, dup);
+            cmds[ kc++ ] = dup;
+        }
+        return cmds;
+    }
+    void print(String fmt,int nc,long [] vals) {
+        int nv = vals.length;
+        for (int kk = 0; kk < nv;) {
+            int nt = Math.min( nv-kk, nc );
+            for (int jj = 0; jj < nt; jj++, kk++)
+                System.out.format( fmt, vals[kk] );
+            System.out.format( "\n" );
+        }
+    }
+    /**
+     * create the structure on disk
+     * ---------------------------------
+     * 0:
+     *   serialized java object
+     *   loc.nblock
+     *   loc.ncomp
+     * base (aligned by 4):
+     *   offsets -- array of offsets to the component data
+     *   rawOffsets -- array of offsets to the serialized components
+     *   array of serialized components, back to back
+     *   array of component data
+     * 8*bs:
+     *   the page data for the components starts here ...
      *
      */
-        static final long serialVersionUID = 3365051556209870876L;
-        transient RandomAccessFile raf;
-        /** bits per block        */            int  bb = Db4j.blockSize;
-        /** block size            */  transient int  bs;
-        /** block offset bit mask */  transient long bm;
-        long size;
-        transient Runner runner;
-        transient QueRunner qrunner;
-        transient Thread thread, qthread;
-        transient volatile Generation pending;
-        transient FileChannel chan;
-        /** the unix file descriptor */  transient int ufd;
-        transient public ArrayList<Hunkable> arrays;
-        transient String name;
-        transient Loc loc;
-        transient boolean live;
-        transient Btrees.IA compRaw;
-        transient HunkLocals compLocals;
-        transient Btrees.IS kryoMap;
-        transient HunkLog logStore;
+    public void create() {
+        start();
+        kryoMap = new Btrees.IS();
+        kryoMap.set(this).init(PATH_KRYOMAP);
+        logStore = new HunkLog();
+        logStore.set(this).init(PATH_LOGSTORE);
 
-        transient Example.MyKryo kryo;
-        transient KryoFactory kryoFactory;
-        transient KryoPool kryoPool;
-        Example.MyKryo kryo() { return ((Example.MyKryo) kryoPool.borrow()).pool(kryoPool); }
-
-        public static final Debug debug = new Debug();
-        static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
-        static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
-
-        static int sleeptime = 10;
-        transient FileLock flock;
-        transient ClassLoader userClassLoader;
-
-        /** for each field, null it out and call gc() -- use -verbose:gc to find deltas */
-        void checkLeaks() {
-            System.out.println( "gc^10" );
-            for (int ii = 0; ii < 10; ii++) System.gc();
-            System.out.println( "thread" );
-            thread = null;
-            System.gc();
-            System.out.println( "qthread" );
-            qthread = null;
-            System.gc();
-            qrunner.checkLeaks();
-            System.out.println( "qrunner" );
-            qrunner = null;
-            System.gc();
-            System.out.println( "runner" );
-            runner = null;
-            System.gc();
-        }
-
-        transient BlocksUtil util;
-        class BlocksUtil {
-            /** return the number of blocks needed for size bytes */
-            int nblocks(int size) { return (size+bs-1) >> bb; }
-            /** return the offset corresponding to kblock */
-            long address(int kblock) { return ((long) kblock) << bb; }
-        }
-        
-        public static class Debug {
-            public final boolean test = true, intp = false, alloc = false;
-            public final boolean cache = false, disk = false;
-            /** print out reads that miss cache */
-            public final boolean eeeread = false;
-            /** QueRunner info, 0:none, 1:per-pass-info, 2:everything */
-            public final int que = 0;
-            /** Runner info, 0:none, 1:per-gen summary, 2:1+start, 3:2+dots */
-            public final int tree = 0;
-            public final boolean reason = false;
-            /** record timing info for the disk loop */
-            public final boolean dtime = false;
-            public final boolean checkTasksList = false;
-        }
-
-        static class Loc {
-            Locals locals = new Locals();
-            /** number of allocated blocks - stored on disk */
-            final LocalInt2 nblocks = new LocalInt2( locals );
-            /** number of allocated components */
-            LocalInt2 ncomp = new LocalInt2( locals );
-        }
-
-        /** load the Composite from the name'd file */
-        public static Db4j load(String name) {
-            DiskObject disk = org.srlutils.Files.load(name);
-            Db4j ld = (Db4j) disk.object;
-            ld.init( name, null );
-            ld.load( (int) disk.size );
-            return ld;
-        }
-        public void register(Hunkable ha) {
-            arrays.add( ha );
-        }
-        /** read the range [k1, k2), values are live, ie must be fenced */
-        byte [] readRange(Transaction tid,long k1,long k2) {
-            int len = (int) (k2 - k1);
-            byte [] araw = new byte[ len ];
-            iocmd( tid, k1, araw, false );
-            return araw;
-        }
-        public void info() {
-            for (Hunkable array : arrays)
-                System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
-        }
-        class LoadTask extends Task {
-            volatile int count;
-            int ncomp;
-            boolean done;
-            Command.RwInt nbc, ncc;
-            int c1, c2;
-            long start;
-            public void load(long $start) {
-                start = $start;
-                c1 = compRaw.create();
-                c2 = compLocals.create();
-                long rawlen = Rounder.rup(start,align);
-                long pcomp = rawlen + loc.locals.size();
-                loc.locals.set(Db4j.this, rawlen );
-                compRaw.createCommit(pcomp);
-                compLocals.createCommit(pcomp+c1);
-                long base = Rounder.rup(pcomp+c1+c2,align);
-                offerTask(this);
-                while (done==false) Simple.sleep(10);
-                CompTask [] cts = new CompTask[ncomp];
-                for (int ii = 0; ii < ncomp; ii++) {
-                    arrays.add( null );
-                    offerTask( cts[ii] = new CompTask(ii) );
-                }
-                for (int ii=0; ii < ncomp; ii++)
-                    cts[ii].awaitb();
-                kryoMap = (Btrees.IS) lookup(PATH_KRYOMAP);
-                logStore = (HunkLog) lookup(PATH_LOGSTORE);
-                
-                System.out.format( "Hunker.load -- %d\n", ncomp );
-            }
-            public void task() throws Pausable {
-                { 
-                    nbc = put( tid, loc.nblocks.read() );
-                    ncc = put( tid, loc.ncomp.read() );
-                    yield();
-                }
-                {
-                    ncomp = ncc.val;
-                }
-                { done = true; }
-            }
-            class CompTask extends Query {
-                public Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
-                byte [] rdata, ldata;
-                int ii;
-                public CompTask(int $ii) { ii = $ii; }
-                public void reason(Db4j.Reason reason) { reasons.append( reason ); }
-                public void reason() {
-                    for (Db4j.Reason reason : reasons)
-                        System.out.println( reason );
-                }
-                public void task() throws Pausable {
-                    {
-                        byte [] b2 = compRaw.context().set(tid).set(ii,null).get(compRaw).val;
-                        Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
-                        Command.RwInt cmd = compLocals.get(tid,ii);
-                        yield();
-                        long kloc = cmd.val;
-                        ha.set(Db4j.this ).createCommit(kloc);
-                        ha.postLoad(tid);
-                        arrays.set( ii, ha );
-                        System.out.format( "Hunker.load.comp -- %d done, %s local:%d cmd:%d\n",
-                                ii, ha.name(), kloc, cmd.val );
-                        count++;
-                    }
-                }
-            }
-        }
-        public void load(long start) {
-            start();
+        CreateTask ct = new CreateTask();
+        offerTask( ct );
+        fence( ct, 10 );
+        fence( null, 10 );
+    }
+    static final int align = 16;
+    /*
+     * file layout (create and load need to be kept in agreement):
+     *   serialized hunker object, padded
+     *   hunker locals
+     *   compRaw locals
+     *   compLocals locals, padded
+     *   base (ie, base is aligned)
+     * fixme -- need to verify that the locals aren't split across page boundries
+     */
+    class CreateTask extends Task {
+        public void task() throws Pausable {
             live = true;
-            new LoadTask().load(start);
+            byte [] raw = org.srlutils.Files.save(Db4j.this );
+            int rawlen = Rounder.rup(raw.length,align);
+            int pcomp = rawlen+loc.locals.size();
+            loc.locals.set(Db4j.this, rawlen );
+            int ncomp = arrays.size();
+            System.out.format( "Hunker.create -- %d\n", ncomp );
+            long nblocks = runner.journalBase;
+            long firstBlock = nblocks + runner.journalSize;
+            for (int ii = 0; ii < nblocks; ii++)
+                put( tid, ii<<bb, new Command.Init() );
+            put( tid, loc.nblocks.write((int) firstBlock) );
+            put( tid, loc.ncomp.write(0) );
+            iocmd( tid, 0, raw, true );
+            // fixme::performance -- use compLocals for loc.locals
+            //   would save a spot in cache and increase the likelihood of loc.nblock being hot
+            //   bit of a chicken and the egg problem though
+            int c1 = compRaw.create();
+            int c2 = compLocals.create();
+            compRaw.createCommit( pcomp );
+            compLocals.createCommit( pcomp+c1 );
+            compRaw.init( compRaw.context().set(tid) );
+            long base = Rounder.rup(pcomp+c1+c2,align);
+            Simple.softAssert(base < 1L*Db4j.this.bs*runner.journalBase );
+            for (Hunkable ha : arrays)
+                create(tid,ha);
         }
-        /** if doWrite then write, else read, data from tid at offset */
-        Command.RwBytes [] iocmd(Transaction tid,long offset,byte [] data,boolean doWrite) {
-            return write( tid, offset, data, Types.Enum._byte.size(), data.length,
-                    new Command.RwBytes().init(doWrite) );
-        }
-        /** if doWrite then write, else read, data from tid at offset */
-        Command.RwInts  [] iocmd(Transaction tid,long offset,int [] data,boolean doWrite) {
-            return write( tid, offset, data, Types.Enum._int.size(), data.length,
-                    new Command.RwInts().init(doWrite) );
-        }
-        /** if doWrite then write, else read, data from tid at offset */
-        Command.RwLongs [] iocmd(Transaction tid,long offset,long [] data,boolean doWrite) {
-            return write( tid, offset, data, Types.Enum._long.size(), data.length,
-                    new Command.RwLongs().init(doWrite) );
-        }
-        /**
-         * use cmd as a template for an array-based action
-         * apply it to data[0:length)
-         * siz is the element size of data
-         * add it to tid (if non-null) at offset
-         * return the array of commands that have been created and added to tid
-         */
-        <TT,SS extends Command.RwArray<TT,SS>> SS []
-                write(Transaction tid,long offset,TT data,int siz,int length,SS cmd) {
-            long end = offset + length * siz;
-            long blockEnd = (offset&~bm)+bs;
-            // fixme:dry -- should be able to extract siz from cmd
-            // fixme:api -- should be able to use a non-0 base or get length from cmd
-
-            // blocks [b1,b2)
-            long b1 =     offset >> bb;
-            long b2 = (end+bs-1) >> bb;
-            int nhunks = (int) (b2 - b1);
-            SS [] cmds = org.srlutils.Array.newArrayLike( cmd, nhunks );
-            int kc = 0;
-
-            for (long start = offset; start < end; start = blockEnd, blockEnd += bs) {
-                long back = Math.min( blockEnd, end );
-                int k1 = (int) (start - offset)/siz, k2 = (int) (back - offset)/siz;
-                SS dup = cmd.dup();
-                dup.set( data );
-                dup.range( k1, k2-k1 );
-                if (tid==null) put(     start, dup);
-                else           put(tid, start, dup);
-                cmds[ kc++ ] = dup;
-            }
-            return cmds;
-        }
-        void print(String fmt,int nc,long [] vals) {
-            int nv = vals.length;
-            for (int kk = 0; kk < nv;) {
-                int nt = Math.min( nv-kk, nc );
-                for (int jj = 0; jj < nt; jj++, kk++)
-                    System.out.format( fmt, vals[kk] );
-                System.out.format( "\n" );
-            }
-        }
-        /**
-         * create the structure on disk
-         * ---------------------------------
-         * 0:
-         *   serialized java object
-         *   loc.nblock
-         *   loc.ncomp
-         * base (aligned by 4):
-         *   offsets -- array of offsets to the component data
-         *   rawOffsets -- array of offsets to the serialized components
-         *   array of serialized components, back to back
-         *   array of component data
-         * 8*bs:
-         *   the page data for the components starts here ...
-         *
-         */
-        public void create() {
-            start();
-            kryoMap = new Btrees.IS();
-            kryoMap.set(this).init(PATH_KRYOMAP);
-            logStore = new HunkLog();
-            logStore.set(this).init(PATH_LOGSTORE);
-            
-            CreateTask ct = new CreateTask();
-            offerTask( ct );
-            fence( ct, 10 );
-            fence( null, 10 );
-        }
-        static final int align = 16;
-        /*
-         * file layout (create and load need to be kept in agreement):
-         *   serialized hunker object, padded
-         *   hunker locals
-         *   compRaw locals
-         *   compLocals locals, padded
-         *   base (ie, base is aligned)
-         * fixme -- need to verify that the locals aren't split across page boundries
-         */
-        class CreateTask extends Task {
-            public void task() throws Pausable {
-                live = true;
-                byte [] raw = org.srlutils.Files.save(Db4j.this );
-                int rawlen = Rounder.rup(raw.length,align);
-                int pcomp = rawlen+loc.locals.size();
-                loc.locals.set(Db4j.this, rawlen );
-                int ncomp = arrays.size();
-                System.out.format( "Hunker.create -- %d\n", ncomp );
-                long nblocks = runner.journalBase;
-                long firstBlock = nblocks + runner.journalSize;
-                for (int ii = 0; ii < nblocks; ii++)
-                    put( tid, ii<<bb, new Command.Init() );
-                put( tid, loc.nblocks.write((int) firstBlock) );
-                put( tid, loc.ncomp.write(0) );
-                iocmd( tid, 0, raw, true );
-                // fixme::performance -- use compLocals for loc.locals
-                //   would save a spot in cache and increase the likelihood of loc.nblock being hot
-                //   bit of a chicken and the egg problem though
-                int c1 = compRaw.create();
-                int c2 = compLocals.create();
-                compRaw.createCommit( pcomp );
-                compLocals.createCommit( pcomp+c1 );
-                compRaw.init( compRaw.context().set(tid) );
-                long base = Rounder.rup(pcomp+c1+c2,align);
-                Simple.softAssert(base < 1L*Db4j.this.bs*runner.journalBase );
-                for (Hunkable ha : arrays)
-                    create(tid,ha);
-            }
-        }
-        public Hunkable lookup(Transaction tid,String name) throws Pausable {
-            Command.RwInt ncomp = put(tid, loc.ncomp.read());
-            tid.submitYield();
-            int num = arrays.size();
-            for (int ii=num; ii < ncomp.val; ii++)
-                lookup(tid,ii);
-            return lookup(name);
-        }
-        // fixme:untested
-        public Hunkable lookup(Transaction tid,int index) throws Pausable {
-            Hunkable ha;
-            if (index < arrays.size()) {
-                while ((ha = arrays.get(index))==null) kilim.Task.sleep(10);
-                return ha;
-            }
-            Command.RwInt ncomp = put(tid, loc.ncomp.read());
-            tid.submitYield();
-            if (index >= ncomp.val) return null;
-            boolean conflict = false;
-            synchronized (arrays) {
-                if (index < arrays.size())
-                    conflict = true;
-                else
-                    arrays.set(index,null);
-            }
-            if (conflict) return lookup(tid,index);
-            byte [] b2 = compRaw.context().set(tid).set(index,null).get(compRaw).val;
-            ha = (Hunkable) org.srlutils.Files.load(b2);
-            Command.RwInt cmd = compLocals.get(tid,index);
-            tid.submitYield();
-            long kloc = cmd.val;
-            ha.set(Db4j.this ).createCommit(kloc);
-            arrays.set(index,ha);
+    }
+    public Hunkable lookup(Transaction tid,String name) throws Pausable {
+        Command.RwInt ncomp = put(tid, loc.ncomp.read());
+        tid.submitYield();
+        int num = arrays.size();
+        for (int ii=num; ii < ncomp.val; ii++)
+            lookup(tid,ii);
+        return lookup(name);
+    }
+    // fixme:untested
+    public Hunkable lookup(Transaction tid,int index) throws Pausable {
+        Hunkable ha;
+        if (index < arrays.size()) {
+            while ((ha = arrays.get(index))==null) kilim.Task.sleep(10);
             return ha;
         }
-        public void create(Transaction tid,Hunkable ha) throws Pausable {
-            ha.set(this);
-            byte [] araw = org.srlutils.Files.save(ha);
-            Command.RwInt ncomp = put(tid, loc.ncomp.read());
-            tid.submitYield();
-            compRaw.context().set(tid).set(ncomp.val,araw).insert(compRaw);
-            put(tid,loc.ncomp.write(ncomp.val+1));
-            int len = ha.create();
-            long offset = compLocals.alloc(ncomp.val,len,tid);
-            ha.createCommit(offset);
-            ha.postInit(tid);
-            System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
+        Command.RwInt ncomp = put(tid, loc.ncomp.read());
+        tid.submitYield();
+        if (index >= ncomp.val) return null;
+        boolean conflict = false;
+        synchronized (arrays) {
+            if (index < arrays.size())
+                conflict = true;
+            else
+                arrays.set(index,null);
         }
-        /** attempt to close the backing file, returning any exception (instead of throwing) */
-        public Exception close() {
-            Exception ex = null;
-            try { raf.close(); }
-            catch (Exception e2) { ex = e2; }
-            System.out.format( "Hunker.close: %s\n", ex==null ? "ok" : ex );
-            return ex;
+        if (conflict) return lookup(tid,index);
+        byte [] b2 = compRaw.context().set(tid).set(index,null).get(compRaw).val;
+        ha = (Hunkable) org.srlutils.Files.load(b2);
+        Command.RwInt cmd = compLocals.get(tid,index);
+        tid.submitYield();
+        long kloc = cmd.val;
+        ha.set(Db4j.this ).createCommit(kloc);
+        arrays.set(index,ha);
+        return ha;
+    }
+    public void create(Transaction tid,Hunkable ha) throws Pausable {
+        ha.set(this);
+        byte [] araw = org.srlutils.Files.save(ha);
+        Command.RwInt ncomp = put(tid, loc.ncomp.read());
+        tid.submitYield();
+        compRaw.context().set(tid).set(ncomp.val,araw).insert(compRaw);
+        put(tid,loc.ncomp.write(ncomp.val+1));
+        int len = ha.create();
+        long offset = compLocals.alloc(ncomp.val,len,tid);
+        ha.createCommit(offset);
+        ha.postInit(tid);
+        System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
+    }
+    /** attempt to close the backing file, returning any exception (instead of throwing) */
+    public Exception close() {
+        Exception ex = null;
+        try { raf.close(); }
+        catch (Exception e2) { ex = e2; }
+        System.out.format( "Hunker.close: %s\n", ex==null ? "ok" : ex );
+        return ex;
+    }
+    /** 
+     * initialize all the transient fields
+     * called for both initial creation and after loading from disk
+     */
+    public Db4j init(String name,Long fileSize) {
+        try {
+            bs = 1<<bb;
+            bm = bs-1;
+            this.name = name;
+            raf = new RandomAccessFile( name, "rw" );
+            ufd = DioNative.systemFD( raf.getFD() );
+            loc = new Loc();
+            util = new BlocksUtil();
+            long cs = raf.length();
+            long nbytes;
+            if (fileSize == null) nbytes = cs;
+            else if (fileSize < 0) nbytes = Math.max( cs, -fileSize );
+            else nbytes = fileSize;
+            int nblocks = (int) (nbytes >> bb);
+            if (nbytes > cs && dio)
+                    DioNative.fallocate(ufd,cs,nbytes-cs);
+            else if (nbytes > cs) {
+                raf.setLength( 0 );
+                raf.setLength( nbytes );
+                byte [] data = new byte[ bs ];
+                for (int ii = 0; ii < data.length; ii++) data[ii] = (byte) ii;
+                for (int ii = 0; ii < nblocks; ii++) raf.write( data );
+            }
+            this.size = nblocks;
+            chan = raf.getChannel();
+            chan.force( false );
+            flock = chan.tryLock();
+            if (flock==null) {
+                System.out.println( "Hunker.lock -- not acquired: " + name );
+                throw new RuntimeException( "could not acquire file lock on: " + name );
+            }
+            else
+                System.out.println( "Hunker.lock -- acquired: " + name );
+            pending = null;
+            runner = new Runner(this);
+            qrunner = new QueRunner(this);
+            arrays = new ArrayList();
+            compRaw = new Btrees.IA();
+            compLocals = new HunkLocals();
+            compRaw.set(this);
+            compLocals.set(this);
+            kryo = new Example.MyKryo(new HunkResolver()).init();
+            doRegistration(kryo);
+            kryoFactory = new KryoFactory() {
+                public Kryo create() { return kryo.dup(); }
+            };
+            kryoPool = new KryoPool.Builder(kryoFactory).build();
+        } catch (IOException ex) {
+            throw new RuntimeException( ex );
         }
-        /** 
-         * initialize all the transient fields
-         * called for both initial creation and after loading from disk
-         */
-        public Db4j init(String name,Long fileSize) {
+        return this;
+    }
+
+
+    void doRegistration(Kryo kryo) {
+        kryo.register(RegPair.class);
+    }
+
+
+    class HunkResolver extends Example.Resolver {
+        public synchronized Registration registerImplicit(Class type) {
+            Registration reg = getRegistration(type);
+            if (reg != null)
+                return reg;
+            int id = kryo.getNextRegistrationId();
+            reg = new Registration(type, kryo.getDefaultSerializer(type), id);
+            RegPair pair = new RegPair();
+            pair.id = id;
+            pair.name = type.getName();
+            logStore.store(pair,(Example.MyKryo) kryo);
+            System.out.format("RegPair.store: %4d %s\n",id,pair.name);
+            return register(reg);
+        }
+
+    }
+
+    static class RegPair implements HunkLog.Loggable {
+        public int id;
+        public String name;
+        public void restore(Db4j hunker) {
             try {
-                bs = 1<<bb;
-                bm = bs-1;
-                this.name = name;
-                raf = new RandomAccessFile( name, "rw" );
-                ufd = DioNative.systemFD( raf.getFD() );
-                loc = new Loc();
-                util = new BlocksUtil();
-                long cs = raf.length();
-                long nbytes;
-                if (fileSize == null) nbytes = cs;
-                else if (fileSize < 0) nbytes = Math.max( cs, -fileSize );
-                else nbytes = fileSize;
-                int nblocks = (int) (nbytes >> bb);
-                if (nbytes > cs && dio)
-                        DioNative.fallocate(ufd,cs,nbytes-cs);
-                else if (nbytes > cs) {
-                    raf.setLength( 0 );
-                    raf.setLength( nbytes );
-                    byte [] data = new byte[ bs ];
-                    for (int ii = 0; ii < data.length; ii++) data[ii] = (byte) ii;
-                    for (int ii = 0; ii < nblocks; ii++) raf.write( data );
-                }
-                this.size = nblocks;
-                chan = raf.getChannel();
-                chan.force( false );
-                flock = chan.tryLock();
-                if (flock==null) {
-                    System.out.println( "Hunker.lock -- not acquired: " + name );
-                    throw new RuntimeException( "could not acquire file lock on: " + name );
-                }
-                else
-                    System.out.println( "Hunker.lock -- acquired: " + name );
-                pending = null;
-                runner = new Runner(this);
-                qrunner = new QueRunner(this);
-                arrays = new ArrayList();
-                compRaw = new Btrees.IA();
-                compLocals = new HunkLocals();
-                compRaw.set(this);
-                compLocals.set(this);
-                kryo = new Example.MyKryo(new HunkResolver()).init();
-                doRegistration(kryo);
-                kryoFactory = new KryoFactory() {
-                    public Kryo create() { return kryo.dup(); }
-                };
-                kryoPool = new KryoPool.Builder(kryoFactory).build();
-            } catch (IOException ex) {
-                throw new RuntimeException( ex );
+                System.out.format("RegPair.restore: %4d %s\n",id,name);
+                Class type = Class.forName(name);
+                hunker.kryo().register(type,id);
             }
-            return this;
-        }
-        
-
-        void doRegistration(Kryo kryo) {
-            kryo.register(RegPair.class);
-        }
-        
-        
-        class HunkResolver extends Example.Resolver {
-            public synchronized Registration registerImplicit(Class type) {
-		Registration reg = getRegistration(type);
-		if (reg != null)
-                    return reg;
-                int id = kryo.getNextRegistrationId();
-                reg = new Registration(type, kryo.getDefaultSerializer(type), id);
-                RegPair pair = new RegPair();
-                pair.id = id;
-                pair.name = type.getName();
-                logStore.store(pair,(Example.MyKryo) kryo);
-                System.out.format("RegPair.store: %4d %s\n",id,pair.name);
-		return register(reg);
-            }
-            
-        }
-
-        static class RegPair implements HunkLog.Loggable {
-            public int id;
-            public String name;
-            public void restore(Db4j hunker) {
-                try {
-                    System.out.format("RegPair.restore: %4d %s\n",id,name);
-                    Class type = Class.forName(name);
-                    hunker.kryo().register(type,id);
-                }
-                catch (ClassNotFoundException ex) {
-                    throw new RuntimeException(ex);
-                }
+            catch (ClassNotFoundException ex) {
+                throw new RuntimeException(ex);
             }
         }
+    }
 
-        public Transaction getTransaction() {
-            Transaction tid = new Transaction().set(this);
-            return tid;
-        }
+    public Transaction getTransaction() {
+        Transaction tid = new Transaction().set(this);
+        return tid;
+    }
 
-        /** set the command to the offset */
-        void put(long offset,Command cmd) {
-            cmd.offset = offset;
-        }
+    /** set the command to the offset */
+    void put(long offset,Command cmd) {
+        cmd.offset = offset;
+    }
 
-        /** add and return the command to the transaction at the offset */
-        <TT extends Command> TT put(Transaction tid,long offset,TT cmd) {
-            cmd.offset = offset;
-            return put(tid,cmd);
-        }
+    /** add and return the command to the transaction at the offset */
+    <TT extends Command> TT put(Transaction tid,long offset,TT cmd) {
+        cmd.offset = offset;
+        return put(tid,cmd);
+    }
 
-        /** add and return the command to the transaction */
-        <TT extends Command> TT put(Transaction tid,TT cmd) {
-            tid.add( cmd);
-            return cmd;
-        }
+    /** add and return the command to the transaction */
+    <TT extends Command> TT put(Transaction tid,TT cmd) {
+        tid.add( cmd);
+        return cmd;
+    }
 
-        /** throw a request to large runtime exception */
-        void throwRTL(int nreq,long avail) {
-            throw Simple.Exceptions.rte(
-                    null, "request too large -- req: %d, avail: %d", nreq, avail );
+    /** throw a request to large runtime exception */
+    void throwRTL(int nreq,long avail) {
+        throw Simple.Exceptions.rte(
+                null, "request too large -- req: %d, avail: %d", nreq, avail );
+    }
+    int [] request(int [] reqs,Transaction tid) throws Pausable {
+        Command.RwInt cmd = put( tid, loc.nblocks.read() );
+        if (tid.submit()) kilim.Task.yield();
+        int nblock = cmd.val;
+        int [] blocks = new int[reqs.length];
+        for (int ii = 0; ii < reqs.length; ii++) {
+            blocks[ii] = nblock;
+            nblock += reqs[ii];
         }
-        int [] request(int [] reqs,Transaction tid) throws Pausable {
-            Command.RwInt cmd = put( tid, loc.nblocks.read() );
-            if (tid.submit()) kilim.Task.yield();
-            int nblock = cmd.val;
-            int [] blocks = new int[reqs.length];
-            for (int ii = 0; ii < reqs.length; ii++) {
-                blocks[ii] = nblock;
-                nblock += reqs[ii];
-            }
-            put( tid, loc.nblocks.write( nblock ) );
-            return blocks;
-        }
-        int nblocks(Transaction tid) {
-            Command.RwInt cmd = put( tid, loc.nblocks.read() );
-            int nb = (tid.submit()) ? -1:cmd.val;
-            return nb;
-        }
+        put( tid, loc.nblocks.write( nblock ) );
+        return blocks;
+    }
+    int nblocks(Transaction tid) {
+        Command.RwInt cmd = put( tid, loc.nblocks.read() );
+        int nb = (tid.submit()) ? -1:cmd.val;
+        return nb;
+    }
 
-        /** request a range of nreq hunks, guaranteed to be contiguous if true */
-        int [] request(int nreq,boolean contiguous,Transaction tid) throws Pausable {
-            Command.RwInt cmd = put( tid, loc.nblocks.read() );
-            if (tid.submit()) kilim.Task.yield();
-            int nblock = cmd.val;
-            int bits = 8;
-            int nmod = nblock >> bits, n2 = (nblock+nreq) >> bits;
-            if (debug.alloc && n2 > nmod)
-                System.out.format( "hunker.request -- mod:%d\n", nblock+nreq );
-            if (nreq > size - nblock) throwRTL( nreq, size - nblock );
-            put( tid, loc.nblocks.write( nblock + nreq ) );
-            int [] alloc = new int [ nreq ];
-            for (int ii = 0; ii < nreq; ii++) alloc[ii] = nblock + ii;
-            return alloc;
-        }
-        public Hunkable lookup(String name) {
-            for (Hunkable ha : arrays)
-                if (ha.name().equals( name )) return ha;
-            return null;
-        }
+    /** request a range of nreq hunks, guaranteed to be contiguous if true */
+    int [] request(int nreq,boolean contiguous,Transaction tid) throws Pausable {
+        Command.RwInt cmd = put( tid, loc.nblocks.read() );
+        if (tid.submit()) kilim.Task.yield();
+        int nblock = cmd.val;
+        int bits = 8;
+        int nmod = nblock >> bits, n2 = (nblock+nreq) >> bits;
+        if (debug.alloc && n2 > nmod)
+            System.out.format( "hunker.request -- mod:%d\n", nblock+nreq );
+        if (nreq > size - nblock) throwRTL( nreq, size - nblock );
+        put( tid, loc.nblocks.write( nblock + nreq ) );
+        int [] alloc = new int [ nreq ];
+        for (int ii = 0; ii < nreq; ii++) alloc[ii] = nblock + ii;
+        return alloc;
+    }
+    public Hunkable lookup(String name) {
+        for (Hunkable ha : arrays)
+            if (ha.name().equals( name )) return ha;
+        return null;
+    }
 
-        public void start() {
-            thread = new Thread( runner, "Disk Loop" );
-            qthread = new Thread( qrunner, "Que Loop" );
-            thread.start();
-            qthread.start();
-        }
-            
-        /** shut down the hunker - callable from outside the qrunner threads */
-        public void shutdown() {
-            offerTask( new Shutdown() );
-            try {
-                qthread.join();
-                qthread = null;
-                thread.join();
-                thread = null;
-            }
-            catch (InterruptedException ex) { throw irte( ex ); }
+    public void start() {
+        thread = new Thread( runner, "Disk Loop" );
+        qthread = new Thread( qrunner, "Que Loop" );
+        thread.start();
+        qthread.start();
+    }
 
-            try { chan.force( false ); }
-            catch (IOException ex) { System.out.println( "sync failed" ); }
-            Stats stats = runner.stats;
-            System.out.format("shutdown.stats -- disk:%5d, diskTime:%8.3f, diskWait:%8.3f, back:%5d\n",
-                    stats.nwait, stats.diskTime, stats.waitTime, qrunner.nback );
+    /** shut down the hunker - callable from outside the qrunner threads */
+    public void shutdown() {
+        offerTask( new Shutdown() );
+        try {
+            qthread.join();
+            qthread = null;
+            thread.join();
+            thread = null;
         }
-        /** force the cache to be committed to disk ... on return the commit is complete */
-        public void forceCommit(int delay) {
-            Db4j.ForceCommit commit = new Db4j.ForceCommit();
-            offerTask( commit );
-            while (!commit.done)
+        catch (InterruptedException ex) { throw irte( ex ); }
+
+        try { chan.force( false ); }
+        catch (IOException ex) { System.out.println( "sync failed" ); }
+        Stats stats = runner.stats;
+        System.out.format("shutdown.stats -- disk:%5d, diskTime:%8.3f, diskWait:%8.3f, back:%5d\n",
+                stats.nwait, stats.diskTime, stats.waitTime, qrunner.nback );
+    }
+    /** force the cache to be committed to disk ... on return the commit is complete */
+    public void forceCommit(int delay) {
+        Db4j.ForceCommit commit = new Db4j.ForceCommit();
+        offerTask( commit );
+        while (!commit.done)
+            Simple.sleep(delay);
+    }
+    /** sync the backing file to disk */
+    public void sync() {
+        forceCommit(10);
+        try { chan.force( false ); }
+        catch (IOException ex) {
+            throw rte( ex, "attempt to sync Hunker file failed" );
+        }
+    }
+
+    /** use fadvise to tell the OS that the entire backing file is "dontneed" in the cache */
+    public void dontneed() {
+        try { DioNative.fadvise( ufd, 0, size<<bb, DioNative.Enum.dontneed ); }
+        catch(Exception ex) {}
+    }
+    public void fence(Db4j.Task task,int delay) {
+        Db4j.Task oldest = null;
+        while (task != null && task.id==0) Simple.sleep(delay);
+        while (true) {
+            OldestTask ot = new OldestTask();
+            offerTask( ot );
+            while (! ot.done())
                 Simple.sleep(delay);
+            oldest = ot.oldest;
+            if (task==null) task = ot;
+            if (oldest==null || oldest.id >= task.id) break;
+            Simple.sleep( delay );
         }
-        /** sync the backing file to disk */
-        public void sync() {
-            forceCommit(10);
-            try { chan.force( false ); }
-            catch (IOException ex) {
-                throw rte( ex, "attempt to sync Hunker file failed" );
-            }
-        }
-
-        /** use fadvise to tell the OS that the entire backing file is "dontneed" in the cache */
-        public void dontneed() {
-            try { DioNative.fadvise( ufd, 0, size<<bb, DioNative.Enum.dontneed ); }
-            catch(Exception ex) {}
-        }
-        public void fence(Db4j.Task task,int delay) {
-            Db4j.Task oldest = null;
-            while (task != null && task.id==0) Simple.sleep(delay);
-            while (true) {
-                OldestTask ot = new OldestTask();
-                offerTask( ot );
-                while (! ot.done())
-                    Simple.sleep(delay);
-                oldest = ot.oldest;
-                if (task==null) task = ot;
-                if (oldest==null || oldest.id >= task.id) break;
-                Simple.sleep( delay );
-            }
-        }
-        /** offer a new task and return it */
-        public <TT extends Queable> TT offerTask(TT task) {
-            qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
-            return task;
-        }
+    }
+    /** offer a new task and return it */
+    public <TT extends Queable> TT offerTask(TT task) {
+        qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
+        return task;
+    }
 
 
 
+    /**
+     * a functonal interface, with a return value, that can be called during query execution by the db4j execution engine,
+     * accepting a transaction and returning a value
+     * @param <TT> the type of the return value
+     */
+    public interface Queryable<TT> {
+        TT query(Db4j.Transaction tid) throws Pausable;
+    }
+    /**
+     * a functional interface without a return value that can be called during query execution by the db4j execution engine,
+     * accepting a transaction and not returning a value
+     */
+    public interface QueryCallable {
         /**
-         * a functonal interface, with a return value, that can be called during query execution by the db4j execution engine,
-         * accepting a transaction and returning a value
-         * @param <TT> the type of the return value
+         * the query to execute
+         * @param tid the transaction tied to the query
+         * @throws Pausable 
          */
-        public interface Queryable<TT> {
-            TT query(Db4j.Transaction tid) throws Pausable;
-        }
+        void query(Db4j.Transaction tid) throws Pausable;
+    }
+    /**
+     * a query that delegates to a functional interface with a return value, ie wrapping a lambda
+     * @param <TT> the type of the lambda return value
+     */
+    public static class LambdaQuery<TT> extends Query<LambdaQuery<TT>> {
+        Queryable<TT> body;
+        /** the captured return value from the wrapped lambda, valid after query completion */
+        public TT val;
         /**
-         * a functional interface without a return value that can be called during query execution by the db4j execution engine,
-         * accepting a transaction and not returning a value
+         * create a new query wrapping body
+         * @param body the lambda to delegate to during query task execution
          */
-        public interface QueryCallable {
-            /**
-             * the query to execute
-             * @param tid the transaction tied to the query
-             * @throws Pausable 
-             */
-            void query(Db4j.Transaction tid) throws Pausable;
-        }
-        /**
-         * a query that delegates to a functional interface with a return value, ie wrapping a lambda
-         * @param <TT> the type of the lambda return value
-         */
-        public static class LambdaQuery<TT> extends Query<LambdaQuery<TT>> {
-            Queryable<TT> body;
-            /** the captured return value from the wrapped lambda, valid after query completion */
-            public TT val;
-            /**
-             * create a new query wrapping body
-             * @param body the lambda to delegate to during query task execution
-             */
-            public LambdaQuery(Queryable body) { this.body = body; }
-            public void task() throws Pausable { val = body.query(tid); }
-        }
-        /**
-         * a query that delegates to a functional interface with a return value, ie wrapping a lambda
-         * @param <TT> the type of the lambda return value
-         */
-        public static class LambdaCallQuery extends Query<LambdaCallQuery> {
-            QueryCallable body;
-            public LambdaCallQuery(QueryCallable body) { this.body = body; }
-            public void task() throws Pausable { body.query(tid); }
-        }
-        /**
-         * create a new query that delegates to body, capturing the return value, and submit it to the execution engine
-         * @param <TT> the return type of body
-         * @param body a lambda or equivalent that is called during the query task execution, with a return value
-         * @return the new query
-         */
-        public <TT> LambdaQuery<TT> submit(Queryable<TT> body) {
-            LambdaQuery<TT> invoke = new LambdaQuery(body);
-            return offerTask(invoke);
-        }
-        /**
-         * create a new query that delegates to return-value-less body, and submit it to the execution engine
-         * @param body a lambda or equivalent that is called during the query task execution, without a return value
-         * @return the new query
-         */
-        public LambdaCallQuery submitCall(QueryCallable body) {
-            LambdaCallQuery implore = new LambdaCallQuery(body);
-            return offerTask(implore);
-        }
-        /**
-         * submit query to the dbms execution engine
-         * @param <TT> the type of the query, which is used for the return value to allow chaining
-         * @param query the query to execute
-         * @return query, preserving the type to allow chaining
-         */
-        public <TT extends Query> TT submitQuery(TT query) {
-            return offerTask(query);
-        }
-        
-        /** task has completed (or been cancelled???) - clean up the accounting info */
-        void cleanupTask(Db4j.Task task) {
-            qrunner.tasks.remove(task);
-            qrunner.ntask++;
-            qrunner.state.completedTasks++;
-        }
-        public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
-        public int stats2() { return runner.stats.nwait; }
+        public LambdaQuery(Queryable body) { this.body = body; }
+        public void task() throws Pausable { val = body.query(tid); }
+    }
+    /**
+     * a query that delegates to a functional interface with a return value, ie wrapping a lambda
+     * @param <TT> the type of the lambda return value
+     */
+    public static class LambdaCallQuery extends Query<LambdaCallQuery> {
+        QueryCallable body;
+        public LambdaCallQuery(QueryCallable body) { this.body = body; }
+        public void task() throws Pausable { body.query(tid); }
+    }
+    /**
+     * create a new query that delegates to body, capturing the return value, and submit it to the execution engine
+     * @param <TT> the return type of body
+     * @param body a lambda or equivalent that is called during the query task execution, with a return value
+     * @return the new query
+     */
+    public <TT> LambdaQuery<TT> submit(Queryable<TT> body) {
+        LambdaQuery<TT> invoke = new LambdaQuery(body);
+        return offerTask(invoke);
+    }
+    /**
+     * create a new query that delegates to return-value-less body, and submit it to the execution engine
+     * @param body a lambda or equivalent that is called during the query task execution, without a return value
+     * @return the new query
+     */
+    public LambdaCallQuery submitCall(QueryCallable body) {
+        LambdaCallQuery implore = new LambdaCallQuery(body);
+        return offerTask(implore);
+    }
+    /**
+     * submit query to the dbms execution engine
+     * @param <TT> the type of the query, which is used for the return value to allow chaining
+     * @param query the query to execute
+     * @return query, preserving the type to allow chaining
+     */
+    public <TT extends Query> TT submitQuery(TT query) {
+        return offerTask(query);
+    }
+
+    /** task has completed (or been cancelled???) - clean up the accounting info */
+    void cleanupTask(Db4j.Task task) {
+        qrunner.tasks.remove(task);
+        qrunner.ntask++;
+        qrunner.state.completedTasks++;
+    }
+    public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
+    public int stats2() { return runner.stats.nwait; }
 
 
     /** 
