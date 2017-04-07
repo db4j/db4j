@@ -28,7 +28,7 @@ public class DemoOverflow {
     HunkArray.I map;
     void load() {
         hunker = Db4j.load(filename);
-        map = (HunkArray.I) hunker.arrays.get(0);
+        map = (HunkArray.I) hunker.lookup(0);
     }
     public void init() {
         hunker = new Db4j().init( filename, null );

@@ -327,7 +327,7 @@ public class DemoHunker {
                 hunker = Db4j.load( name );
                 arrays = new HunkArray.L[ nstores ];
                 for (int ii = 0; ii < nstores; ii++)
-                    arrays[ii] = (HunkArray.L) hunker.arrays.get( ii );
+                    arrays[ii] = (HunkArray.L) hunker.lookup( ii );
             }
         }
         public TT run() {

@@ -19,8 +19,8 @@ public class DemoEntropy {
     HunkCount buildSeed;
     void load() {
         hunker = Db4j.load(filename);
-        map = (HunkArray.I) hunker.arrays.get(0);
-        buildSeed = (HunkCount) hunker.arrays.get(1);
+        map = (HunkArray.I) hunker.lookup(0);
+        buildSeed = (HunkCount) hunker.lookup(1);
     }
     public void init() {
         hunker = new Db4j().init( filename, null ); // 1L << 32 );

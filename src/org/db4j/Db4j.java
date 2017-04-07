@@ -141,7 +141,7 @@ public class Db4j implements Serializable {
     transient volatile Generation pending;
     transient FileChannel chan;
     /** the unix file descriptor */  transient int ufd;
-    transient public ArrayList<Hunkable> arrays;
+    transient ArrayList<Hunkable> arrays;
     transient String name;
     transient Loc loc;
     transient boolean live;
@@ -434,6 +434,9 @@ public class Db4j implements Serializable {
                 create(tid,ha);
         }
     }
+    // fixme - replace all usages with lookup(tid,index)
+    public Hunkable lookup(int index) { return arrays.get(index); }
+    
     public Hunkable lookup(Transaction tid,String name) throws Pausable {
         Command.RwInt ncomp = put(tid, loc.ncomp.read());
         tid.submitYield();
@@ -586,7 +589,7 @@ public class Db4j implements Serializable {
         }
     }
 
-    public Transaction getTransaction() {
+    Transaction getTransaction() {
         Transaction tid = new Transaction().set(this);
         return tid;
     }
@@ -652,7 +655,7 @@ public class Db4j implements Serializable {
         return null;
     }
 
-    public void start() {
+    void start() {
         thread = new Thread( runner, "Disk Loop" );
         qthread = new Thread( qrunner, "Que Loop" );
         thread.start();

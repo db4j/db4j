@@ -21,7 +21,7 @@ public class FastOverflow {
     void load() {
         hunker = Db4j.load(filename);
 //        hunker.qrunner.genc = Integer.MAX_VALUE - (1<<23);
-        map = (HunkArray.I) hunker.arrays.get(0);
+        map = (HunkArray.I) hunker.lookup(0);
     }
     long sum(int [] vals) {
         long sum = Util.Ranged.sum(1,vals.length,vals);
