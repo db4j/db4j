@@ -88,7 +88,7 @@ public class DemoHunker {
                 super.rollback(hunker,restart);
             }
             public String report() {
-                return String.format( ", nback: %5d, nwait: %5d\n", nback, hunker.runner.nwait );
+                return String.format( ", nback: %5d, nwait: %5d\n", nback, hunker.stats2() );
             }
 
             public boolean postRun(boolean pre) {
@@ -172,7 +172,7 @@ public class DemoHunker {
             boolean success();
         }
         public void report(double tc,String report) {
-            int ios = hunker.runner.totalReads + hunker.runner.totalWrites;
+            int ios = hunker.stats();
             System.out.format( "Demo::%-10s - %5.2fs --> %5.1f iops, %5.2f iopt%s\n",
                     taskKlass.getSimpleName(), tc, 1.0*ios/tc, 1.0*ios/nn, report );
         }

@@ -135,41 +135,41 @@ public class Db4j implements Serializable {
      *
      */
         static final long serialVersionUID = 3365051556209870876L;
-        transient public RandomAccessFile raf;
-        /** bits per block        */  public           int  bb = Db4j.blockSize;
-        /** block size            */  public transient int  bs;
-        /** block offset bit mask */  public transient long bm;
-        public long size;
-        transient public Runner runner;
-        transient public QueRunner qrunner;
-        transient public Thread thread, qthread;
-        transient volatile public Generation pending;
-        transient public FileChannel chan;
-        /** the unix file descriptor */  transient public int ufd;
+        transient RandomAccessFile raf;
+        /** bits per block        */            int  bb = Db4j.blockSize;
+        /** block size            */  transient int  bs;
+        /** block offset bit mask */  transient long bm;
+        long size;
+        transient Runner runner;
+        transient QueRunner qrunner;
+        transient Thread thread, qthread;
+        transient volatile Generation pending;
+        transient FileChannel chan;
+        /** the unix file descriptor */  transient int ufd;
         transient public ArrayList<Hunkable> arrays;
-        transient public String name;
-        transient public Loc loc;
-        transient public boolean live;
-        transient public Btrees.IA compRaw;
-        transient public HunkLocals compLocals;
-        transient public Btrees.IS kryoMap;
-        transient public HunkLog logStore;
+        transient String name;
+        transient Loc loc;
+        transient boolean live;
+        transient Btrees.IA compRaw;
+        transient HunkLocals compLocals;
+        transient Btrees.IS kryoMap;
+        transient HunkLog logStore;
 
-        transient public Example.MyKryo kryo;
+        transient Example.MyKryo kryo;
         transient KryoFactory kryoFactory;
         transient KryoPool kryoPool;
-        public Example.MyKryo kryo() { return ((Example.MyKryo) kryoPool.borrow()).pool(kryoPool); }
+        Example.MyKryo kryo() { return ((Example.MyKryo) kryoPool.borrow()).pool(kryoPool); }
 
         public static final Debug debug = new Debug();
-        public static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
-        public static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
+        static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
+        static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
 
-        public static int sleeptime = 10;
+        static int sleeptime = 10;
         transient FileLock flock;
         transient ClassLoader userClassLoader;
 
         /** for each field, null it out and call gc() -- use -verbose:gc to find deltas */
-        public void checkLeaks() {
+        void checkLeaks() {
             System.out.println( "gc^10" );
             for (int ii = 0; ii < 10; ii++) System.gc();
             System.out.println( "thread" );
@@ -187,10 +187,10 @@ public class Db4j implements Serializable {
             System.gc();
         }
 
-        transient public BlocksUtil util;
-        public class BlocksUtil {
+        transient BlocksUtil util;
+        class BlocksUtil {
             /** return the number of blocks needed for size bytes */
-            public int nblocks(int size) { return (size+bs-1) >> bb; }
+            int nblocks(int size) { return (size+bs-1) >> bb; }
             /** return the offset corresponding to kblock */
             long address(int kblock) { return ((long) kblock) << bb; }
         }
@@ -210,12 +210,12 @@ public class Db4j implements Serializable {
             public final boolean checkTasksList = false;
         }
 
-        public static class Loc {
-            public Locals locals = new Locals();
+        static class Loc {
+            Locals locals = new Locals();
             /** number of allocated blocks - stored on disk */
-            public final LocalInt2 nblocks = new LocalInt2( locals );
+            final LocalInt2 nblocks = new LocalInt2( locals );
             /** number of allocated components */
-            public LocalInt2 ncomp = new LocalInt2( locals );
+            LocalInt2 ncomp = new LocalInt2( locals );
         }
 
         /** load the Composite from the name'd file */
@@ -230,7 +230,7 @@ public class Db4j implements Serializable {
             arrays.add( ha );
         }
         /** read the range [k1, k2), values are live, ie must be fenced */
-        public byte [] readRange(Transaction tid,long k1,long k2) {
+        byte [] readRange(Transaction tid,long k1,long k2) {
             int len = (int) (k2 - k1);
             byte [] araw = new byte[ len ];
             iocmd( tid, k1, araw, false );
@@ -240,7 +240,7 @@ public class Db4j implements Serializable {
             for (Hunkable array : arrays)
                 System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
         }
-        public class LoadTask extends Task {
+        class LoadTask extends Task {
             volatile int count;
             int ncomp;
             boolean done;
@@ -282,7 +282,7 @@ public class Db4j implements Serializable {
                 }
                 { done = true; }
             }
-            public class CompTask extends Query {
+            class CompTask extends Query {
                 public Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
                 byte [] rdata, ldata;
                 int ii;
@@ -315,17 +315,17 @@ public class Db4j implements Serializable {
             new LoadTask().load(start);
         }
         /** if doWrite then write, else read, data from tid at offset */
-        public Command.RwBytes [] iocmd(Transaction tid,long offset,byte [] data,boolean doWrite) {
+        Command.RwBytes [] iocmd(Transaction tid,long offset,byte [] data,boolean doWrite) {
             return write( tid, offset, data, Types.Enum._byte.size(), data.length,
                     new Command.RwBytes().init(doWrite) );
         }
         /** if doWrite then write, else read, data from tid at offset */
-        public Command.RwInts  [] iocmd(Transaction tid,long offset,int [] data,boolean doWrite) {
+        Command.RwInts  [] iocmd(Transaction tid,long offset,int [] data,boolean doWrite) {
             return write( tid, offset, data, Types.Enum._int.size(), data.length,
                     new Command.RwInts().init(doWrite) );
         }
         /** if doWrite then write, else read, data from tid at offset */
-        public Command.RwLongs [] iocmd(Transaction tid,long offset,long [] data,boolean doWrite) {
+        Command.RwLongs [] iocmd(Transaction tid,long offset,long [] data,boolean doWrite) {
             return write( tid, offset, data, Types.Enum._long.size(), data.length,
                     new Command.RwLongs().init(doWrite) );
         }
@@ -336,7 +336,7 @@ public class Db4j implements Serializable {
          * add it to tid (if non-null) at offset
          * return the array of commands that have been created and added to tid
          */
-        public <TT,SS extends Command.RwArray<TT,SS>> SS []
+        <TT,SS extends Command.RwArray<TT,SS>> SS []
                 write(Transaction tid,long offset,TT data,int siz,int length,SS cmd) {
             long end = offset + length * siz;
             long blockEnd = (offset&~bm)+bs;
@@ -362,7 +362,7 @@ public class Db4j implements Serializable {
             }
             return cmds;
         }
-        public void print(String fmt,int nc,long [] vals) {
+        void print(String fmt,int nc,long [] vals) {
             int nv = vals.length;
             for (int kk = 0; kk < nv;) {
                 int nt = Math.min( nv-kk, nc );
@@ -409,7 +409,7 @@ public class Db4j implements Serializable {
          *   base (ie, base is aligned)
          * fixme -- need to verify that the locals aren't split across page boundries
          */
-        public class CreateTask extends Task {
+        class CreateTask extends Task {
             public void task() throws Pausable {
                 live = true;
                 byte [] raw = org.srlutils.Files.save(Db4j.this );
@@ -559,7 +559,7 @@ public class Db4j implements Serializable {
         }
         
         
-        public class HunkResolver extends Example.Resolver {
+        class HunkResolver extends Example.Resolver {
             public synchronized Registration registerImplicit(Class type) {
 		Registration reg = getRegistration(type);
 		if (reg != null)
@@ -576,7 +576,7 @@ public class Db4j implements Serializable {
             
         }
 
-        public static class RegPair implements HunkLog.Loggable {
+        static class RegPair implements HunkLog.Loggable {
             public int id;
             public String name;
             public void restore(Db4j hunker) {
@@ -597,28 +597,28 @@ public class Db4j implements Serializable {
         }
 
         /** set the command to the offset */
-        public void put(long offset,Command cmd) {
+        void put(long offset,Command cmd) {
             cmd.offset = offset;
         }
 
         /** add and return the command to the transaction at the offset */
-        public <TT extends Command> TT put(Transaction tid,long offset,TT cmd) {
+        <TT extends Command> TT put(Transaction tid,long offset,TT cmd) {
             cmd.offset = offset;
             return put(tid,cmd);
         }
 
         /** add and return the command to the transaction */
-        public <TT extends Command> TT put(Transaction tid,TT cmd) {
+        <TT extends Command> TT put(Transaction tid,TT cmd) {
             tid.add( cmd);
             return cmd;
         }
 
         /** throw a request to large runtime exception */
-        public void throwRTL(int nreq,long avail) {
+        void throwRTL(int nreq,long avail) {
             throw Simple.Exceptions.rte(
                     null, "request too large -- req: %d, avail: %d", nreq, avail );
         }
-        public int [] request(int [] reqs,Transaction tid) throws Pausable {
+        int [] request(int [] reqs,Transaction tid) throws Pausable {
             Command.RwInt cmd = put( tid, loc.nblocks.read() );
             if (tid.submit()) kilim.Task.yield();
             int nblock = cmd.val;
@@ -630,14 +630,14 @@ public class Db4j implements Serializable {
             put( tid, loc.nblocks.write( nblock ) );
             return blocks;
         }
-        public int nblocks(Transaction tid) {
+        int nblocks(Transaction tid) {
             Command.RwInt cmd = put( tid, loc.nblocks.read() );
             int nb = (tid.submit()) ? -1:cmd.val;
             return nb;
         }
 
         /** request a range of nreq hunks, guaranteed to be contiguous if true */
-        public int [] request(int nreq,boolean contiguous,Transaction tid) throws Pausable {
+        int [] request(int nreq,boolean contiguous,Transaction tid) throws Pausable {
             Command.RwInt cmd = put( tid, loc.nblocks.read() );
             if (tid.submit()) kilim.Task.yield();
             int nblock = cmd.val;
@@ -677,9 +677,9 @@ public class Db4j implements Serializable {
 
             try { chan.force( false ); }
             catch (IOException ex) { System.out.println( "sync failed" ); }
-            System.out.format(
-                    "shutdown.stats -- disk:%5d, diskTime:%8.3f, diskWait:%8.3f, back:%5d\n",
-                    runner.nwait, runner.diskTime, runner.waitTime, qrunner.nback );
+            Stats stats = runner.stats;
+            System.out.format("shutdown.stats -- disk:%5d, diskTime:%8.3f, diskWait:%8.3f, back:%5d\n",
+                    stats.nwait, stats.diskTime, stats.waitTime, qrunner.nback );
         }
         /** force the cache to be committed to disk ... on return the commit is complete */
         public void forceCommit(int delay) {
@@ -798,11 +798,14 @@ public class Db4j implements Serializable {
         }
         
         /** task has completed (or been cancelled???) - clean up the accounting info */
-        public void cleanupTask(Db4j.Task task) {
+        void cleanupTask(Db4j.Task task) {
             qrunner.tasks.remove(task);
             qrunner.ntask++;
             qrunner.state.completedTasks++;
         }
+        public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
+        public int stats2() { return runner.stats.nwait; }
+
 
     /** 
      * base class for userspace queries
@@ -1385,6 +1388,12 @@ public class Db4j implements Serializable {
         }
     }
 
+    public static class Stats {
+        public int totalReads = 0;
+        public int totalWrites = 0;
+        public int nwait = 0;
+        public double diskTime = 0, waitTime = 0;
+    }
 
     /**
      *  thread that handles disk io
@@ -1394,10 +1403,7 @@ public class Db4j implements Serializable {
         public Timer timer = new Timer();
         public boolean finished = false;
         public ByteBuffer buf;
-        public int totalReads = 0;
-        public int totalWrites = 0;
-        public int nwait = 0;
-        public double diskTime = 0, waitTime = 0;
+        public Stats stats = new Stats();
         public Runner(Db4j $hunker) {
             hunker = $hunker;
             buf = ByteBuffer.allocate( hunker.bs );
@@ -1414,12 +1420,12 @@ public class Db4j implements Serializable {
                     // fixme::spinlock -- use a que ???
                     if (hunker.pending == null) {
                         org.srlutils.Simple.sleep(Db4j.sleeptime);
-                        nwait++;
+                        stats.nwait++;
                     }
                     else {
                         double t1=0, t2=0;
                         if (debug.dtime) t1 = timer.tval();
-                        waitTime += t1-t0;
+                        stats.waitTime += t1-t0;
                         Generation map = hunker.pending;
                         int mts = map.iotree.size();
                         if (debug.tree >= 2) {
@@ -1427,7 +1433,7 @@ public class Db4j implements Serializable {
                         }
                         process( map );
                         if (debug.dtime) t2 = timer.tval();
-                        diskTime += t2-t1;
+                        stats.diskTime += t2-t1;
                         if (debug.tree >= 1) {
                             if (debug.tree >= 2) System.out.println();
                             System.out.format(
@@ -1545,7 +1551,7 @@ public class Db4j implements Serializable {
                             continue;
                         }
                         if (dio) DioNative.fadvise( ufd, offset, bs, DioNative.Enum.dontneed );
-                        totalReads++;
+                        stats.totalReads++;
                     }
                     boolean done = block.runBlock(hunker,data);
 
@@ -1805,7 +1811,7 @@ public class Db4j implements Serializable {
         void doWrite(Db4j hunker,byte [] data) throws IOException {
             if (data==null) Simple.softAssert(false);
             hunker.runner.write( kblock, ByteBuffer.wrap(data) );
-            hunker.runner.totalWrites++;
+            hunker.runner.stats.totalWrites++;
         }
         public void postRun(Db4j hunker) throws IOException {
             if (writ && commit) {

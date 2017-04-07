@@ -20,7 +20,7 @@ public class FastOverflow {
     HunkArray.I map;
     void load() {
         hunker = Db4j.load(filename);
-        hunker.qrunner.genc = Integer.MAX_VALUE - (1<<23);
+//        hunker.qrunner.genc = Integer.MAX_VALUE - (1<<23);
         map = (HunkArray.I) hunker.arrays.get(0);
     }
     long sum(int [] vals) {
