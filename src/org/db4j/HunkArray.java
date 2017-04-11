@@ -20,7 +20,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     // transient public int hunks[];
     /** block size, entry size (fixme -- needs to be calc'd based on type), entries per hunk */
     public int bs, es = 8, eph;
-    transient public Db4j hunker;
+    transient public Db4j db4j;
     public String name;
     transient public long hunksBase;
     transient public Vars loc;
@@ -80,10 +80,10 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
 
     
 
-    public ZZ set(Db4j _hunker) {
-        hunker = _hunker;
+    public ZZ set(Db4j _db4j) {
+        db4j = _db4j;
         loc = new Vars();
-        bs = hunker.bs;
+        bs = db4j.bs;
         es = cmd().size();
         eph = bs / es;
         initConstants();
@@ -103,7 +103,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
      */
     public ZZ init(String $name) {
         name = $name;
-        hunker.register( this );
+        db4j.register( this );
         return (ZZ) this;
     }
 
@@ -113,12 +113,12 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         return cap;
     }
     public void createCommit(long locBase) {
-        loc.locals.set( hunker, locBase );
+        loc.locals.set(db4j, locBase );
         hunksBase = locBase + loc.locals.size();
     }
     public void postInit(Transaction tid) throws Pausable {
-        hunker.put( tid, loc.nhunks.write(0) );
-        hunker.put( tid, loc.nlive.write(0) );
+        db4j.put( tid, loc.nhunks.write(0) );
+        db4j.put( tid, loc.nlive.write(0) );
     }
     public void postLoad(Transaction tid) throws Pausable {}
 
@@ -135,7 +135,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
             Command.RwLongs cmd = new Command.RwLongs().init(true);
             cmd.range( kdata, length );
             cmd.set( data );
-            hunker.put( tid, offset(k1, tid), cmd );
+            db4j.put( tid, offset(k1, tid), cmd );
             cmds[ii++] = cmd;
             kdata += length;
         }
@@ -155,7 +155,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
             Command.RwArray cmd = tmp.dup();
             cmd.range(kdata,length);
             cmd.set(data);
-            hunker.put( tid, offset(k1, tid), cmd );
+            db4j.put( tid, offset(k1, tid), cmd );
             cmds[ii++] = cmd;
             kdata += length;
         }
@@ -166,13 +166,13 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     /** use Command.Init to initialize pages as they're "appended" */
     public void initPages(long index,Transaction tid) throws Pausable {
         int khunk = (int) ((index-1) / eph);
-        Command.RwInt nlive = hunker.put( tid, loc.nlive.read() );
+        Command.RwInt nlive = db4j.put( tid, loc.nlive.read() );
         if (tid.submit()) kilim.Task.yield();
         if (khunk >= nlive.val) {
             long ko = khunk * eph;
             long offset = offset(ko,tid);
-            hunker.put( tid, offset, new Command.Init() );
-            hunker.put( tid, loc.nlive.write(khunk+1) );
+            db4j.put( tid, offset, new Command.Init() );
+            db4j.put( tid, loc.nlive.write(khunk+1) );
         }
     }
 
@@ -181,7 +181,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     /** allocate space in the array to ensure that index is contained */
     public void allocHunks(long index,Transaction tid) throws Pausable {
         int khunk = (int) ((index-1) / eph);
-        Command.RwInt cmd = hunker.put( tid, loc.nhunks.read() );
+        Command.RwInt cmd = db4j.put( tid, loc.nhunks.read() );
         if (tid.submit()) kilim.Task.yield();
         int nhunks = cmd.val;
         if (khunk < nhunks) return;
@@ -192,12 +192,12 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         if (false && khunk < maxSlots) {
             int knext = khunk+1;
             int ngrow = knext - nhunks;
-            int kpage = hunker.request( ngrow, true, tid )[0];
+            int kpage = db4j.request( ngrow, true, tid )[0];
             int [] kblocks = new int[ngrow];
             for (int ii = 0; ii < ngrow; ii++) kblocks[ii] = kpage + ii;
 
-            hunker.iocmd( tid, hunksBase+nhunks*bph, kblocks, true );
-            hunker.put( tid, loc.nhunks.write(knext) );
+            db4j.iocmd( tid, hunksBase+nhunks*bph, kblocks, true );
+            db4j.put( tid, loc.nhunks.write(knext) );
 
             // fixme -- should we clear, commit and rollback ???
             return;
@@ -237,12 +237,12 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         boolean useRestart = false;
 
         if (useRestart) tid.clear();
-        hunker.put( tid, loc.nhunks.read() );
+        db4j.put( tid, loc.nhunks.read() );
 
-        int [] kblocks = hunker.request( reqs, tid );
+        int [] kblocks = db4j.request( reqs, tid );
 
-        hunker.iocmd( tid, hunksBase + sb1*bph, kblocks, true );
-        hunker.put( tid, loc.nhunks.write(knext) );
+        db4j.iocmd( tid, hunksBase + sb1*bph, kblocks, true );
+        db4j.put( tid, loc.nhunks.write(knext) );
         if (useRestart) {
             Db4j.restart();
             tid.restart = true;
@@ -302,7 +302,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
             int sbi = sbIndex();
             long offset = hunksBase + sbi*bph;
             Command.RwInt cmd = new Command.RwInt();
-            hunker.put( tid, offset, cmd );
+            db4j.put( tid, offset, cmd );
             if (tid.submit()) kilim.Task.yield();
             int block = cmd.val;
             return block + khunk % sbsize;
@@ -323,13 +323,13 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         boolean useInit = true;
         if (useInit) initPages( index+es, tid );
         long offset = offset( index, tid );
-        hunker.put( tid, offset, cmd );
+        db4j.put( tid, offset, cmd );
         return cmd;
     }
 
     public CC get(Transaction tid,long index,CC cmd) throws Pausable {
         long offset = offset( index, tid );
-        hunker.put( tid, offset, cmd );
+        db4j.put( tid, offset, cmd );
         return cmd;
     }
     public CC get(Transaction tid,long index) throws Pausable {
@@ -341,12 +341,12 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     public int hunkSlot(int index,Transaction tid) throws Pausable {
         long pos = hunksBase + index*bytesPerHunk;
         Command.RwInt cmd = new Command.RwInt().init(false);
-        hunker.put( tid, pos, cmd );
+        db4j.put( tid, pos, cmd );
         if (tid.submit()) kilim.Task.yield();
         return cmd.val;
     }
     
-    public long hunkOffset(int page) { return ((long) page) << hunker.bb; }
+    public long hunkOffset(int page) { return ((long) page) << db4j.bb; }
     public long offset(long index, Transaction tid) throws Pausable {
         int kh = (int) (index / eph);
         int ke = (int) (index % eph);
@@ -367,7 +367,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         return String.format( "[[%8d:%5d --> (%5d::%12d) %8d, %8d]]", kh, ke, sbi, pntr, kb, offset );
     }
     public void info2(Transaction tid) throws Pausable {
-        Command.RwInt cmd = hunker.put( tid, loc.nhunks.read() );
+        Command.RwInt cmd = db4j.put( tid, loc.nhunks.read() );
         if (tid.submit()) kilim.Task.yield();
         int nhunks = cmd.val;
         MetaHunk meta = new MetaHunk();

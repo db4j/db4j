@@ -63,10 +63,10 @@ public abstract class Command implements Cloneable, Iterable<Command> {
         public void remove() { throw new UnsupportedOperationException(); }
     }
     
-    public static void print(Db4j hunker,boolean iterate,Iterable<Command> cmds) {
+    public static void print(Db4j db4j,boolean iterate,Iterable<Command> cmds) {
         for (Command cmd : cmds) {
-            long kp = cmd.offset >> hunker.bb;
-            long ko = cmd.offset & hunker.bm;
+            long kp = cmd.offset >> db4j.bb;
+            long ko = cmd.offset & db4j.bm;
             String info = cmd.info();
             char status = cmd.write() ? 'w':'r';
             if (cmd.done()) status = Character.toUpperCase(status);
@@ -98,7 +98,7 @@ public abstract class Command implements Cloneable, Iterable<Command> {
     public abstract void read(Page buf,int offset);
     public abstract void write(Page buf,int offset);
 
-    public void run(int offset,Page buf,Db4j hunker,boolean defer) {
+    public void run(int offset,Page buf,Db4j db4j,boolean defer) {
         boolean write = write();
         // fixme::kludge -- this works with the current set of commands (Nop isn't a write, Init overrides)
         if (write && buf.data==null) return;
@@ -107,7 +107,7 @@ public abstract class Command implements Cloneable, Iterable<Command> {
     }
     public void handle(Db4j.QueRunner qr) { qr.handleWrite(this); }
 
-    public void book(Db4j hunker) {}
+    public void book(Db4j db4j) {}
     public void clean() {}
 
     /** return a clone of the command */
@@ -131,7 +131,7 @@ public abstract class Command implements Cloneable, Iterable<Command> {
 
     public static class Nop extends Command {
         boolean done, write = false;
-        public void book(Db4j hunker) { done = true; }
+        public void book(Db4j db4j) { done = true; }
         public boolean write() { return write; }
         public int size() { return 0; }
         public boolean done() { return done; }
@@ -143,9 +143,9 @@ public abstract class Command implements Cloneable, Iterable<Command> {
         public byte [] data;
         { write = true; }
         public Init() {}
-        public void run(int offset,Page buf,Db4j hunker,boolean defer) {
-            if (true) { buf.data = new byte[hunker.bs]; return; }
-            if (data==null) data = new byte[hunker.bs];
+        public void run(int offset,Page buf,Db4j db4j,boolean defer) {
+            if (true) { buf.data = new byte[db4j.bs]; return; }
+            if (data==null) data = new byte[db4j.bs];
             buf.data = data;
         }
         public void handle(Db4j.QueRunner qr) { qr.handleInit(this); }
@@ -166,14 +166,14 @@ public abstract class Command implements Cloneable, Iterable<Command> {
         public boolean done() { return (status & done) != 0; }
         public boolean write() { return (status & write) != 0; }
 
-        public void book(Db4j hunker) {
+        public void book(Db4j db4j) {
             status |= done;
         }
         public SS yield() throws Pausable {
             txn.submitYield();
             return (SS) this;
         }
-        public SS add(Db4j hunker,Db4j.Transaction txn) { hunker.put(txn,this); return (SS) this; }
+        public SS add(Db4j db4j,Db4j.Transaction txn) { db4j.put(txn,this); return (SS) this; }
     }
 
 

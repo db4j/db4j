@@ -62,15 +62,15 @@ public class Chat1 extends Database {
                 }
             }.start().joinb();
             k2 = new Btrees.IS();
-            hello.hunker.submitCall(tid -> {
-                tid.hunker.create(tid,k2.init("hello.kryoMap"));
+            hello.db4j.submitCall(tid -> {
+                tid.db4j.create(tid,k2.init("hello.kryoMap"));
             }).awaitb();
-            hello.hunker.submitCall(tid -> {
+            hello.db4j.submitCall(tid -> {
                 k2.insert(tid,707,"hello world");
             }).awaitb();
         }
-        k3 = (Btrees.IS) hello.hunker.lookup("hello.kryoMap");
-        String klass = hello.hunker.submit(tid -> k3.find(tid,707)).awaitb().val;
+        k3 = (Btrees.IS) hello.db4j.lookup("hello.kryoMap");
+        String klass = hello.db4j.submit(tid -> k3.find(tid,707)).awaitb().val;
         System.out.println(klass);
         System.exit(0);
     }

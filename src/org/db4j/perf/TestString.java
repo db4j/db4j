@@ -224,8 +224,8 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
             int size = r1.nextInt(0,maxSize);
             jo = timedLoop(size,jj,jo,operationsPerPass);
         }
-        hunker.shutdown();
-        hunker.close();
+        db4j.shutdown();
+        db4j.close();
     }
     public abstract void check(CC cc,long key1,String sprout1);
     public static class Key extends TestString<SI.Data> {
@@ -276,14 +276,14 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
     }
     abstract CC ccset(CC cc,long key,int index);
     String filename = "./db_files/b6.mmap";
-    Db4j hunker;
+    Db4j db4j;
     public void init() {
-        hunker = new Db4j().init( filename, null ); // 1L << 32 );
-        map.set( hunker );
+        db4j = new Db4j().init( filename, null ); // 1L << 32 );
+        map.set(db4j );
         map.init("Bushy Tree");
-        hunker.create();
-        hunker.fence(null,100);
-        hunker.forceCommit(100);
+        db4j.create();
+        db4j.fence(null,100);
+        db4j.forceCommit(100);
     }
     public long process(final int jo) {
         final long magic = r1.nextLong();
@@ -341,7 +341,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
             }
             
         };
-        new Task().offer(hunker);
+        new Task().offer(db4j);
         return magic;
     }
     

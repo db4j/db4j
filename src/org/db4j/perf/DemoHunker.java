@@ -82,13 +82,13 @@ public class DemoHunker {
             long [] ko = new long[ni];
             
 
-            public void rollback(Db4j hunker,boolean restart) {
+            public void rollback(Db4j db4j,boolean restart) {
                 nback++;
                 if (dbg) System.out.format( "demo.roll -- %5d %5d --> %5d %5d\n", i1, i2, k1, k2 );
-                super.rollback(hunker,restart);
+                super.rollback(db4j,restart);
             }
             public String report() {
-                return String.format( ", nback: %5d, nwait: %5d\n", nback, hunker.stats2() );
+                return String.format( ", nback: %5d, nwait: %5d\n", nback, db4j.stats2() );
             }
 
             public boolean postRun(boolean pre) {
@@ -146,7 +146,7 @@ public class DemoHunker {
         public void test() {
             new Query() { public void task() throws Pausable {
                 arrays[0].info2(tid);
-            }}.offer(hunker).awaitb();
+            }}.offer(db4j).awaitb();
         }
     }
 
@@ -172,7 +172,7 @@ public class DemoHunker {
             boolean success();
         }
         public void report(double tc,String report) {
-            int ios = hunker.stats();
+            int ios = db4j.stats();
             System.out.format( "Demo::%-10s - %5.2fs --> %5.1f iops, %5.2f iopt%s\n",
                     taskKlass.getSimpleName(), tc, 1.0*ios/tc, 1.0*ios/nn, report );
         }
@@ -237,24 +237,24 @@ public class DemoHunker {
             for (int ii = 0; ii < niter; ii++) {
                 task = Simple.Reflect.newInner( taskKlass, this );
                 Query t2;
-                hunker.submitQuery( t2 = task.set(ii,offsets,kv) );
+                db4j.submitQuery( t2 = task.set(ii,offsets,kv) );
                 if (! async) t2.awaitb();
             }
             while (done < niter) Simple.sleep(100);
-            hunker.sync();
+            db4j.sync();
             double tc = timer.tock();
             report( tc, task.report() );
-            hunker.dontneed();
+            db4j.dontneed();
             if (taskKlass==WriteTask.class && false)
                 new Query() { public void task() throws Pausable {
                     arrays[0].info2(tid);
-                }}.offer(hunker).awaitb();
+                }}.offer(db4j).awaitb();
         }
     }
 
     
     public static abstract class Demo<TT> implements Cloneable {
-        public Db4j hunker;
+        public Db4j db4j;
         public HunkArray.L [] arrays;
         public org.srlutils.rand.Source source = new org.srlutils.rand.Source();
         public int nstores, nn, niter;
@@ -266,7 +266,7 @@ public class DemoHunker {
         public boolean force = false;
         
         public void cleanup() {
-            hunker = null;
+            db4j = null;
             arrays = null;
         }
 
@@ -311,23 +311,23 @@ public class DemoHunker {
         public void start() {
             String name = mapFilename;
             //            name = "/dev/sdb2";
-            hunker = new Db4j();
+            db4j = new Db4j();
             File file = new File( name );
             if ( ! file.exists() || force ) {
                 // don't auto delete the file ... it takes forever to recreate it (limit of linux/ext3)
                 //                file.delete();
                 long fileSize = (size*8 + size*8/128)*nstores + (1<<20);
-                hunker.init( name, fileSize );
+                db4j.init( name, fileSize );
                 arrays = new HunkArray.L[ nstores ];
                 for (int ii = 0; ii < nstores; ii++)
-                    arrays[ii] = new HunkArray.L().set( hunker ).init( "stuff" + ii );
-                hunker.create();
+                    arrays[ii] = new HunkArray.L().set(db4j ).init( "stuff" + ii );
+                db4j.create();
             }
             else {
-                hunker = Db4j.load( name );
+                db4j = Db4j.load( name );
                 arrays = new HunkArray.L[ nstores ];
                 for (int ii = 0; ii < nstores; ii++)
-                    arrays[ii] = (HunkArray.L) hunker.lookup( ii );
+                    arrays[ii] = (HunkArray.L) db4j.lookup( ii );
             }
         }
         public TT run() {
@@ -336,13 +336,13 @@ public class DemoHunker {
                 start();
                 if (drop) DioNative.dropCache();
                 test();
-                if (dbg) hunker.info();
+                if (dbg) db4j.info();
 //                Simple.sleep(1000);
 //                hunker.forceCommit(10);
-                hunker.shutdown();
+                db4j.shutdown();
             }
             catch (Exception ex) { throw Simple.Exceptions.rte(ex); }
-            finally { hunker.close(); }
+            finally { db4j.close(); }
             return (TT) this;
         }
         public abstract void test();

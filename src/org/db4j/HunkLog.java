@@ -22,7 +22,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
 //    static final long serialVersionUID;
 
     
-    transient public Db4j hunker;
+    transient public Db4j db4j;
     public String name;
     transient public long hunksBase;
     transient public Vars loc;
@@ -43,12 +43,12 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
 
 
     public interface Loggable {
-        public void restore(Db4j hunker);
+        public void restore(Db4j db4j);
     }
     
 
-    public HunkLog set(Db4j _hunker) {
-        hunker = _hunker;
+    public HunkLog set(Db4j _db4j) {
+        db4j = _db4j;
         loc = new Vars();
         return this;
     }
@@ -59,7 +59,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
      */
     public HunkLog init(String $name) {
         name = $name;
-        hunker.register( this );
+        db4j.register( this );
         return this;
     }
 
@@ -68,20 +68,20 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
         return lsize;
     }
     public void createCommit(long locBase) {
-        loc.locals.set(hunker, locBase);
+        loc.locals.set(db4j, locBase);
     }
     transient int ngrow, tmpBase;
     public void postInit(Transaction tid) throws Pausable {
         ngrow = 8;
-        int base = hunker.request(ngrow, true, tid)[0];
+        int base = db4j.request(ngrow, true, tid)[0];
         tmpBase = base;
-        hunker.put( tid, loc.nhunks.write(ngrow) );
-        hunker.put(tid, loc.kbase.write(base) );
-        byte [] zeros = new byte[hunker.bs];
+        db4j.put( tid, loc.nhunks.write(ngrow) );
+        db4j.put(tid, loc.kbase.write(base) );
+        byte [] zeros = new byte[db4j.bs];
         for (int khunk=0; khunk < ngrow; khunk++)
         {
-            hunker.put(tid, (0L+khunk+base) << hunker.bb, new Command.Init());
-            hunker.put(tid, (0L+khunk+base) << hunker.bb, new Command.RwBytes().init(true).set(zeros));
+            db4j.put(tid, (0L+khunk+base) << db4j.bb, new Command.Init());
+            db4j.put(tid, (0L+khunk+base) << db4j.bb, new Command.RwBytes().init(true).set(zeros));
         }
     }
     public void postLoad(Transaction tid) throws Pausable {
@@ -102,11 +102,11 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
     public void restore(Transaction tid) throws Pausable {
         byte [] data = get(tid);
         Input buffer = new Input(data);
-        Example.MyKryo kryo = hunker.kryo();
+        Example.MyKryo kryo = db4j.kryo();
         while (buffer.position() < data.length) {
             Loggable obj = (Loggable) kryo.readClassAndObject(buffer);
             if (obj==null) break;
-            obj.restore(hunker);
+            obj.restore(db4j);
             position = buffer.position();
         }
     }
@@ -118,22 +118,22 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
     // so the caller must provide a means for detecting termination
     // eg, NUL-terminated or an included length
     public void set(int offset,byte [] data) throws LogFullException {
-        if (offset + data.length > ngrow*hunker.bs)
+        if (offset + data.length > ngrow*db4j.bs)
             throw new LogFullException();
-        long total = (tmpBase << hunker.bb) + offset;
-        Command.RwBytes[] cmds = hunker.iocmd(null,total,data,true);
+        long total = (tmpBase << db4j.bb) + offset;
+        Command.RwBytes[] cmds = db4j.iocmd(null,total,data,true);
         for (Command.RwBytes cmd : cmds)
-            hunker.qrunner.handleWrite(cmd);
+            db4j.qrunner.handleWrite(cmd);
     }
     
     public byte [] get(Transaction tid) throws Pausable {
-        Command.RwInt base = hunker.put(tid, loc.kbase.read());
-        Command.RwInt hunks = hunker.put(tid, loc.nhunks.read());
+        Command.RwInt base = db4j.put(tid, loc.kbase.read());
+        Command.RwInt hunks = db4j.put(tid, loc.nhunks.read());
         tid.submitYield();
         tmpBase = base.val;
         ngrow = hunks.val;
-        byte [] data = new byte[ngrow*hunker.bs];
-        Command.RwBytes[] cmds = hunker.iocmd(tid,base.val << hunker.bb,data,false);
+        byte [] data = new byte[ngrow*db4j.bs];
+        Command.RwBytes[] cmds = db4j.iocmd(tid,base.val << db4j.bb,data,false);
         tid.submitYield();
         return data;
     }
@@ -181,7 +181,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
         }
         
         public void route() {
-            hunker.submitCall(tid -> {
+            db4j.submitCall(tid -> {
                 int num = count.get(tid);
                 users.insert(tid,num,randUser());
                 count.plus(tid,1);
@@ -191,7 +191,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
         
         public String info() {
             String val =
-            hunker.submit(tid -> {
+            db4j.submit(tid -> {
                 String last = null;
                 User [] all = users.getall(tid).vals().toArray(new User[0]);
                 for (User user : all) {
@@ -214,7 +214,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
             hello.start("./db_files/hunk2.mmap",true);
             for (int ii = 0; ii < 3000; ii++)
                 hello.route();
-            hello.hunker.fence(null,100);
+            hello.db4j.fence(null,100);
             hello.info();
             hello.shutdown(true);
         }

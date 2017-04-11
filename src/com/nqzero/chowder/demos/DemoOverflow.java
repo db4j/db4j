@@ -24,20 +24,20 @@ import org.srlutils.Util;
  */
 public class DemoOverflow {
     String filename = "./db_files/b6.mmap";
-    Db4j hunker;
+    Db4j db4j;
     HunkArray.I map;
     void load() {
-        hunker = Db4j.load(filename);
-        map = (HunkArray.I) hunker.lookup(0);
+        db4j = Db4j.load(filename);
+        map = (HunkArray.I) db4j.lookup(0);
     }
     public void init() {
-        hunker = new Db4j().init( filename, null );
+        db4j = new Db4j().init( filename, null );
         map = new HunkArray.I();
-        map.set( hunker );
+        map.set(db4j );
         map.init("Player Overflow");
-        hunker.create();
-        hunker.fence(null,100);
-        hunker.forceCommit(100);
+        db4j.create();
+        db4j.fence(null,100);
+        db4j.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source();
     { 
@@ -69,9 +69,9 @@ public class DemoOverflow {
                 public void task() throws Pausable {
                     map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
-            }.offer(hunker);
+            }.offer(db4j);
         }
-        hunker.fence(null,10);
+        db4j.fence(null,10);
         System.out.println("insert complete");
     }
     long running;
@@ -85,7 +85,7 @@ public class DemoOverflow {
     public void dorotate() {
         for (int ii = 0; ii < np; ii++)
             rot0(ii);
-        hunker.fence(null,10);
+        db4j.fence(null,10);
     }
     void swap1(int [] d1,int [] d2,int k1,int k2) {
         int delta = (d1[k1] - d2[k2])/2;
@@ -116,11 +116,11 @@ public class DemoOverflow {
                 swap1(data,data,vals[0],vals[1]);
                 map.setdata(tid,kplayer*nv,data,new Command.RwInts().init(true),nv);
             }
-        }.offer(hunker);
+        }.offer(db4j);
     }
     public void close() {
-        hunker.shutdown();
-        hunker.close();
+        db4j.shutdown();
+        db4j.close();
     }
     public static class Demo {
         public static void main(String [] args) {

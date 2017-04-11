@@ -516,7 +516,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     public static class Demo {
         Btrees.IA lt;
         String filename = "./db_files/b6.mmap";
-        Db4j hunker;
+        Db4j db4j;
         int [] keys;
         public static void main2(String [] args) {
             Long seed = null;
@@ -524,13 +524,13 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             new Demo().demo();
         }
         public void demo() {
-            hunker = new Db4j().init( filename, null );
+            db4j = new Db4j().init( filename, null );
             lt = new Btrees.IA();
-            lt.set( hunker );
+            lt.set(db4j );
             lt.init("Bushy Tree");
-            hunker.create();
-            hunker.fence(null,100);
-            hunker.forceCommit(100);
+            db4j.create();
+            db4j.fence(null,100);
+            db4j.forceCommit(100);
             final int ipt=8, bpe=770, size=1<<25, len=Simple.Rounder.rup(size/bpe,ipt);
             keys = Rand.source.rand( new int[len], 0, 1<<30 );
             for (int ii=0; ii < keys.length; ii += ipt) {
@@ -546,16 +546,16 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                         lt.context().set(tid).set(key,bytes).insert(lt);
                     }
                 }};
-                new Insert().offer(hunker);
+                new Insert().offer(db4j);
             }
-            hunker.fence(null,100);
-            hunker.shutdown();
-            hunker.close();
-            hunker = Db4j.load(filename);
-            lt = (Btrees.IA) hunker.arrays.get(0);
+            db4j.fence(null,100);
+            db4j.shutdown();
+            db4j.close();
+            db4j = Db4j.load(filename);
+            lt = (Btrees.IA) db4j.arrays.get(0);
             check(keys.length);
-            hunker.shutdown();
-            hunker.close();
+            db4j.shutdown();
+            db4j.close();
             lt.clear();
         }
         void check(int nn) {
@@ -570,36 +570,36 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                         Simple.softAssert(val==i2 || keys[val]==key);
                     }
                 }};
-                new Check().offer(hunker);
+                new Check().offer(db4j);
             }
-            hunker.fence(null,100);
+            db4j.fence(null,100);
         }
     }
     public static class Mindir2 extends BtTests2 {
         DF2 lt;
         String filename = "./db_files/b6.mmap";
-        Db4j hunker;
+        Db4j db4j;
         boolean ok = true;
         boolean nocheck = true;
         boolean reopen = false;
         { sntext = "put get rem chk"; }
         public void init2() {
-            hunker = new Db4j().init( filename, null ); // 1L << 32 );
+            db4j = new Db4j().init( filename, null ); // 1L << 32 );
             lt = new DF2();
-            lt.set( hunker );
+            lt.set(db4j );
             lt.init("Bushy Tree");
-            hunker.create();
-            hunker.fence(null,100);
-            hunker.forceCommit(100);
+            db4j.create();
+            db4j.fence(null,100);
+            db4j.forceCommit(100);
         }
         public void run(int stage) throws Exception {
             if (reopen)
-                hunker = Db4j.load(filename);
-            lt = (DF2) hunker.arrays.get(0);
+                db4j = Db4j.load(filename);
+            lt = (DF2) db4j.arrays.get(0);
             stage(stage);
             if (reopen) {
-                hunker.shutdown();
-                hunker.close();
+                db4j.shutdown();
+                db4j.close();
             }
         }
         public void stage(final int stage) {
@@ -642,14 +642,14 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                     }
                 }
                 };
-                task.offer(hunker);
+                task.offer(db4j);
                 if (chk) task.awaitb();
             }
-            hunker.fence(null,10);
+            db4j.fence(null,10);
         }
         public boolean finish() throws Exception {
-            hunker.shutdown();
-            hunker.close();
+            db4j.shutdown();
+            db4j.close();
             lt.clear();
             return ok;
         }

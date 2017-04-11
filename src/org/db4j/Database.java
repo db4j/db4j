@@ -11,9 +11,9 @@ import org.srlutils.Simple;
 
 /** a generic database that takes it's configuration from it's variables */
 public class Database {
-    public Db4j hunker;
+    public Db4j db4j;
     public Table [] tables;
-    public Database init(Db4j $hunker) { hunker = $hunker; return this; }
+    public Database init(Db4j $db4j) { db4j = $db4j; return this; }
     public static class Self extends Table {}
     public Self self = new Self();
 
@@ -22,7 +22,7 @@ public class Database {
     }
 
     public <TT> Db4j.LambdaQuery<TT> future(Db4j.Queryable<TT> body) throws Pausable {
-        return hunker.submit(body);
+        return db4j.submit(body);
     }
 
     
@@ -47,28 +47,28 @@ public class Database {
         for (Field field : fields) {
             Table table = (Table) Simple.Reflect.alloc(  field.getType() );
             tables[ ktable++ ] = table;
-            table.init( base(field), hunker );
+            table.init(base(field), db4j );
             table.build(table,overwrite);
             Simple.Reflect.set( this, field.getName(), table );
         }
-        self.init(null,hunker);
+        self.init(null,db4j);
         self.build(this,overwrite);
     }
     public synchronized void shutdown(boolean orig) {
         if (orig && shutdownThread != null)
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
         shutdownThread = null;
-        hunker.shutdown();
-        hunker.close();
+        db4j.shutdown();
+        db4j.close();
     }
     Thread shutdownThread;
     public Database start(String base,boolean init) {
-        hunker = init ? new Db4j() : Db4j.load( base );
-        hunker.userClassLoader = this.getClass().getClassLoader();
+        db4j = init ? new Db4j() : Db4j.load( base );
+        db4j.userClassLoader = this.getClass().getClassLoader();
         if (init) {
-            hunker.init( base, -(2L<<30) );
+            db4j.init( base, -(2L<<30) );
             build(true);
-            hunker.create();
+            db4j.create();
         }
         else load();
         shutdownThread = new Thread(new Runnable() {
@@ -86,12 +86,12 @@ public class Database {
         int ktable = 0;
         for (Field field : fields) {
             Table table = (Table) Simple.Reflect.alloc(  field.getType() );
-            table.init( base(field), hunker );
+            table.init(base(field), db4j );
             table.load(table);
             tables[ ktable++ ] = table;
             Simple.Reflect.set( this, field.getName(), table );
         }
-        self.init(null,hunker);
+        self.init(null,db4j);
         self.load(this);
     }
     /** close the resourses associated with the database */
@@ -100,7 +100,7 @@ public class Database {
     }
     public abstract class Task<TT extends Task> extends Db4j.Query<TT> {
         // fixme -- report bug in kilim. if task() is added here as abstract, weave fails
-        public TT offer() { return (TT) hunker.submitQuery(this); }
+        public TT offer() { return (TT) db4j.submitQuery(this); }
     }
 
     
@@ -109,10 +109,10 @@ public class Database {
     /** a colection of columns */
     public static class Table {
         String root;
-        public Db4j hunker;
+        public Db4j db4j;
         public Hunkable [] columns;
-        public Table init(String _root,Db4j hunker) {
-            this.hunker = hunker;
+        public Table init(String _root,Db4j db4j) {
+            this.db4j = db4j;
             root = _root;
             return this;
         }
@@ -122,10 +122,10 @@ public class Database {
             int ktable = 0;
             for (Field field : fields) {
                 String name = filename(field);
-                Hunkable composite = hunker.lookup( name );
+                Hunkable composite = db4j.lookup( name );
                 if (overwrite || composite == null) {
                     composite = (Hunkable) Simple.Reflect.alloc( field.getType() );
-                    composite.set( hunker );
+                    composite.set(db4j );
                     composite.init( name );
                 }
                 columns[ ktable++ ] = composite;
@@ -140,7 +140,7 @@ public class Database {
             for (Field field : fields) {
                 Hunkable composite = null;
                 String filename = filename(field);
-                composite = (Hunkable) hunker.lookup( filename );
+                composite = (Hunkable) db4j.lookup( filename );
                 if (composite == null) {
                     String err = String.format( "failed to find Hunkable: %s, as field: %s",
                             filename, field.getName() );

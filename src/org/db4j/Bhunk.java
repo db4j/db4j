@@ -28,7 +28,7 @@ import org.srlutils.btree.TestDF;
 public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet> 
     implements Serializable, Hunkable<Bhunk>
 {
-    transient public Db4j hunker;
+    transient public Db4j db4j;
     transient public Vars loc;
     transient byte [][] pages = new byte[1<<16][];
     int knext = 1;
@@ -67,7 +67,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         if (page==null) {
             LocalCommand cmd = new LocalCommand();
             cmd.offset = loc.locals.base;
-            hunker.put( context.txn, cmd );
+            db4j.put( context.txn, cmd );
             if (context.txn.submit())
                 kilim.Task.yield();
             context.depth = cmd.depth;
@@ -75,7 +75,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             page = getPage(kpage,context,context.depth==0);
         }
         else
-            hunker.put( context.txn, loc.kroot.write(page.kpage) );
+            db4j.put( context.txn, loc.kroot.write(page.kpage) );
         return page;
     }
     /** read a page directly from the file, ie without hunker, for debugging */
@@ -94,7 +94,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             Command.Reference refcmd = new Command.Reference().init(false);
 //            Command.RwBytes cmd = new Command.RwBytes().init(false).range( 0, hunker.bs );
     //        cmd.msg = "Bhunk.get:" + kpage;
-            hunker.put( cc.txn, offset(kpage,0), refcmd );
+            db4j.put( cc.txn, offset(kpage,0), refcmd );
             if (cc.txn.submit()) kilim.Task.yield();
             page = newPage(leaf,cc,false);
             page.buf = refcmd.data;
@@ -105,13 +105,13 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         if (extraChecks) Simple.softAssert(kpage > 0);
         return page;
     }
-    public long offset(int kpage,int index) { return (((long) kpage) << hunker.bb) + index; }
+    public long offset(int kpage,int index) { return (((long) kpage) << db4j.bb) + index; }
     int d2, r2;
     public void depth(int level,CC context) throws Pausable {
         context.depth = level;
         d2 = level;
-        if (!fakeLoc) hunker.put( context.txn, loc.depth.write(level) );
-        if (!fakeLoc & stuff) hunker.put( context.txn, loc.stuff.write(level+1) );
+        if (!fakeLoc) db4j.put( context.txn, loc.depth.write(level) );
+        if (!fakeLoc & stuff) db4j.put( context.txn, loc.stuff.write(level+1) );
     }
     public void split(Sheet src,Sheet dst) { src.split(dst); }
     public int shift(Sheet page, int ko) { return page.shift(ko); }
@@ -128,10 +128,10 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             pages[kpage] = page.buf;
         }
         else {
-            kpage = hunker.request( 1, true, cc.txn )[0];
+            kpage = db4j.request( 1, true, cc.txn )[0];
             Command.Init cmd = new Command.Init();
             cmd.data = page.buf; // fixme -- does this really work ???
-            hunker.put( cc.txn, offset(kpage,0), cmd );
+            db4j.put( cc.txn, offset(kpage,0), cmd );
         }
         page.kpage = kpage;
         page.flag |= copy;
@@ -157,7 +157,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         InsertCommand set(int $ko,Sheet $page,CC $cc) { ko=$ko; page=$page; cc=$cc; return this; }
         public void read(Page buf,int offset) { throw Simple.Exceptions.rte(null,"cmd is write only"); }
         public void write(Page buf,int offset) {}
-        public void run(int offset,Page buf,Db4j hunker,boolean defer) {
+        public void run(int offset,Page buf,Db4j db4j,boolean defer) {
             if (defer) buf.dupify();
             page.buf = buf.data;
             page.load();
@@ -194,7 +194,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             while (!xo.same(z2)) {
                 int kpage = xo.page.dexs(xo.ko);
                 Command.Reference refcmd = new Command.Reference().init(false);
-                hunker.put( context.txn, offset(kpage,0), refcmd );
+                db4j.put( context.txn, offset(kpage,0), refcmd );
                 advance(xo,level,context);
             }
             context.txn.submitYield();
@@ -221,7 +221,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             page.commit();
         }
         else
-            hunker.put( context.txn, offset(page.kpage,0), cmd );
+            db4j.put( context.txn, offset(page.kpage,0), cmd );
     }
     // in theory, we can defer applying the delete until it's needed
     // which would save a copy of the data block for simple tasks (perhaps a 50% savings)
@@ -230,7 +230,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     private int delete_deferred(Sheet page,int index,CC context) {
         if (page.isset(copy)) return page.delete(index);
         Command cmd = new InsertCommand().set(index,page,context);
-        hunker.put( context.txn, offset(page.kpage,0), cmd );
+        db4j.put( context.txn, offset(page.kpage,0), cmd );
         return index < page.num-1 ? index : (index==0 ? 0:index-1);
     }
     public void prep(Sheet page) {
@@ -247,7 +247,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         cmd.data = page.buf;
         int kpage = page.kpage;
         if (useCopy & false) context.txn.cleanse(kpage);
-        hunker.put( context.txn, offset(kpage,0), cmd );
+        db4j.put( context.txn, offset(kpage,0), cmd );
     }
     public void postInit(Transaction tid) throws Pausable {
         init(context().set(tid));
@@ -255,17 +255,17 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     public void postLoad(Transaction tid) throws Pausable {}
     public Bhunk init(String $name) {
         name = $name;
-        hunker.register( this );
+        db4j.register( this );
         return this;
     }
-    public Bhunk set(Db4j $hunker) {
-        hunker = $hunker;
+    public Bhunk set(Db4j $db4j) {
+        db4j = $db4j;
         loc = new Vars();
         return this;
     }
     public String name() { return name; }
     public void createCommit(long locBase) {
-        loc.locals.set( hunker, locBase );
+        loc.locals.set(db4j, locBase );
     }
     public int create() {
         int lsize = loc.locals.size();
@@ -350,13 +350,13 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             if (under(val))
                 set2(page,index,val);
             else {
-                int nb = hunker.util.nblocks(val.length);
-                int [] blocks = hunker.request(nb,true,tid);
+                int nb = db4j.util.nblocks(val.length);
+                int [] blocks = db4j.request(nb,true,tid);
                 int kblock = blocks[0], len = val.length;
                 int offset = setx(page,index);
                 page.puti(offset,val.length);
                 page.puti(offset+4,blocks[0]);
-                hunker.iocmd(tid,hunker.util.address(blocks[0]),val,true);
+                db4j.iocmd(tid,db4j.util.address(blocks[0]),val,true);
                 if (dbg)
                     System.out.format("setx @ %5d: %5d %5d\n",offset,len,kblock);
             }
@@ -369,8 +369,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             int len = page.geti(offset,0);
             int kblock = page.geti(offset+4,0);
             byte [] bytes = new byte[len];
-            long address = hunker.util.address(kblock);
-            hunker.iocmd(tid,address,bytes,false);
+            long address = db4j.util.address(kblock);
+            db4j.iocmd(tid,address,bytes,false);
         }
         public TT getx(Transaction tid,Sheet page,int index) throws Pausable {
             int offset = getx(page,index);
@@ -382,8 +382,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             if (dbg)
                 System.out.format("getx @ %5d: %5d %5d\n",offset,len,kblock);
             byte [] bytes = new byte[len];
-            long address = hunker.util.address(kblock);
-            hunker.iocmd(tid,address,bytes,false);
+            long address = db4j.util.address(kblock);
+            db4j.iocmd(tid,address,bytes,false);
             tid.submitYield();
             return convert(bytes);
         }
@@ -428,11 +428,11 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         protected TT convert(byte[] bytes) {
             Input input = new Input(bytes);
-            return (TT) hunker.kryo().get(input);
+            return (TT) db4j.kryo().get(input);
         }
         byte [] save(TT val) {
             Output buffer = new Output(2048,-1);
-            hunker.kryo().put(buffer,val,false);
+            db4j.kryo().put(buffer,val,false);
             return buffer.toBytes();
         }
     }
@@ -443,7 +443,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                     : ((Bstring.Cmpr) cmpr).bytes;
         }
         protected TT convert(byte[] bytes) {
-            return (TT) org.srlutils.Files.load(bytes,0,-1,Bhunk.this.hunker.userClassLoader);
+            return (TT) org.srlutils.Files.load(bytes,0,-1,Bhunk.this.db4j.userClassLoader);
         }
     }
     public class ValsStringx extends ValsVarx<String,Bstring.Cmpr> {
@@ -498,27 +498,27 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             rand.init(seedSeed,true);
         }
         String filename = "./db_files/b6.mmap";
-        Db4j hunker;
+        Db4j db4j;
         boolean ok = true;
         boolean reopen = false;
         public Mindir(int $nn,TT $map) { nn=$nn; map=$map; }
         { stageNames = "put look rem chk".split(" "); }
         public void alloc() { setup(stageNames.length, "Bhunk.DF"); }
-        void close() { hunker.shutdown(); hunker.close(); }
+        void close() { db4j.shutdown(); db4j.close(); }
         public void init() {
             seed = rand.setSeed(null,false);
-            hunker = new Db4j().init( filename, null ); // 1L << 32 );
-            map.set( hunker );
+            db4j = new Db4j().init( filename, null ); // 1L << 32 );
+            map.set(db4j );
             map.init("Bushy Tree");
-            hunker.create();
-            hunker.fence(null,100);
-            hunker.forceCommit(100);
+            db4j.create();
+            db4j.fence(null,100);
+            db4j.forceCommit(100);
             if (reopen) close();
         }
         public void run(final int stage) throws Exception {
             rand.setSeed(seed,false);
-            if (reopen) hunker = Db4j.load(filename);
-            map = (TT) hunker.arrays.get(0);
+            if (reopen) db4j = Db4j.load(filename);
+            map = (TT) db4j.arrays.get(0);
             for (int ii = 0; ii < nn; ii++) {
                 final int jj = ii;
                 final float v1 = 0.01f*jj, goal = stage==3 ? -1f:v1;
@@ -543,9 +543,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                     else               map.findData(cc);
                     if (stage > 0 && (cc.val() != goal))
                         ok = false;
-                } }.offer(hunker);
+                } }.offer(db4j);
             }
-            hunker.fence(null,10);
+            db4j.fence(null,10);
             if (reopen) close();
         }
         public boolean finish() throws Exception {
@@ -557,7 +557,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     public static class Demo {
         DF lt;
         String name = "./db_files/b6.mmap";
-        Db4j hunker;
+        Db4j db4j;
         float val, vo = 97f;
         double ko = 7.1;
         int nb = 0;
@@ -592,23 +592,23 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         
         public void demo() {
-            hunker = new Db4j().init( name, null ); // 1L << 32 );
+            db4j = new Db4j().init( name, null ); // 1L << 32 );
             lt = new DF();
-            lt.set( hunker );
+            lt.set(db4j );
             lt.init("Bushy Tree");
             int nn = 1347-7;
-            hunker.create();
+            db4j.create();
             // break out the final iter to allow tracing in the debugger
             for (int ii = 0; ii < nn; ii++)
-                new PutTask(ii,ii+ko,ii+vo).offer(hunker);
-            hunker.fence(null,100);
-            new PutTask(nn,nn+ko,nn+vo).offer(hunker).awaitb();
+                new PutTask(ii,ii+ko,ii+vo).offer(db4j);
+            db4j.fence(null,100);
+            new PutTask(nn,nn+ko,nn+vo).offer(db4j).awaitb();
             for (int ii = 0; ii < nn; ii++) 
-                new GetTask(ii+ko,ii+vo).offer(hunker);
-            new GetTask(nn+ko,nn+vo).offer(hunker);
-            hunker.fence(null,100);
-            new CheckTask().offer(hunker).awaitb();
-            lt.hunker.shutdown();
+                new GetTask(ii+ko,ii+vo).offer(db4j);
+            new GetTask(nn+ko,nn+vo).offer(db4j);
+            db4j.fence(null,100);
+            new CheckTask().offer(db4j).awaitb();
+            lt.db4j.shutdown();
         }
         public static void auto(int passes,int npp,TaskTimer.Runner ... runners) throws Exception {
             Simple.Scripts.cpufreqStash( 2300000 );

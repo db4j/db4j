@@ -17,7 +17,7 @@ public class DemoStringx {
 
         public void route() {
             String bio = RandomStringUtils.randomAlphanumeric(src.nextInt(8000));
-            hunker.submitCall(tid -> {
+            db4j.submitCall(tid -> {
                 int num = count.get(tid);
                 users.insert(tid,num,bio);
                 count.plus(tid,1);
@@ -27,7 +27,7 @@ public class DemoStringx {
         
         public String info() {
             String val =
-            hunker.submit(tid -> {
+            db4j.submit(tid -> {
                 String last = null;
                 String [] all = users.getall(tid).vals().toArray(new String[0]);
                 for (String user : all) {
@@ -50,7 +50,7 @@ public class DemoStringx {
             hello.start("./db_files/hunk2.mmap",true);
             for (int ii = 0; ii < 3000; ii++)
                 hello.route();
-            hello.hunker.fence(null,100);
+            hello.db4j.fence(null,100);
             hello.info();
             hello.shutdown(true);
         }

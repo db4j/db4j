@@ -18,7 +18,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         public final LocalInt2 count = new LocalInt2( locals );
     }
     transient public Vars loc;
-    transient public Db4j hunker;
+    transient public Db4j db4j;
     public String name;
 
     public String info() {
@@ -28,47 +28,47 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
     /** add delta to the stored value and return the old value */
     public int plus(Transaction tid,int delta) throws Pausable {
         RwInt read = loc.count.read();
-        hunker.put( tid, read );
+        db4j.put( tid, read );
         if (tid.submit()) kilim.Task.yield();
         RwInt writ = loc.count.write(read.val + delta);
-        hunker.put( tid, writ );
+        db4j.put( tid, writ );
         return read.val;
     }
     public int get(Transaction tid) throws Pausable {
         RwInt read = loc.count.read();
-        hunker.put( tid, read );
+        db4j.put( tid, read );
         if (tid.submit()) kilim.Task.yield();
         return read.val;
     }
     public void set(Transaction tid,int val) {
         RwInt writ = loc.count.write(val);
-        hunker.put( tid, writ );
+        db4j.put( tid, writ );
     }
     
     public int create() {
         int cap = loc.locals.size();
         return cap;
     }
-    public void createCommit(long locBase) { loc.locals.set( hunker, locBase ); }
+    public void createCommit(long locBase) { loc.locals.set(db4j, locBase ); }
     public String name() { return name; }
-    public HunkCount set(Db4j $hunker) {
-        hunker = $hunker;
+    public HunkCount set(Db4j $db4j) {
+        db4j = $db4j;
         loc = new Vars();
         return this;
     }
     public HunkCount init(String $name) { 
-        hunker.register( this );
+        db4j.register( this );
         name = $name;
         return this;
     }
     public void postInit(Transaction tid) throws Pausable {
-        hunker.put(tid, loc.count.write(0));
+        db4j.put(tid, loc.count.write(0));
     }
     public void postLoad(Transaction tid) throws Pausable {}
     
     public static class Demo {
         HunkCount lt;
-        Db4j hunker;
+        Db4j db4j;
         String name = "./db_files/hunk2.mmap";
         
         public class Task extends Db4j.Query {
@@ -80,14 +80,14 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         }
         
         public void demo() {
-            hunker = new Db4j().init( name, null );
+            db4j = new Db4j().init( name, null );
             lt = new HunkCount();
-            lt.set( hunker );
+            lt.set(db4j );
             lt.init("Hunk Count");
-            hunker.create();
-            for (int ii = 0; ii < 10; ii++) hunker.submitQuery( new Task() );
-            hunker.fence( null, 10 );
-            lt.hunker.shutdown();
+            db4j.create();
+            for (int ii = 0; ii < 10; ii++) db4j.submitQuery( new Task() );
+            db4j.fence( null, 10 );
+            lt.db4j.shutdown();
         }
     }    
     public static void main(String [] args) {

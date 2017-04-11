@@ -14,25 +14,25 @@ import org.srlutils.Util;
 
 public class DemoEntropy {
     String filename = "./db_files/b6.mmap";
-    Db4j hunker;
+    Db4j db4j;
     HunkArray.I map;
     HunkCount buildSeed;
     void load() {
-        hunker = Db4j.load(filename);
-        map = (HunkArray.I) hunker.lookup(0);
-        buildSeed = (HunkCount) hunker.lookup(1);
+        db4j = Db4j.load(filename);
+        map = (HunkArray.I) db4j.lookup(0);
+        buildSeed = (HunkCount) db4j.lookup(1);
     }
     public void init() {
-        hunker = new Db4j().init( filename, null ); // 1L << 32 );
+        db4j = new Db4j().init( filename, null ); // 1L << 32 );
         map = new HunkArray.I();
-        map.set( hunker );
+        map.set(db4j );
         map.init("Player Entropy");
         buildSeed = new HunkCount();
-        buildSeed.set(hunker);
+        buildSeed.set(db4j);
         buildSeed.init("seed used for building player round robin");
-        hunker.create();
-        hunker.fence(null,100);
-        hunker.forceCommit(100);
+        db4j.create();
+        db4j.fence(null,100);
+        db4j.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source(), r2 = new org.srlutils.rand.Source();
     { 
@@ -58,7 +58,7 @@ public class DemoEntropy {
         build(bs);
         new Db4j.Query() { public void task() throws Pausable {
             buildSeed.set(tid,bs);
-        } }.offer(hunker);
+        } }.offer(db4j);
         System.out.println("build complete: " + bs);
         for (int ii = 0; ii < np; ii++) {
             final int kplayer = ii;
@@ -73,9 +73,9 @@ public class DemoEntropy {
                 public void task() throws Pausable {
                     map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
-            }.offer(hunker);
+            }.offer(db4j);
         }
-        hunker.fence(null,10);
+        db4j.fence(null,10);
         System.out.println("insert complete");
         build();
     }
@@ -128,7 +128,7 @@ public class DemoEntropy {
     public void build() {
         new Db4j.Query() { public void task() throws Pausable {
             bseed = buildSeed.get(tid);
-        } }.offer(hunker).awaitb();
+        } }.offer(db4j).awaitb();
         build(bseed);
         System.out.println("build loaded: " + bseed);
     }
@@ -142,7 +142,7 @@ public class DemoEntropy {
     public void dorotate(int numReps) {
         for (int ii = 0; ii < numReps; ii++)
             rot1(ii);
-        hunker.fence(null,10);
+        db4j.fence(null,10);
     }
     void swap1(int [] d1,int [] d2,int k1,int k2) {
         int delta = (d1[k1] - d2[k2])/2;
@@ -172,7 +172,7 @@ public class DemoEntropy {
                 }
                 map.setdata(tid,kplayer*nv,data,new Command.RwInts().init(true),nv);
             }
-        }.offer(hunker);
+        }.offer(db4j);
     }
     long [] sums = new long[np];
     long asum = 0, suma=0;
@@ -192,16 +192,16 @@ public class DemoEntropy {
                     Simple.softAssert(data[0]==order[kplayer],"validate: %d, %d != %d\n",
                             kplayer,data[0],order[kplayer]);
                 }
-            }.offer(hunker);
+            }.offer(db4j);
         }
-        hunker.fence(null,10);
+        db4j.fence(null,10);
         long avg = Simple.Rounder.divup(asum,1L*np*nv);
         System.out.format("validate data load complete: %12d --> %5d, %5d\n", asum, avg, suma);
         validateSums();
     }
     public void close() {
-        hunker.shutdown();
-        hunker.close();
+        db4j.shutdown();
+        db4j.close();
     }
     public static class Demo {
         public static void main(String [] args) {

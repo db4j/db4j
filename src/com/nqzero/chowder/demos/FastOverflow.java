@@ -16,12 +16,12 @@ import org.srlutils.Util;
 
 public class FastOverflow {
     String filename = "./db_files/b6.mmap";
-    Db4j hunker;
+    Db4j db4j;
     HunkArray.I map;
     void load() {
-        hunker = Db4j.load(filename);
+        db4j = Db4j.load(filename);
 //        hunker.qrunner.genc = Integer.MAX_VALUE - (1<<23);
-        map = (HunkArray.I) hunker.lookup(0);
+        map = (HunkArray.I) db4j.lookup(0);
     }
     long sum(int [] vals) {
         long sum = Util.Ranged.sum(1,vals.length,vals);
@@ -46,14 +46,14 @@ public class FastOverflow {
 //                    yield();
 //                    asum += sum(data);
                 }
-            }.offer(hunker).awaitb();
+            }.offer(db4j).awaitb();
         }
         System.out.format("FastOverflow: %12d\n", asum);
     }
     long asum = 0;
     public void close() {
-        hunker.shutdown();
-        hunker.close();
+        db4j.shutdown();
+        db4j.close();
     }
     public static class Demo {
         public static void main(String [] args) {
