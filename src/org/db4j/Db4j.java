@@ -58,15 +58,15 @@ import org.srlutils.Callbacks.Cleanable;
 public class Db4j implements Serializable {
     
     /** don't drop cache that's newer than the last iogen that's completed */
-    public static final boolean useLastgen = false;
-    public static final int bitsCache = 16;
-    public static final int bitsIotree = 16;
+    static final boolean useLastgen = false;
+    static final int bitsCache = 16;
+    static final int bitsIotree = 16;
     /** kludge to enable printing whenever a Task doesn't complete immediately 
      * ie requires reading from disk */
-    public static boolean printNotDone = false;
-    public static ByteOrder byteOrder = ByteOrder.nativeOrder();
+    static boolean printNotDone = false;
+    static ByteOrder byteOrder = ByteOrder.nativeOrder();
     private static final boolean checkStatus = false;
-    public static boolean dio = ! DioNative.skip;
+    static boolean dio = ! DioNative.skip;
     
 
 
@@ -127,7 +127,7 @@ public class Db4j implements Serializable {
 
     // this seems to work with 10-13 ... not sure why 9 bits is breaking
     /** the hunker block size */
-    public static int blockSize = 12;
+    static int blockSize = 12;
 
     static final long serialVersionUID = 3365051556209870876L;
     transient RandomAccessFile raf;
@@ -242,7 +242,7 @@ public class Db4j implements Serializable {
         Command.RwInt nbc, ncc;
         int c1, c2;
         long start;
-        public void load(long $start) {
+        void load(long $start) {
             start = $start;
             c1 = compRaw.create();
             c2 = compLocals.create();
@@ -278,10 +278,10 @@ public class Db4j implements Serializable {
             { done = true; }
         }
         class CompTask extends Query {
-            public Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
+            Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
             byte [] rdata, ldata;
             int ii;
-            public CompTask(int $ii) { ii = $ii; }
+            CompTask(int $ii) { ii = $ii; }
             public void reason(Db4j.Reason reason) { reasons.append( reason ); }
             public void reason() {
                 for (Db4j.Reason reason : reasons)
@@ -304,7 +304,7 @@ public class Db4j implements Serializable {
             }
         }
     }
-    public void load(long start) {
+    void load(long start) {
         start();
         live = true;
         new LoadTask().load(start);
@@ -575,8 +575,8 @@ public class Db4j implements Serializable {
     }
 
     static class RegPair implements HunkLog.Loggable {
-        public int id;
-        public String name;
+        int id;
+        String name;
         public void restore(Db4j db4j) {
             try {
                 System.out.format("RegPair.restore: %4d %s\n",id,name);
@@ -910,9 +910,9 @@ public class Db4j implements Serializable {
      * reads are relative to the current generation
      * writes all become visible in the following generation
      */
-    public static class QueRunner implements Runnable {
-        public Db4j db4j;
-        public boolean finished = false;
+    static class QueRunner implements Runnable {
+        Db4j db4j;
+        boolean finished = false;
         /**
          *  the generation counter
          *  incremented for every transaction before it is registered
@@ -920,29 +920,29 @@ public class Db4j implements Serializable {
          *  ie, it is the gen that was used for the last registered or entreed transaction
          *  fixme -- need to handle wrap-around
          */
-        public long genc = gencUsageMarker(1);
-        public Cache dc;
-        public Generation map = null;
-        public Quetastic    quetastic;
-        public ConcurrentLinkedQueue<Queable> commandQ;
-        public ConcurrentLinkedQueue<Predicable> blockQ;
-        public Timer timer = new Timer();
+        long genc = gencUsageMarker(1);
+        Cache dc;
+        Generation map = null;
+        Quetastic    quetastic;
+        ConcurrentLinkedQueue<Queable> commandQ;
+        ConcurrentLinkedQueue<Predicable> blockQ;
+        Timer timer = new Timer();
         /** tree of rollback tasks ... they've been rolled back, need to be run from scratch */
-        public TaskTree backlog = new TaskTree();
+        TaskTree backlog = new TaskTree();
         /** list of all unfinished tasks */
-        public Listee.Lister<Db4j.Task> tasks = new Listee.Lister();
+        Listee.Lister<Db4j.Task> tasks = new Listee.Lister();
         /** list of tasks that have returned from BlockNode, waiting to be run */
-        public TaskTree waiting = new TaskTree();
+        TaskTree waiting = new TaskTree();
         /** number of rollbacks in this generation */
-        public int nback;
-        public int ntask;
-        public int taskID = 1;
-        public HashMap<Integer,Latch> latchMap = new HashMap();
+        int nback;
+        int ntask;
+        int taskID = 1;
+        HashMap<Integer,Latch> latchMap = new HashMap();
         boolean sendGen = true;
-        public int kjournal = 0;
-        public boolean clearout, clearack;
-        public long lastgen = gencUsageMarker(0);
-        public State state;
+        int kjournal = 0;
+        boolean clearout, clearack;
+        long lastgen = gencUsageMarker(0);
+        State state;
 
         /** 
          * marker method to indicate that a field is dependent on genc
@@ -951,9 +951,9 @@ public class Db4j implements Serializable {
          * @param val the desired value
          * @return the same value is returned
          */
-        public static int gencUsageMarker(int val) { return val; }
+        static int gencUsageMarker(int val) { return val; }
 
-        public QueRunner(Db4j $db4j) {
+        QueRunner(Db4j $db4j) {
             db4j = $db4j;
             int qtb = 12;
             quetastic = new Quetastic().setCap( 1<<qtb, 1<<(qtb+1) );
@@ -963,7 +963,7 @@ public class Db4j implements Serializable {
             state = new State();
         }
 
-        public void checkLeaks() {
+        void checkLeaks() {
             dc.checkLeaks();
             System.out.println( "Qrunner.cache" );
             dc = null;
@@ -981,7 +981,7 @@ public class Db4j implements Serializable {
         }
 
 
-        public void register(Transaction txn) {
+        void register(Transaction txn) {
             Simple.softAssert( !txn.inuse );
             if (dc.check) dc.check();
             // fixme::dry -- maybe should add a (synthetic) task instead ...
@@ -992,13 +992,13 @@ public class Db4j implements Serializable {
             if (dc.check) dc.check();
         }
 
-        public long journalSpace() { return db4j.runner.journalSize - kjournal; }
-        public Generation makeCT() {
+        long journalSpace() { return db4j.runner.journalSize - kjournal; }
+        Generation makeCT() {
             Generation ct = new Generation().genc( genc );
             ct.kjournal = kjournal;
             return ct;
         }
-        public class State {
+        class State {
             int pl = (int) (.2*dc.maxsize), ph = (int) (.8*dc.maxsize);
             int addedTasks, completedTasks, max = 1024*32;
             void reset() {
@@ -1034,7 +1034,7 @@ public class Db4j implements Serializable {
                 Simple.spinDebug(false,"caused by: %s",ex);
             }
         }
-        public void run2() {
+        void run2() {
             boolean predOnly = false, linefeed = false;
             double start = timer.tock();
             Thread current = Thread.currentThread();
@@ -1205,7 +1205,7 @@ public class Db4j implements Serializable {
             }
         }
 
-        public void handleRef(Command.Reference cmd) {
+        void handleRef(Command.Reference cmd) {
             BlockNode block = getBlock(cmd.offset>>db4j.bb,null,map);
             Simple.softAssert(block.cache==null || block.cache.ready());
             if (block.writeCache==null)
@@ -1214,7 +1214,7 @@ public class Db4j implements Serializable {
         }
         
         /** handle a Command.Init - initialize the cache for the specified page */
-        public boolean handleInit(Command.Init cmd) {
+        boolean handleInit(Command.Init cmd) {
             long gen2 = cmd.txn.gen0;
             CachedBlock c2 = dc.getCache(cmd.offset,genc-1,gen2);
             Simple.softAssert(c2==null);
@@ -1224,7 +1224,7 @@ public class Db4j implements Serializable {
             return true;
         }
         /** process the write */
-        public void handleWrite(Command cmd) {
+        void handleWrite(Command cmd) {
 
             /*
              * add the block to the iotree if needed
@@ -1283,7 +1283,7 @@ public class Db4j implements Serializable {
         }
         /** if the read can be handled by cache, 
          *    run+book it and return null, else return the cache info */
-        public PreRead preRead(Command cmd,Command first) {
+        PreRead preRead(Command cmd,Command first) {
             boolean alloc = false;
             long gen2 = cmd.txn.gen0;
             CachedBlock c2 = dc.getCache(cmd.offset,cmd.gen,gen2);
@@ -1303,13 +1303,13 @@ public class Db4j implements Serializable {
         }
         /** commit a previously calculated preRead 
          *    - there must not be any modification of the cache */
-        public void commitRead(PreRead pr) {
+        void commitRead(PreRead pr) {
             CachedBlock cache = pr.entry;
             BlockNode block = getBlock(cache.kblock,cache, map);
             block.addRead(pr.cmd);
         }
         /** cancel a read that hasn't been committed, ie delete the cache entry if it was alloc'd */
-        public void cancelRead(PreRead pr) {
+        void cancelRead(PreRead pr) {
             // fixme -- remove checks ...
             boolean dbg = false;
             if (dbg) dc.check();
@@ -1318,7 +1318,7 @@ public class Db4j implements Serializable {
             if (dbg) dc.check();
         }
         /** insert the block entry if needed */
-        public BlockNode getBlock(long kblock,CachedBlock cache,Generation iomap) {
+        BlockNode getBlock(long kblock,CachedBlock cache,Generation iomap) {
             BlockNode block = iomap.iotree.get(kblock);
             if (block==null) {
                 block = new BlockNode().kblock(kblock);
@@ -1329,7 +1329,7 @@ public class Db4j implements Serializable {
             return block;
         }
         /** check whether cmd has been overwritten between the cmd creation and gen */
-        public boolean overwritten(Command cmd,Command first) {
+        boolean overwritten(Command cmd,Command first) {
             // invariants: we've read cmd, so there must be a cached block of it
             //   compare the value at the time of the read
             //   with the data in the most recently cached block
@@ -1362,7 +1362,7 @@ public class Db4j implements Serializable {
          *  if data is null and cmds aren't full, return null
          *  else a page that cmds can be run against
          */
-        public Command.Page runCache(CachedBlock cb,Command cmd,Command first) {
+        Command.Page runCache(CachedBlock cb,Command cmd,Command first) {
             byte [] data = null;
             if (cb != null && cb.ready()) data = cb.data;
             final int bb = db4j.bb;
@@ -1396,13 +1396,13 @@ public class Db4j implements Serializable {
     /**
      *  thread that handles disk io
      */
-    public static class Runner implements Runnable {
-        public Db4j db4j;
-        public Timer timer = new Timer();
-        public boolean finished = false;
-        public ByteBuffer buf;
-        public Stats stats = new Stats();
-        public Runner(Db4j $db4j) {
+    static class Runner implements Runnable {
+        Db4j db4j;
+        Timer timer = new Timer();
+        boolean finished = false;
+        ByteBuffer buf;
+        Stats stats = new Stats();
+        Runner(Db4j $db4j) {
             db4j = $db4j;
             buf = ByteBuffer.allocate(db4j.bs );
             buf.order(byteOrder);
@@ -1455,14 +1455,14 @@ public class Db4j implements Serializable {
         int kk = 0;
 
         /** write the buffer to the journal and increment the journal-block pointer */
-        public void journal(byte [] data) throws IOException {
+        void journal(byte [] data) throws IOException {
             if (data==null) Simple.softAssert(false);
             write( journalBase + kk++, ByteBuffer.wrap(data) );
         }
         /** write the buffer to the journal at journal-block kj */
-        public void journal(int kj) throws IOException { write(journalBase + kj,buf); }
+        void journal(int kj) throws IOException { write(journalBase + kj,buf); }
         /** write the buffer to block kblock */
-        public void write(long kblock,ByteBuffer b2) throws IOException {
+        void write(long kblock,ByteBuffer b2) throws IOException {
             long offset = kblock << db4j.bb;
             b2.clear();
             int nwrite = db4j.chan.write( b2, offset );
@@ -1476,7 +1476,7 @@ public class Db4j implements Serializable {
          * then the blocks are written, ie the block.data
          * then 1 page as a footer, initially zeros, switched to ones when the block data is complete
          */
-        public int header(Generation gen) throws IOException {
+        int header(Generation gen) throws IOException {
             if (gen.nwrite==0) return kk;
             java.util.Arrays.fill( buf.array(), (byte) 0 );
             int footer = kk + gen.nheader + gen.nwrite;
@@ -1502,7 +1502,7 @@ public class Db4j implements Serializable {
             journal(kk++); // ultimate header page
             return footer;
         }
-        public void footer(Generation generation,int footer) throws IOException {
+        void footer(Generation generation,int footer) throws IOException {
             Simple.softAssert( footer==kk );
             if (generation.nwrite==0) return;
             java.util.Arrays.fill( buf.array(), (byte) 0xff );
@@ -1510,7 +1510,7 @@ public class Db4j implements Serializable {
             if (Db4j.debug.disk)
                 Simple.softAssert(Generation.nfooter==1);
         }
-        public void process(Generation generation) {
+        void process(Generation generation) {
             try {
                 int footer = 0;
                 int bs = db4j.bs;
@@ -1578,63 +1578,63 @@ public class Db4j implements Serializable {
         }
     }
 
-    public static class PreRead {
+    static class PreRead {
         Command cmd;
         PreRead next;
         boolean alloc;
         CachedBlock entry;
-        public PreRead(Command $cmd,boolean $alloc,CachedBlock $entry)
+        PreRead(Command $cmd,boolean $alloc,CachedBlock $entry)
             { cmd=$cmd; alloc=$alloc; entry=$entry; }
     }
     
     /** a set of io to be completed as a single generation */
-    public static class Generation implements Predicable {
-        public int nfound;
+    static class Generation implements Predicable {
+        int nfound;
         /** immutable, the qrunner txn counter at the moment this generation begins */
-        public long genc = QueRunner.gencUsageMarker(0);
+        long genc = QueRunner.gencUsageMarker(0);
         /** immutable, the next qrunner txn counter upon map rotation */
-        public long gen2 = QueRunner.gencUsageMarker(0);
-        public LongHash.Map<BlockNode> iotree = new LongHash.Map().init(bitsIotree+1);
+        long gen2 = QueRunner.gencUsageMarker(0);
+        LongHash.Map<BlockNode> iotree = new LongHash.Map().init(bitsIotree+1);
 
         /** the number of blocks that need to be written to disk */
-        public int nwrite = 0;
-        public int ntitle = 2;
+        int nwrite = 0;
+        int ntitle = 2;
         /** the number of blocks that are needed for the journal header */
-        public int nheader = 1;
-        public int kjournal;
-        public boolean journalFull, commit;
-        public boolean dropOutstanding;
+        int nheader = 1;
+        int kjournal;
+        boolean journalFull, commit;
+        boolean dropOutstanding;
         private Task completedTasksList;
         boolean shutdown;
-        public Generation genc(long val) { this.genc = val; return this; }
+        Generation genc(long val) { this.genc = val; return this; }
         
-        public static int bitsHeader = 3, nfooter = 1;
+       static int bitsHeader = 3, nfooter = 1;
 
         /** free any resources so that old generations can be kept in memory efficiently */
-        public void cleanup() { iotree = null; }
+        void cleanup() { iotree = null; }
         /** 
          * the journal consists of a header, the block data, and a footer
          * header: number of write blocks, kblock for each block
          * footer: all zeros for not complete, all ones for complete
          */
-        public int journalSize() { return nwrite==0 ? 0:nwrite + nheader + nfooter; }
+        int journalSize() { return nwrite==0 ? 0:nwrite + nheader + nfooter; }
         /** the upper bound on the size of the journal after adding nw writes */
-        public int journalBound(Db4j db4j,int nw) {
+        int journalBound(Db4j db4j,int nw) {
             // worst case is every write adds a block
             int nlongs = nwrite + ntitle + nw;
             int nh = Simple.Rounder.divup2(nlongs << bitsHeader, db4j.bb );
             return nwrite + nw + nh + nfooter;
         }
-        public void nonEmptyify() { if (iotree.isEmpty()) put( new DummyBlock() ); }
+        void nonEmptyify() { if (iotree.isEmpty()) put( new DummyBlock() ); }
         
-        public void checkLeaks() {
+        void checkLeaks() {
             System.out.format( "BlockTree.checkLeaks()\n" );
             System.out.format( "Generation.iotree -- size:%d\n", iotree.size );
             iotree = null;
             System.gc();
         }
 
-        public void addWrite(Db4j db4j,BlockNode block,Command cmd) {
+        void addWrite(Db4j db4j,BlockNode block,Command cmd) {
             if (!block.writ) {
                 long mask = db4j.bm >> bitsHeader;
                 int nlongs = nwrite + ntitle; // the magic, count and kblock for each block
@@ -1652,33 +1652,33 @@ public class Db4j implements Serializable {
                 task.postRun(false);
         }
 
-        public BlockNode [] blocks = new BlockNode[1 << bitsIotree];
-        public void put(BlockNode block) {
+        BlockNode [] blocks = new BlockNode[1 << bitsIotree];
+        void put(BlockNode block) {
             blocks[iotree.size] = block;
             iotree.put( block.kblock, block );
             if (iotree.size >= blocks.length)
                 Simple.softAssert( false, "50%% hash capacity exceeded" );
         }
-        public void remove(long kblock) {
+        void remove(long kblock) {
             iotree.remove( kblock );
             int ii = 0;
             while (blocks[ii].kblock != kblock) ii++;
             blocks[ii] = blocks[iotree.size];
             blocks[iotree.size] = null;
         }
-        public void sort() { 
+        void sort() { 
             Arrays.sort( blocks, 0, iotree.size );
             blocks = Util.dup( blocks, 0, iotree.size );
         }
 
     }
 
-    public static class BlockTree extends TreeDisk<BlockNode,Void> {
+    static class BlockTree extends TreeDisk<BlockNode,Void> {
         public int compare(BlockNode v1,BlockNode v2,Void cc) {
             long k1 = v1.kblock, k2 = v2.kblock;
             return Long.signum( k1-k2 );
         }
-        public void checkLeaks() {
+        void checkLeaks() {
             System.out.format( "BlockTree.blocks.cache\n" );
             for (Entry<BlockNode> entry : this) entry.val.cache = null;
             System.gc();
@@ -1691,9 +1691,9 @@ public class Db4j implements Serializable {
         }
     }
 
-    public static class ForceCommit extends BlockNode implements Queable {
+    static class ForceCommit extends BlockNode implements Queable {
         { kblock = Long.MAX_VALUE; writ = false; }
-        public boolean done = false;
+        boolean done = false;
         public void entree(QueRunner qr) {
             qr.dc.submitCache();
             qr.map.put( this );
@@ -1707,7 +1707,7 @@ public class Db4j implements Serializable {
     }
     
     /** a placeholder to allow making the iotree non-empty */
-    public static class DummyBlock extends BlockNode {
+    static class DummyBlock extends BlockNode {
         { kblock = -1; writ = false; }
         public boolean runBlock(Db4j db4j,byte [] data) { return true; }
         public void handle(Db4j db4j) {}
@@ -1717,7 +1717,7 @@ public class Db4j implements Serializable {
      *  a class that implements shutdown for the Hunker
      *    fixme -- inhibit adding new tasks and let the existing tasks play out
      */
-    public static class Shutdown extends BlockNode implements Queable {
+    static class Shutdown extends BlockNode implements Queable {
         { kblock = Long.MAX_VALUE; writ = false; }
         long gen;
         public void entree(QueRunner qr) {
@@ -1737,46 +1737,46 @@ public class Db4j implements Serializable {
         public boolean dontRead() { return true; }
     }
     public static int maxcmds = 0;
-    public static class BlockNode implements Predicable, Comparable<BlockNode> {
-        public long kblock;
-        /** the entire block will be written */  public boolean full = false;
-        public DynArray.Objects<Command> cmds;
+    static class BlockNode implements Predicable, Comparable<BlockNode> {
+        long kblock;
+        /** the entire block will be written */  boolean full = false;
+        DynArray.Objects<Command> cmds;
         /** the cached block, ie a priori */
-        public CachedBlock cache;
+        CachedBlock cache;
         /** the cache for the final state of the block, ie the written value, ie a posteriori */
-        public CachedBlock writeCache;
-        public boolean writ;
-        public DiskAnomaly diskAnomaly;
-        public boolean commit;
+        CachedBlock writeCache;
+        boolean writ;
+        DiskAnomaly diskAnomaly;
+        boolean commit;
 
         /** is the block really full, ie the whole block will be written and there are no reads */
-        public boolean full() { return false; }
-        public CachedBlock xcache() { return writeCache==null ? cache:writeCache; }
+        boolean full() { return false; }
+        CachedBlock xcache() { return writeCache==null ? cache:writeCache; }
 
-        public void addWrite(Command cmd) {
+        void addWrite(Command cmd) {
             if (!writeCache.ready())
                 cmds.add(cmd);
             writ = true;
 //            if (cmds.max > maxcmds) maxcmds = cmds.max;
             maxcmds++;
         }
-        public void addRead(Command cmd) {
+        void addRead(Command cmd) {
             cmds.add(cmd);
         }
         
-        public BlockNode init() {
+        BlockNode init() {
             cmds = new DynArray.Objects().init( Command.class );
             return this;
         }
-        public BlockNode kblock(long kb) { kblock = kb; return this; }
-        public boolean dontRead() {
+        BlockNode kblock(long kb) { kblock = kb; return this; }
+        boolean dontRead() {
             boolean dont = full()
                     || (writeCache != null && writeCache.ready())
                     || (     cache != null &&      cache.ready());
             return dont;
         }
         /** run the block - executed in the Runner thread */
-        public boolean runBlock(Db4j db4j,byte [] data) throws IOException {
+        boolean runBlock(Db4j db4j,byte [] data) throws IOException {
             if (full())
                 Simple.softAssert(false,"not implemented yet");
             
@@ -1811,7 +1811,7 @@ public class Db4j implements Serializable {
             db4j.runner.write( kblock, ByteBuffer.wrap(data) );
             db4j.runner.stats.totalWrites++;
         }
-        public void postRun(Db4j db4j) throws IOException {
+        void postRun(Db4j db4j) throws IOException {
             if (writ && commit) {
                 doWrite(db4j, writeCache.data );
             }
@@ -1868,7 +1868,7 @@ public class Db4j implements Serializable {
          *  note: there can only be 1 cache entry that's not up to date since the pending generation
          *    is held until the current generations Marker is seen, ie all current blocks are handled
          */
-        public void onReady(Db4j db4j,byte [] data) {
+        void onReady(Db4j db4j,byte [] data) {
             DynArray.Objects<Command> c2 = cmds;
             cmds = new DynArray.Objects().init( Command.class );
             
@@ -1899,42 +1899,42 @@ public class Db4j implements Serializable {
         }
     }
     public static class CachedBlock extends Listee<CachedBlock> implements Comparable<CachedBlock> {
-        public long kblock;
-        public byte [] data;
+        long kblock;
+        byte [] data;
         /** the generation of the latest write or zero for pure reads */
-        public long gen = QueRunner.gencUsageMarker(0);
+        long gen = QueRunner.gencUsageMarker(0);
         /** the generation of the latest access */
-        public long update = QueRunner.gencUsageMarker(0);
+        long update = QueRunner.gencUsageMarker(0);
         /** 
          *  indicate the block is live
          *  can use data being non-null, but then updates happen in Runner thread
          *  makes debugging harder / more confusing
          *  fixme:simplicity -- delete and replace with data being non-null
          */
-        public boolean ready = false;
-        public boolean writ, submit;
+        boolean ready = false;
+        boolean writ, submit;
         boolean counted;
         /** linked list of cache for this kblock */
-        public CachedBlock older, newer;
-        public boolean out;
+        CachedBlock older, newer;
+        boolean out;
 
-        public static class ListEntry extends Listee<ListEntry> {
-            public CachedBlock cb;
-            public ListEntry(CachedBlock $val) { cb = $val; }
-            public CachedBlock read() { return cb.older; }
+        static class ListEntry extends Listee<ListEntry> {
+            CachedBlock cb;
+            ListEntry(CachedBlock $val) { cb = $val; }
+            CachedBlock read() { return cb.older; }
             
         }
         /** has the block been initialized ? */
-        public boolean ready() { return ready; }
+        boolean ready() { return ready; }
         /** the the key */
         public CachedBlock setKey(long $kblock,long $gen)
             { kblock = $kblock; gen = $gen; return this; }
         /** slurp the data from buf and store it in data (atomically), if setReady set ready true */
-        public void slurp(byte[] $data) {
+        void slurp(byte[] $data) {
             data = Util.dup($data);
         }
         /** copy src and use it as data */
-        public void setData(byte [] $data,boolean $ready) { data = $data; ready = $ready; }
+        void setData(byte [] $data,boolean $ready) { data = $data; ready = $ready; }
         /** sort by kblock, then gen */
         public int compareTo(CachedBlock o) {
             if (true)
@@ -1944,7 +1944,7 @@ public class Db4j implements Serializable {
                     : Long   .signum( kblock - o.kblock );
         }
         public String toString() { return kblock + ":" + gen; }
-        public String info() {
+        String info() {
             String fmt = "CachedBlock"
                     + "\n\t kblock:%d"
                     + "\n\t data:%s"
@@ -1958,21 +1958,21 @@ public class Db4j implements Serializable {
             return String.format(fmt,
                     kblock, data, gen, update, ready, submit, older, newer, out );
         }
-        public void clear() { data=null; older=newer=null; kblock=gen=update=-1; }
+        void clear() { data=null; older=newer=null; kblock=gen=update=-1; }
     }
 
 
 
-    public static class CT {
+    static class CT {
         private boolean checkLinks = false;
-        public LongHash.Map<CachedBlock> ct = new LongHash.Map().init( Cache.nbb + 2 );
-        public void checkLeaks() {
+        LongHash.Map<CachedBlock> ct = new LongHash.Map().init( Cache.nbb + 2 );
+        void checkLeaks() {
             { checkField(0); System.gc(); }
             { checkField(1); System.gc(); }
             { checkField(2); System.gc(); }
             { checkField(3); System.gc(); }
         }
-        public void checkField(int field) {
+        void checkField(int field) {
             String txt = "";
             switch(field) {
                 case 0:
@@ -2010,7 +2010,7 @@ public class Db4j implements Serializable {
                 Simple.softAssert( c2.older==null || c2.newer==null || c2.older != c2.newer );
             return c2;
         }
-        public Iterable<CachedBlock> iter() {
+        Iterable<CachedBlock> iter() {
             return ct.values();
         }
         private void delete(CachedBlock c1) {
@@ -2030,7 +2030,7 @@ public class Db4j implements Serializable {
             c1.clear();
         }
 
-        public int size;
+        int size;
         private int size() { return size; }
 
         private void put(CachedBlock cb) {
@@ -2041,20 +2041,20 @@ public class Db4j implements Serializable {
             c2.newer = cb;
         }
     }
-    public static class Cache {
-        public CT tree = new CT();
+    static class Cache {
+        CT tree = new CT();
         static int nbb = bitsCache + (12-Db4j.blockSize);
-        /** ratio of block cache hits for the last decade           */  public double hitRatio = 1.0;
+        /** ratio of block cache hits for the last decade           */  double hitRatio = 1.0;
         /** number of cmds that were found in the cache, current decade  */
-                                                                        public int hitCount;
-        /** number of cmds that tried the cache, current decade     */  public int tryCount;
-        /** number of blocks hit by the cache, current decade       */  public int nhit;
-        /** maximum allowed size of the cache                       */  public int maxsize = 1 << nbb;
-        public Db4j db4j;
-        public int incsize = 1 << 8;
+                                                                        int hitCount;
+        /** number of cmds that tried the cache, current decade     */  int tryCount;
+        /** number of blocks hit by the cache, current decade       */  int nhit;
+        /** maximum allowed size of the cache                       */  int maxsize = 1 << nbb;
+        Db4j db4j;
+        int incsize = 1 << 8;
         /** list of cached blocks, ordered by update, 
          *    head is the oldest, tail is most recently updated */
-        public UpdateTree byUpdate = new UpdateTree();
+        UpdateTree byUpdate = new UpdateTree();
         /** list of txns ... tail is freshest, head is oldest */
         Listee.Lister<Transaction> txns = new Listee.Lister();
         /** 
@@ -2063,20 +2063,20 @@ public class Db4j implements Serializable {
          * this list is kept in sorted order, according to CachedBlock.gen
          * ie, the generation of the most recent write command
          */
-        public Listee.Lister<CachedBlock> covered = new Listee.Lister();
+        Listee.Lister<CachedBlock> covered = new Listee.Lister();
         /** 
          * number of CachedBlock-s as new or newer than the oldest outstanding transaction
          * ie, txns.head
          */
         private int outstanding;
-        public int decsize = maxsize;
+        int decsize = maxsize;
         /** the newest generation that has been dropped */
-        public long cliff = QueRunner.gencUsageMarker(0);
-        public boolean check = false;
-        public boolean checkScrub = false;
-        public boolean checkComplete = true;
+        long cliff = QueRunner.gencUsageMarker(0);
+        boolean check = false;
+        boolean checkScrub = false;
+        boolean checkComplete = true;
         /** list of reads and committed writes that are not outstanding */
-        public Listee.Lister<CachedBlock> current = new Listee.Lister();
+        Listee.Lister<CachedBlock> current = new Listee.Lister();
         /** number of naked uncommitted writes                 */  int ndefoe;
         /** number of naked writes pending commit              */  int ncrusoe;
         /** number of naked covering committed writes          */  int ncovered;
@@ -2096,15 +2096,15 @@ public class Db4j implements Serializable {
          */
         
         
-        public class UpdateTree extends TreeDisk<CachedBlock,Void> {
+        class UpdateTree extends TreeDisk<CachedBlock,Void> {
             public int compare(CachedBlock v1,CachedBlock v2,Void cc) {
                 return v1.update==v2.update
                         ? Long.compare(v1.kblock,v2.kblock)
                         : Long.compare(v1.update,v2.update);
             }
-            public CachedBlock head() { return first().val; }
+            CachedBlock head() { return first().val; }
         }
-        public void checkLeaks() {
+        void checkLeaks() {
             System.out.format( "Cache.byUpdate\n" );
             byUpdate = null;
             System.gc();
@@ -2123,7 +2123,7 @@ public class Db4j implements Serializable {
         }
 
         static boolean dd = false;
-        public void check() {
+        void check() {
             // outstanding:
             //   purely naked and update is no older than oldest txn (semi-optional)
             //   a read or write that is covered by a write that isn't current
@@ -2209,18 +2209,18 @@ public class Db4j implements Serializable {
          * the generation of the oldest outstanding transaction or possible txn
          * ie a read-only gets the generation of the current map
          */
-        public long oldest() {
+        long oldest() {
             long last = useLastgen ? db4j.qrunner.lastgen : db4j.qrunner.map.genc;
             if (txns.head==null) return last;
             else                 return Math.min( last, txns.head.gen0 );
         }
-        public void test() {
+        void test() {
              Simple.softAssert(tree.size==current.size+byUpdate.size+d2+c2+ntatler+covered.size);
         }
 
         /** remove txn from the list of outstanding transactions 
          *    and cleanup any now-naked cache entries */
-        public void cleanupTxn(Transaction txn) {
+        void cleanupTxn(Transaction txn) {
             if ( !check && checkScrub ) check();
             if (txn==txns.head)
                 Simple.nop();
@@ -2229,21 +2229,21 @@ public class Db4j implements Serializable {
             scrub();
         }
 
-        public Cache set(Db4j $db4j) {
+        Cache set(Db4j $db4j) {
             db4j = $db4j;
             return this;
         }
         String info() {
             return String.format("cache: %5d %5d %5d",byUpdate.size,ntatler+covered.size,d2+c2);
         }
-        public void dumpTxns() {
+        void dumpTxns() {
             System.out.format( "Hunk:Cache -- %5d, %5d, %5d\n",
                     txns.size, covered.size, tree.size );
             for (Transaction txn : txns)
                 System.out.format( "cache.txn -- %s\n", txn );
         }
 
-        public void complete(long gen,long total) {
+        void complete(long gen,long total) {
             int ios = tryCount - hitCount;
             if (ios >= decsize) {
                 hitRatio = 1.0 * nhit / tree.size();
@@ -2266,7 +2266,7 @@ public class Db4j implements Serializable {
             if (check || checkComplete) check();
         }
         /** initialize and insert the cached block into the cache and manage the cache */
-        public CachedBlock putCache(long offset,long gen,long update,boolean writ) {
+        CachedBlock putCache(long offset,long gen,long update,boolean writ) {
             if (check) check();
             long kblock = offset >> db4j.bb;
             CachedBlock cb = new CachedBlock().setKey( kblock, gen );
@@ -2277,17 +2277,17 @@ public class Db4j implements Serializable {
             setUpdate(cb,update);
             return cb;
         }
-        public int precovered() { 
+        int precovered() { 
             return maxsize - byUpdate.size - covered.size - ntatler;
         }
-        public int precommit() { 
+        int precommit() { 
             return precovered()-d2-c2;
         }
-        public int predefoe() { return prestand() + byUpdate.size; }
-        public int precrusoe() { return predefoe() + ncrusoe; }
-        public int prestand() { return maxsize - tree.size + current.size; }
+        int predefoe() { return prestand() + byUpdate.size; }
+        int precrusoe() { return predefoe() + ncrusoe; }
+        int prestand() { return maxsize - tree.size + current.size; }
 
-        public void dump() {
+        void dump() {
             for (CachedBlock cb : tree.iter())
                 System.out.format( "%20s\n", cb );
         }
@@ -2296,7 +2296,7 @@ public class Db4j implements Serializable {
          * check if cmd is in the cache ... if it is, return the CachedBlock, else null 
          * update the statistics if successful
          */
-        public CachedBlock getCache(long offset,long gen,long last) {
+        CachedBlock getCache(long offset,long gen,long last) {
             tryCount++;
             long kblock = offset >> db4j.bb;
             CachedBlock cache = tree.get(kblock,gen), c2 = cache;
@@ -2324,7 +2324,7 @@ public class Db4j implements Serializable {
             else current.append(cb);
         }
         
-        public long oldestRead() {
+        long oldestRead() {
             // fixme:read-only -- should track the read-only transactions and preserve
             //   the generation of the map at the time of creation
             long last = useLastgen ? db4j.qrunner.lastgen : db4j.qrunner.map.genc;
@@ -2347,7 +2347,7 @@ public class Db4j implements Serializable {
          */
         
         /** scrub any covering reads that aren't needed anymore, ie the covered write is current */
-        public void scrub() {
+        void scrub() {
             long oldest = oldest();
             TreeDisk.Entry<CachedBlock> entry = byUpdate.first(), next;
             
@@ -2405,7 +2405,7 @@ public class Db4j implements Serializable {
          * returns the newest generation that was effected
          * QRT-only (ie, queRunnerThread)
          */
-        public void drop() {
+        void drop() {
             CachedBlock cb = current.pop();
             if (cb==null)
                 throw new DropOutstandingException();
@@ -2477,7 +2477,7 @@ public class Db4j implements Serializable {
             }
         }
         /** update the time-to-live info for this block */
-        public void update(CachedBlock cb,long update) {
+        void update(CachedBlock cb,long update) {
             Simple.softAssert(cb.newer==null);
             Simple.softAssert(update >= oldest());
             if (update <= cb.update) {
@@ -2503,14 +2503,14 @@ public class Db4j implements Serializable {
          * set the time-to-live and append to the list of cache ordered by update
          * assumption: cb is not yet in byUpdate
          */
-        public void setUpdate(CachedBlock cb,long update) {
+        void setUpdate(CachedBlock cb,long update) {
             Simple.softAssert(cb.newer==null & update >= oldest());
             cb.update = update;
             if (cb.writ)         ndefoe++;
             else                 addToUpdate(cb);
         }
         /** handle the accounting for a newly covered cb, submitting the covering write if needed */
-        public void cover(CachedBlock cb,boolean submit) {
+        void cover(CachedBlock cb,boolean submit) {
             if (cb.writ) {
                 if (cb.submit)          ncrusoe--;   // commit pending
                 else                     ndefoe--;   // uncommitted
@@ -2544,7 +2544,7 @@ public class Db4j implements Serializable {
             else addRead(cb);                               // current or outstanding
             test();
         }
-        public void submitCache() {
+        void submitCache() {
             int nd = ndefoe, nd2 = d2;
             ncrusoe += ndefoe;
             ndefoe = 0;
@@ -2595,14 +2595,14 @@ public class Db4j implements Serializable {
         public void handle(Db4j db4j);
     }
     /** a cooperatively latch a page, ie first caller is owner, later callers are deferred */
-    public static class Latch {
+    static class Latch {
         Latch next;
         int kpage;
-        public DynArray.Objects<Db4j.Task> tasks;
+        DynArray.Objects<Db4j.Task> tasks;
         /** initialize storage if needed */
-        public void init() { if (tasks==null) tasks = DynArray.Objects.neww(Db4j.Task.class ); }
+        void init() { if (tasks==null) tasks = DynArray.Objects.neww(Db4j.Task.class ); }
         /** restart the deferred tasks */
-        public void restart(Db4j db4j) {
+        void restart(Db4j db4j) {
             if (tasks != null) {
                 for (Db4j.Task task : tasks) {
                     if (Db4j.debug.reason) task.pure().reason( "BlockNode.restartLatches" );
@@ -2617,9 +2617,9 @@ public class Db4j implements Serializable {
     public static abstract class Rollbacker extends Listee<Rollbacker> {
         public abstract void runRollback(Transaction txn);
     }
-    public static class ClosedException extends RuntimeException {}
-    public static class RestartException extends RuntimeException {}
-    public static class DropOutstandingException extends RuntimeException {}
+    static class ClosedException extends RuntimeException {}
+    static class RestartException extends RuntimeException {}
+    static class DropOutstandingException extends RuntimeException {}
 
     public static class Transaction extends Listee<Transaction> {
         /** 
@@ -2628,52 +2628,52 @@ public class Db4j implements Serializable {
          * a linked list using Command.next
          * most recently inserted command as tail, ie in forward order
          */
-        public Command writs;
+        Command writs;
         /** the tail of the (write) cmds */
-        public Command writsTail;
+        Command writsTail;
         /** the last command to be submitted, ie the set [reads,readsTail) is outstanding */
-        public Command readsTail;
+        Command readsTail;
         /** the number of reads and writes */
-        public int nreads, nwrits;
+        int nreads, nwrits;
         /** the number of previously submitted reads */
-        public int ksub;
+        int ksub;
         /** monotonic unique id, set in registration to the qrunner genc */
-        public long gen0 = QueRunner.gencUsageMarker(0);
-        public int ncomplete;
-        public boolean inuse, committed;
+        long gen0 = QueRunner.gencUsageMarker(0);
+        int ncomplete;
+        boolean inuse, committed;
         /** 
          * the transaction was dropped or
          * the commit failed ... the queRunner detected a change to a dependent read
          * roll it back and retry
          */
         // fixme::configable -- allow txn to relax consistency reqs
-        public boolean rollback;
-        public boolean restart;
-        public Listee.Lister<Rollbacker> rollbackers;
+        boolean rollback;
+        boolean restart;
+        Listee.Lister<Rollbacker> rollbackers;
         DynArray.Objects<Cleanable> cleaners;
 
-        public Db4j db4j;
-        public Task task;
+        Db4j db4j;
+        Task task;
         /** a list of 1-generation latches */
-        public Latch latches;
-        public boolean uptodate;
-        public PreRead p1;
-        public boolean readonly;
-        public int nr;
+        Latch latches;
+        boolean uptodate;
+        PreRead p1;
+        boolean readonly;
+        int nr;
 
         public void addRollbacker(Rollbacker rb) {
             if (rollbackers==null) rollbackers = new Listee.Lister();
             rollbackers.append( rb );
         }
-        public void addCleaner(Cleanable cleaner) {
+        void addCleaner(Cleanable cleaner) {
             if (cleaners==null) cleaners = new DynArray.Objects().init( Cleanable.class );
             cleaners.add(cleaner);
         }
 
-        public Transaction set(Db4j $db4j) { db4j = $db4j; return this; }
+        Transaction set(Db4j $db4j) { db4j = $db4j; return this; }
 
         /** add a latch for kpage, ie if that page isn't held become the owner, otherwise defer */
-        public void addLatch(int kpage) {
+        void addLatch(int kpage) {
             Latch cmd = new Latch();
             cmd.kpage = kpage;
             cmd.next = latches;
@@ -2686,7 +2686,7 @@ public class Db4j implements Serializable {
          * for reads, see if the read can be satisfied by the current list of writes
          * if not, at it to the io que immediately
          */
-        public void add(Command cmd) {
+        void add(Command cmd) {
             uptodate = false;
             cmd.txn = this;
             if (rollback) throw new ClosedException();
@@ -2696,7 +2696,7 @@ public class Db4j implements Serializable {
             if (cmd.write()) nwrits++;
             else nreads++;
         }
-        public void cleanse(long kblock) {
+        void cleanse(long kblock) {
             final int bb = db4j.bb;
             Command c1 = writs;
             writs = null;
@@ -2710,7 +2710,7 @@ public class Db4j implements Serializable {
             ksub = nreads = nwrits = 0;
             writs = readsTail = null;
         }
-        public void overWritten() {
+        void overWritten() {
             QueRunner qr = db4j.qrunner;
             for (Command cmd = writs; !rollback && cmd != null; cmd = cmd.next)
                 if (!cmd.write())
@@ -2718,7 +2718,7 @@ public class Db4j implements Serializable {
         }
 
         /** latch all latches, return true if a latch has failed and need to be deferred */
-        public boolean checkLatch(QueRunner qr) {
+        boolean checkLatch(QueRunner qr) {
             if (latches==null) return false;
             overWritten();
             if (rollback) return false;
@@ -2758,13 +2758,13 @@ public class Db4j implements Serializable {
                 for (Cleanable cleaner : cleaners) cleaner.clean();
             cleaners = null;
         }
-        public void unlatch() {
+        void unlatch() {
             for (Latch latch = latches; latch != null; latch = latch.next)
                 latch.restart(db4j);
             latches = null;
         }
-        public Command getTail() { return readsTail==null ? writs:readsTail.next; }
-        public boolean entreeReads(QueRunner qr) {
+        Command getTail() { return readsTail==null ? writs:readsTail.next; }
+        boolean entreeReads(QueRunner qr) {
             if (gen0 <= qr.dc.cliff)
                 rollback = true;
             
@@ -2800,12 +2800,12 @@ public class Db4j implements Serializable {
                 return complete;
             }
         }
-        public void cancelReads() {
+        void cancelReads() {
             for (PreRead pr = p1; pr != null; pr = pr.next)
                 db4j.qrunner.cancelRead( pr );
             p1 = null;
         }
-        public void commitReads() {
+        void commitReads() {
             for (PreRead pr = p1; pr != null; pr = pr.next, nr++)
                 db4j.qrunner.commitRead( pr );
             p1 = null;
@@ -2816,7 +2816,7 @@ public class Db4j implements Serializable {
         static int fakeCount = 0, fakeMask = 0x0;
         
         /** submit the transaction - return true if a yield is required */
-        public boolean submit() {
+        boolean submit() {
             if ((fakeCount++ & fakeMask) > 0)
                 return true;
             uptodate = true;
@@ -2838,7 +2838,7 @@ public class Db4j implements Serializable {
         }
 
         /** returns true if the transaction was handled by cache */
-        public boolean entree(QueRunner qr) {
+        boolean entree(QueRunner qr) {
             if (! inuse) qr.register( this );
             boolean deferred = (gen0 != qr.genc);
             if (!committed) {
@@ -2911,7 +2911,7 @@ public class Db4j implements Serializable {
         public String toString() {
             return String.format( "Txn -- %5dr, %5dw, gen%5d", nreads, nwrits, gen0 );
         }
-        public void cleanOldReads() {
+        void cleanOldReads() {
             Command tail = getTail();
             for (Command cmd = writs; cmd != tail; cmd = cmd.next)
                 if (! cmd.write())
@@ -2919,8 +2919,8 @@ public class Db4j implements Serializable {
         }
     }
 
-    public static class TaskTree extends TreeDisk<Task,Void> {
-        public Task get(final int $id) {
+    static class TaskTree extends TreeDisk<Task,Void> {
+        Task get(final int $id) {
             Task task = new DummyTask();
             task.id = $id;
             return get( task );
@@ -2934,8 +2934,8 @@ public class Db4j implements Serializable {
         }
     }
 
-    public static class OldestTask extends Task {
-        public Task oldest;
+    static class OldestTask extends Task {
+        Task oldest;
         public void task() throws Pausable {}
         public void runTask(Db4j db4j) {
             oldest = db4j.qrunner.tasks.head;
@@ -2949,8 +2949,8 @@ public class Db4j implements Serializable {
     //   disable weaving in build.xml
     
     /** use an exception instead of yield to restart tasks */
-    public static boolean useRestart = false;
-    public static void restart() {
+    static boolean useRestart = false;
+    static void restart() {
         if (useRestart) throw new Db4j.RestartException();
     }
     private static class DummyKilimTask extends kilim.Continuation.FakeTask {
@@ -2973,11 +2973,11 @@ public class Db4j implements Serializable {
      *   and then once after the commit
      */
     public abstract static class Task extends Listee<Task> implements Queable {
-        public int id;
+        int id;
         Status status = Status.None;
         public Transaction tid;
-        public Kask kask;
-        public Task listForGen;
+        Kask kask;
+        Task listForGen;
         private boolean done, alive = true;
         static kilim.Task dummyKilimTask = new DummyKilimTask();
         int dogyears;
@@ -2997,9 +2997,9 @@ public class Db4j implements Serializable {
         // fixme -- why use the completedtasklist instead of just counting all the completed writes ???
         public boolean postRun(boolean pre) { return false; }
         
-        public class Kask {
+        class Kask {
             private kilim.Fiber fiber = new kilim.Fiber(dummyKilimTask);
-            public boolean re() throws kilim.NotPausable {
+            boolean re() throws kilim.NotPausable {
                 boolean tasking = false;
                 try {
                     fiber.begin();
@@ -3013,7 +3013,7 @@ public class Db4j implements Serializable {
                 return ex==null ? fiber.end() : false;
             }
         }
-        public boolean done() {
+        boolean done() {
             if (ex != null) throw ex;
             return done && !alive;
         }
@@ -3027,13 +3027,13 @@ public class Db4j implements Serializable {
         }
         public void task(kilim.Fiber fiber) throws Exception {}
         public abstract void task() throws Pausable, Exception;
-        public void clear() {
+        void clear() {
             kask = null;
             tid = null;
             status( Status.None );
         }
-        public void init2() { done = false; alive = true; kask = new Kask(); }
-        public void init(Db4j db4j) {
+        void init2() { done = false; alive = true; kask = new Kask(); }
+        void init(Db4j db4j) {
             init2();
             tid = db4j.getTransaction();
             tid.task = this;
@@ -3043,7 +3043,7 @@ public class Db4j implements Serializable {
             if (Db4j.debug.reason) pure().reason( "task.init" );
         }
 
-        public void preRun(Db4j db4j) {
+        void preRun(Db4j db4j) {
             if (!tid.committed) {
                 if (db4j.qrunner.clearout) {
                     rollback(db4j,true);
@@ -3064,7 +3064,7 @@ public class Db4j implements Serializable {
             }
             runTask(db4j);
         }
-        public boolean fakeTask() throws kilim.NotPausable {
+        boolean fakeTask() throws kilim.NotPausable {
             try { task(); }
             catch (kilim.Pausable ex) { throw rte(ex,"should never happen"); }
             catch (RestartException ex) { return true; }
@@ -3237,7 +3237,7 @@ public class Db4j implements Serializable {
             status = next;
         }
     }
-    public static class DummyTask extends Task { public void task() throws Pausable {} }
+    static class DummyTask extends Task { public void task() throws Pausable {} }
     public static class Reason extends Listee<Reason> {}
     public static class ReasonObject<TT> extends Reason {
         TT object;
@@ -3249,8 +3249,8 @@ public class Db4j implements Serializable {
         public ReasonString set(String $txt) { txt = $txt; return this; }
         public String toString() { return txt; }
     }
-    public static Task silentTask = new DummyTask();
-    public static class DiskAnomaly {
+    static Task silentTask = new DummyTask();
+    static class DiskAnomaly {
         int numRead;
     }
     enum Status {

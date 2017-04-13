@@ -62,7 +62,7 @@ public class Chat1 extends Database {
             }.start().joinb();
             k2 = new Btrees.IS();
             hello.db4j.submitCall(tid -> {
-                tid.db4j.create(tid,k2.init("hello.kryoMap"));
+                hello.db4j.create(tid,k2.init("hello.kryoMap"));
             }).awaitb();
             hello.db4j.submitCall(tid -> {
                 k2.insert(tid,707,"hello world");
