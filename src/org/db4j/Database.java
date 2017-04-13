@@ -3,9 +3,7 @@
 package org.db4j;
 
 import java.lang.reflect.Field;
-import kilim.Pausable;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j;
 import org.srlutils.DynArray;
 import org.srlutils.Simple;
 
@@ -21,11 +19,6 @@ public class Database {
         return field.getDeclaringClass().getSimpleName() + "/";
     }
 
-    public <TT> Db4j.LambdaQuery<TT> future(Db4j.Queryable<TT> body) throws Pausable {
-        return db4j.submit(body);
-    }
-
-    
     
     /** get all the fields of obj assignable from filter using reflection */
     public static Field[] getFields(Object obj,Class filter) {
