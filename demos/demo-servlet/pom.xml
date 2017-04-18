@@ -15,7 +15,7 @@
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>kilim</artifactId>
-            <version>2.0.0-9</version>
+            <version>2.0.0-10</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
@@ -32,7 +32,7 @@
             <plugin>
                 <groupId>org.db4j</groupId>
                 <artifactId>kilim</artifactId>
-                <version>2.0.0-9</version>
+                <version>2.0.0-10</version>
                 <executions>
                     <execution>
                         <goals><goal>weave</goal></goals>
