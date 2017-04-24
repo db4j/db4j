@@ -62,7 +62,7 @@ this implements a simple persistent RESTful "mailbox" app
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>db4j</artifactId>
-            <version>0.9.2</version>
+            <version>0.9.4</version>
         </dependency>
 ```
 
