@@ -956,6 +956,9 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         boolean pable = (kilim.Pausable.class==(Class)Pausable.class);
 
         public void doinit(Fiber fiber) { throw new RuntimeException(); }
+        public void dorun(int stage,Fiber fiber) { throw new RuntimeException(); }
+
+        
         public void doinit() throws Pausable {}
         public void init() throws kilim.NotPausable {
             keys = Rand.rand(nn+1);
@@ -965,7 +968,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             else   try { doinit(); } catch (Exception ex) {}
         }
         public void kiss() { map.clear(); }
-        public void dorun(int stage,Fiber fiber) { throw new RuntimeException(); }
+
         public void dorun(int stage) throws Pausable {}
         public void run(final int stage) throws kilim.NotPausable {
             if (pable) { dorun(stage,fiber.begin()); fiber.end(); }
@@ -1022,10 +1025,8 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     
     public static class Demo {
         public static void main(String[] args) throws Exception {
-            if (true) {
-                org.srlutils.btree.TestDF.auto(null,0,1,1,new Tester.Sub(1000000));
-                org.srlutils.btree.TestDF.auto(null,0,3,3,new Tester.Sub(1000000));
-            }
+            org.srlutils.btree.TestDF.auto(null,0,1,1,new Tester.Sub(1000000));
+            org.srlutils.btree.TestDF.auto(null,0,3,3,new Tester.Sub(1000000));
         }
     }
     
