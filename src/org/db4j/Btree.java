@@ -583,13 +583,22 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             boolean valid = p1 != null && (p2==null || !p1.same(p2));
             return valid;
         }
+        /**
+         * make the next element in the range current and store the key/value pair in context
+         * @return true if the element is valid
+         */
         public boolean next() throws Pausable {
             boolean valid = hasnext();
             first = false;
             if (valid) btree.getccx(p1.page,cc,p1.ko);
             return valid;
         }
-        public boolean next2() throws Pausable {
+        /**
+         * make the next element in the range current and store the key/value pair in context.
+         * additionally, when a new page is accessed for the first time, toast all elements
+         * @return true if the element is valid
+         */
+        public boolean nextGreedy() throws Pausable {
             Page po = p1.page;
             boolean valid = hasnext();
             if (valid && (preinit | po != p1.page)) btree.toastPage(p1,cc);
@@ -598,6 +607,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             return valid;
         }
     }
+    /**
+     * advance path to the next page in the path
+     * @param path the initial path, which is modified to point to the next page
+     * @param start the depth of the path
+     * @param context the context
+     */
     void advance(Path<PP> path,int start,CC context) throws Pausable {
         path.ko++;
         if (path.ko < path.page.num)
