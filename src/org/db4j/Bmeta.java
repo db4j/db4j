@@ -216,7 +216,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         return size2;
     }
     
-    public static boolean checkDel = true;
+    public static boolean checkDel = false;
     public void checkDel(Sheet page,boolean force) {
         if (!(checkDel | force)) return;
         int size1 = mmeta;
@@ -361,9 +361,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
         public ArrayList<VV> vals() throws Pausable {
             ArrayList<VV> vals = new ArrayList();
-            // fixme - next2 is hardcoded. should have a more flexible mechanism for bulk loading
             slurp(p1,p2,cc);
-            while (next()) 
+            while (next())
                 vals.add(cc.val);
             return vals;
         }
