@@ -36,11 +36,11 @@ public class HunkLocals extends HunkArray.I {
         return klast;
     }
 
-    public void postInit(Transaction tid) throws Pausable {
+    protected void postInit(Transaction tid) throws Pausable {
         super.postInit(tid);
         last.write(0);
     }
-    public void postLoad(Transaction tid) throws Pausable {}
+    protected void postLoad(Transaction tid) throws Pausable {}
 
     public static void main(String [] args) throws Exception {
         Db4j.Demo.main(args);

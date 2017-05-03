@@ -11,7 +11,7 @@ import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
 
-public class HunkCount implements Hunkable<HunkCount>, Serializable {
+public class HunkCount extends Hunkable<HunkCount> implements Serializable {
     static final long serialVersionUID = -1693345263933559568L;    
     public static class Vars {
         public Locals locals = new Locals();
@@ -21,7 +21,7 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
     transient public Db4j db4j;
     public String name;
 
-    public String info() {
+    protected String info() {
         return "";
     }
 
@@ -45,11 +45,11 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         db4j.put( tid, writ );
     }
     
-    public int create() {
+    protected int create() {
         int cap = loc.locals.size();
         return cap;
     }
-    public void createCommit(long locBase) { loc.locals.set(db4j, locBase ); }
+    protected void createCommit(long locBase) { loc.locals.set(db4j, locBase ); }
     public String name() { return name; }
     public HunkCount set(Db4j $db4j) {
         db4j = $db4j;
@@ -61,10 +61,10 @@ public class HunkCount implements Hunkable<HunkCount>, Serializable {
         name = $name;
         return this;
     }
-    public void postInit(Transaction tid) throws Pausable {
+    protected void postInit(Transaction tid) throws Pausable {
         db4j.put(tid, loc.count.write(0));
     }
-    public void postLoad(Transaction tid) throws Pausable {}
+    protected void postLoad(Transaction tid) throws Pausable {}
     
     public static class Demo {
         HunkCount lt;

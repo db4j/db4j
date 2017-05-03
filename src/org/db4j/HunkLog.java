@@ -18,7 +18,7 @@ import org.db4j.Db4j.Transaction;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
 
-public class HunkLog implements Hunkable<HunkLog>, Serializable {
+public class HunkLog extends Hunkable<HunkLog> implements Serializable {
 //    static final long serialVersionUID;
 
     
@@ -30,7 +30,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
 
     public String name() { return name; }
 
-    public String info() {
+    protected String info() {
         return "";
     }
     
@@ -63,15 +63,15 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
         return this;
     }
 
-    public int create() {
+    protected int create() {
         int lsize = loc.locals.size();
         return lsize;
     }
-    public void createCommit(long locBase) {
+    protected void createCommit(long locBase) {
         loc.locals.set(db4j, locBase);
     }
     transient int ngrow, tmpBase;
-    public void postInit(Transaction tid) throws Pausable {
+    protected void postInit(Transaction tid) throws Pausable {
         ngrow = 8;
         int base = db4j.request(ngrow, true, tid)[0];
         tmpBase = base;
@@ -84,7 +84,7 @@ public class HunkLog implements Hunkable<HunkLog>, Serializable {
             db4j.put(tid, (0L+khunk+base) << db4j.bb, new Command.RwBytes().init(true).set(zeros));
         }
     }
-    public void postLoad(Transaction tid) throws Pausable {
+    protected void postLoad(Transaction tid) throws Pausable {
         restore(tid);
     }
 

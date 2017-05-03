@@ -26,7 +26,7 @@ import org.srlutils.btree.TestDF;
  *  a hunkable btree
 */
 public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet> 
-    implements Serializable, Hunkable<Bhunk>
+    implements Serializable
 {
     transient public Db4j db4j;
     transient public Vars loc;
@@ -255,10 +255,10 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         if (useCopy & false) context.txn.cleanse(kpage);
         db4j.put( context.txn, offset(kpage,0), cmd );
     }
-    public void postInit(Transaction tid) throws Pausable {
+    protected void postInit(Transaction tid) throws Pausable {
         init(context().set(tid));
     }
-    public void postLoad(Transaction tid) throws Pausable {}
+    protected void postLoad(Transaction tid) throws Pausable {}
     public Bhunk init(String $name) {
         name = $name;
         db4j.register( this );
@@ -270,14 +270,14 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         return this;
     }
     public String name() { return name; }
-    public void createCommit(long locBase) {
+    protected void createCommit(long locBase) {
         loc.locals.set(db4j, locBase );
     }
-    public int create() {
+    protected int create() {
         int lsize = loc.locals.size();
         return lsize;
     }
-    public String info() { return ""; }
+    protected String info() { return ""; }
 
     public void split(Sheet src,Sheet dst,int kb) { src.split(dst,kb); }
     

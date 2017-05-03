@@ -113,15 +113,15 @@ public class Db4j implements Serializable {
 
     
 
-    public static interface Hunkable<TT extends Hunkable> {
-        public String info();
-        public int create();
-        public void createCommit(long locBase);
-        public String name();
-        public TT set(Db4j db4j);
-        public TT init(String $name);
-        public void postInit(Transaction tid) throws Pausable;
-        public void postLoad(Transaction tid) throws Pausable;
+    public static abstract class Hunkable<TT extends Hunkable> {
+        protected abstract String info();
+        protected abstract int create();
+        protected abstract void createCommit(long locBase);
+        public abstract String name();
+        public abstract TT set(Db4j db4j);
+        public abstract TT init(String $name);
+        protected abstract void postInit(Transaction tid) throws Pausable;
+        protected abstract void postLoad(Transaction tid) throws Pausable;
     }
 
 

@@ -16,6 +16,8 @@ import org.srlutils.btree.Butil;
 
 // can run either kilimized or kilim-free (comment out the following import)
 import kilim.Pausable;
+import org.db4j.Db4j.Hunkable;
+import org.db4j.Db4j.Transaction;
 
 /*
  * 
@@ -48,7 +50,7 @@ import kilim.Pausable;
  * PP: page type
  */
 public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
-    implements Serializable
+    extends Hunkable<Btree> implements Serializable
 {
     public static final Modes modes = new Modes();
     public int bb = 12;
@@ -914,10 +916,19 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             p1.rawcopy(p0,k1,k0,pkey,keysize);
         }
         public int [] getInfo() { return new int[] {depth, pages.size-kdels.size, zeroMerge}; }
+
+        // shim implementation of Hunkable
+        protected int create() { return 0; }
+        protected void createCommit(long locBase) {}
+        public String name() { return null; }
+        public Bhunk set(Db4j db4j) { return null; }
+        public Bhunk init(String $name) { return null; }
+        protected void postInit(Transaction tid) throws Pausable {}
+        protected void postLoad(Transaction tid) throws Pausable {}
     }
     /** return an array of depth and number of pages */
     public int [] getInfo() { return null; }
-    public String info() {
+    protected String info() {
         int [] info = getInfo();
         return String.format("Btree depth:%d, pages:%d\n", info[0], info[1]);
     }

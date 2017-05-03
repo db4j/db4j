@@ -12,7 +12,7 @@ import org.db4j.Db4j.Transaction;
 import org.srlutils.Simple.Rounder;
 
 public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ extends HunkArray>
-        implements Hunkable<HunkArray>, Serializable {
+        extends Hunkable<HunkArray> implements Serializable {
     static final long serialVersionUID = -9057551081001858374L;
 
     
@@ -34,7 +34,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
 
     public String name() { return name; }
     
-    public String info() {
+    protected String info() {
         // fixme -- this is all pre-kilim and isn't meaningful anymore
         //   should be stripped down to what can be found without pauses
         //   and another method introduce that is Pausable that captures everything else
@@ -107,20 +107,20 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         return (ZZ) this;
     }
 
-    public int create() {
+    protected int create() {
         int lsize = loc.locals.size();
         int cap = lsize + maxSlots*bytesPerHunk;
         return cap;
     }
-    public void createCommit(long locBase) {
+    protected void createCommit(long locBase) {
         loc.locals.set(db4j, locBase );
         hunksBase = locBase + loc.locals.size();
     }
-    public void postInit(Transaction tid) throws Pausable {
+    protected void postInit(Transaction tid) throws Pausable {
         db4j.put( tid, loc.nhunks.write(0) );
         db4j.put( tid, loc.nlive.write(0) );
     }
-    public void postLoad(Transaction tid) throws Pausable {}
+    protected void postLoad(Transaction tid) throws Pausable {}
 
 
     public Command.RwLongs [] setLongs(Transaction tid,long k1,long [] data) throws Pausable {
