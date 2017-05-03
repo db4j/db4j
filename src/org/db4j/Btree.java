@@ -63,7 +63,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     int pkey, pval, pdex;
     double minfill = 3.0/8.0;
 
-    public void init(int $keysize,int $valsize) {
+    void init(int $keysize,int $valsize) {
         keysize = $keysize;
         valsize = $valsize;
         mbranch = keysize + dexsize;
@@ -77,12 +77,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     }
 
     /** get the root and init context.depth if page is null, else set the page */
-    public abstract PP rootz(PP page,CC context) throws Pausable;
+    abstract PP rootz(PP page,CC context) throws Pausable;
     /** set the map depth and update context.depth */
-    public abstract void depth(int level,CC context) throws Pausable;
+    abstract void depth(int level,CC context) throws Pausable;
     
 
-    public void init(CC context) throws Pausable {
+    void init(CC context) throws Pausable {
         PP root = createPage(true,context);
         rootz(root,context);
         depth(0,context);
@@ -90,13 +90,13 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     }
 
     /** find the index of the first key in the page >= key - stepped linear search */
-    public int findIndex(PP page,int mode,CC context) {
+    int findIndex(PP page,int mode,CC context) {
         boolean greater = modes.greater( mode );
         int step = 16, num = page.numkeys(), k1;
         k1 = findLoop(page,step,num,step,context,greater);
         return k1;
     }
-    int findLoop(PP page,int k1,int num,int step,CC context,boolean greater) {
+    protected int findLoop(PP page,int k1,int num,int step,CC context,boolean greater) {
         for (; k1<num; k1+=step) {
             int cmp = compare( page, k1, context );
             if (greater & cmp==0) cmp = 1;
@@ -115,7 +115,10 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         return range().set(b1,b2,c1);
     }
     protected Range<CC> range() { return new Range(this); }
-    /** find the key represented by data */
+    /** 
+     * search the tree using the provided context
+     * @param context the context, including the key to search for
+     */
     public void findData(CC context) throws Pausable {
         findPath(context,true);
         if (true) return;
@@ -135,6 +138,11 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             getccx(page, context, ko);
         }
     }
+    /** search the tree for the data represented by context and return the path to the matching node
+     * @param context the context, including the key to search for
+     * @param get if true, store the matching key and value in context
+     * @return the path to the matching node
+     */
     public Path findPath(CC context,boolean get) throws Pausable {
         initContext(context);
         PP page = rootz(null,context);
@@ -167,11 +175,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         }
         return path;
     }
-    public void verify(CC cc) throws Pausable {
+    /** verify the integrity of the tree, throwing a runtime error for problems */
+    void verify(CC cc) throws Pausable {
         PP page = rootz(null,cc);
         if (cc.depth > 0) verify(page,0,cc,null);
     }
-    public void verify(PP page,int level) throws Pausable {
+    void verify(PP page,int level) throws Pausable {
         CC cc = context();
         getccx(page,cc,0);
         initContext(cc);
@@ -186,7 +195,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             initContext(cc);
         }
     }
-    public void verify(PP page,int level,CC cc,CC cp) throws Pausable {
+    void verify(PP page,int level,CC cc,CC cp) throws Pausable {
         Simple.softAssert(page.leaf==0);
         verify(page,level);
         checkDel(page,true);
@@ -220,6 +229,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
      * split must be done during decent of the tree if the page is full, ie, the parent is never full
      * split page0 with parent index kp into page1 (ie page1 is the new page)
      * modifies the depth if parent is null -- fixme - makes level-tracking complicated
+     * @param raft the index at which a new pair will be inserted, which is updated by the split 
      */
     PP split(PP page0,Raft<PP> raft,PP parent,int kp,boolean leaf,CC context) throws Pausable {
         PP page1 = createPage(leaf,context);
@@ -238,7 +248,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         kp = shift(parent,kp);
         int kp1 = nextIndex(parent,kp);
         // for non-leafs, this isn't usually a "valid" key ... but we just did the split so it's ok
-        key( parent, kp, page0, page0.num-1);
+        key(parent, kp, page0, page0.num-1);
         parent.dexs(kp , page0.kpage);
         parent.dexs(kp1, page1.kpage);
         commit(parent,context);
@@ -253,8 +263,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         }
         return page0;
     }
-    public void prep(PP page) {}
+    /** collect garbage for the page, causing the page to be sequential */
+    void prep(PP page) {}
+    /** a modifiable index, used to adjust insert location post split */
     static class Raft<PP> { int ko; }
+
+    /** insert the key/value pair in context into the tree */
     public void insert(CC context) throws Pausable { insert1(context); }
     /** 
      *  single pass insert
@@ -281,7 +295,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     
     
     /** insert the key value pair in context into the map */
-    public void insert2(CC context) throws Pausable {
+    void insert2(CC context) throws Pausable {
         context.mode = modes.gt;
         Path<PP> path = findPath(context,false);
         insertPath(path,context);
@@ -299,7 +313,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     PP splitPage(Path<PP> path,CC context,PP left,PP right) throws Pausable {
         return null; // must be overrided
     }
-    /** traverse path, splitting each page if needed */
+    /** traverse path, splitting each page if needed and insert the key/value pair in context */
     public void insertPath(Path<PP> path,CC context) throws Pausable {
         PP left=null, right=null, page0, page1;
         for (; path != null && overcap(page0=path.page,context,right==null,left);
@@ -349,7 +363,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         if (context.match) 
             remove(path,context,path.right);
     }
-    public int delete(PP page,int index) {
+    int delete(PP page,int index) {
         prep(page);
         return page.delete(index);
     }
@@ -388,7 +402,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             commit(path.page,context);
         }
     }
-    public void combine(Path<PP> path,CC context) throws Pausable {
+    void combine(Path<PP> path,CC context) throws Pausable {
         boolean yes = true;
         int level = context.depth;
         for (; yes && path.prev != null; path = path.prev, level--)
@@ -405,7 +419,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
      * merge p2 (the right element) into p1 (the left element) and update parent
      * kp is index of p1 in parent
      */
-    public void merge(PP p1,PP p2,PP parent,int n1,int n2,int kp,CC context) {
+    void merge(PP p1,PP p2,PP parent,int n1,int n2,int kp,CC context) {
         int k1 = p1.num-1;
         merge(p2,p1);
         free(p2);
@@ -416,13 +430,13 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         commit(p1,context);
         commit(parent,context);
     }
-    public void checkDel(PP page,boolean force) {}
+    void checkDel(PP page,boolean force) {}
     public int zeroMerge = 0;
     /** 
      * merge path either to the right or left
      * leafs only merge at 0 or pac
      */
-    public boolean merge2(Path<PP> path,CC context,int level) throws Pausable {
+    boolean merge2(Path<PP> path,CC context,int level) throws Pausable {
         PP page = path.page;
         int num = page.num();
         boolean leaf = (level==context.depth);
@@ -467,10 +481,14 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         }
         return false;
     }
+    /** an opaque handle to allow passing pages publicly without loss of encapsulation */
     public static class OpaquePage<PP extends Page> {
         PP page;
     }
+    /** a linked list representing a position in the tree */
     public static class Path<PP extends Page> {
+        // fixme:encapsulation - btree subclasses could need access to private members
+        //                       use static protected methods
         Path() {}
         Path<PP> prev;
         PP page;
@@ -753,9 +771,9 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
 
     
 
-    public void  prepx(PP page,CC context,int ko) {}
-    public void getccx(PP page,CC context,int ko) throws Pausable { getcc(page,context,ko); }
-    public void setccx(PP page,CC context,int ko) throws Pausable { setcc(page,context,ko); }
+    void  prepx(PP page,CC context,int ko) {}
+    void getccx(PP page,CC context,int ko) throws Pausable { getcc(page,context,ko); }
+    void setccx(PP page,CC context,int ko) throws Pausable { setcc(page,context,ko); }
     
     /** set the key and val (if not leaf) in context to the values from page at ko */
     public abstract void getcc(PP page,CC context,int ko);
@@ -778,7 +796,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
 
     
     /** read the state variables - potentially expensive */
-    public void initContext(CC cc) throws Pausable {
+    void initContext(CC context) throws Pausable {
         // note: cc.depth gets initialized in rootz()
     }
 
@@ -791,7 +809,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     int pac(boolean leaf) { return leaf ? qleaf:qbranch; }
     int cap(boolean leaf) { return leaf ? nleaf:nbranch; }
     /** is the page too full to add this key/val pair ? */
-    public boolean overcap(PP page,CC cc,boolean leaf,PP left) { return page.num() == cap(leaf); }
+    boolean overcap(PP page,CC cc,boolean leaf,PP left) { return page.num() == cap(leaf); }
     /** return the length of the data in page merged with other and cc inserted */
     public final int nextpos(PP page,PP other,CC cc,boolean leaf) {
         int num = page.num;
@@ -809,8 +827,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     
 
     /** get the page pointed to by parent[index] */
-    public PP dexs(PP parent,int index,boolean leaf,CC cc) throws Pausable {
-        // fixme::perf - could push no-pause-required path up
+    PP dexs(PP parent,int index,boolean leaf,CC cc) throws Pausable {
         int kpage = parent.dexs(index);
         PP page = getPage(kpage,cc,leaf);
         boolean l2 = page.leaf==1;
@@ -839,14 +856,14 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     public void free(PP page) {}
 
     
-    public static abstract class DirectMap<CC extends Context>
+    static abstract class DirectMap<CC extends Context>
         extends Btree<CC,Sheet> {
         /** the root page */
         public Sheet rootz;
         DynArray.ints kdels = new DynArray.ints();
         DynArray.Objects<Sheet> pages = new DynArray.Objects().init(Sheet.class);
         public int depth;
-        public Sheet rootz(Sheet page,CC context) throws Pausable {
+        Sheet rootz(Sheet page,CC context) throws Pausable {
             if (page==null) context.depth = depth;
             else rootz = page;
             return rootz;
@@ -856,7 +873,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             kdels.add(page.kpage);
             page.clean();
         }
-        public void depth(int level,CC context) throws Pausable {
+        void depth(int level,CC context) throws Pausable {
             context.depth = depth = level;
         }
         public void split(Sheet src,Sheet dst,int kb) { src.split(dst,kb); }
@@ -1008,7 +1025,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             public void getcc(Sheet po,Data cc,int ko) { cc.key=po.getd(pkey,ko); cc.val=po.getf(pval,ko); }
             double key(Sheet page,int index) { return page.getd(pkey,index); }
             public int compare(Sheet page,int index,Data data) { return Butil.compare(data.key,key(page,index)); }
-            int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
+            protected int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
                 for (; k1<num; k1+=step) {
                     int cmp = compare( page, k1, context );
                     if (greater & cmp==0) cmp = 1;

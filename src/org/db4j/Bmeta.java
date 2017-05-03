@@ -65,7 +65,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         public VV get() { return val; }
     }
     /** read the state variables - potentially expensive */
-    public void initContext(CC cc) throws Pausable {
+    void initContext(CC cc) throws Pausable {
         super.initContext(cc);
         // fixme -- should we skip cc.init in some cases eg pop() and first()
         cc.init(this);
@@ -217,7 +217,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     }
     
     public static boolean checkDel = false;
-    public void checkDel(Sheet page,boolean force) {
+    void checkDel(Sheet page,boolean force) {
         if (!(checkDel | force)) return;
         int size1 = mmeta;
         if (page.leaf==1)
@@ -290,7 +290,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         check(parent);
     }
     
-    public boolean overcap(Sheet page,CC cc,boolean leaf,Sheet left) {
+    boolean overcap(Sheet page,CC cc,boolean leaf,Sheet left) {
         return space(page,cc,leaf,left) < 0;
     }
     /** return the number of bytes of free space that would remain after the insertion of cc or left */
@@ -309,7 +309,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         if (keys.dynlen | vals.dynlen)       insert2(context);
         else                           super.insert (context);
     }
-    public int delete(Sheet page,int index) {
+    int delete(Sheet page,int index) {
         prep(page);
         // copy the lower jar into the gap
         // iterate the keys+vals and offset any in the lower jar
@@ -400,23 +400,23 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         public int compare(Bpage.Sheet page,int index,Data data) {
             return keys.compare( data.key, page, index, data.keydata );
         }
-        public void setccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
+        void setccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
             check(page);
             keys.set(page,ko,cc.key,cc.keydata);
             v2.setx(cc.txn,page,ko,cc.val,cc.valdata);
         }
-        public void getccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
+        void getccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
             check(page);
             cc.key = keys.get(page,ko);
             cc.val = v2.getx(cc.txn,page,ko);
         }
 
-        public void prepx(Sheet page,Data context,int ko) {
+        void prepx(Sheet page,Data context,int ko) {
             v2.prepx(context.txn,page,ko);
         }
         
         public boolean isToast(Data data) { return v2.isToast(data.val,data.valdata); }
-        public int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,null);
                 if (greater & cmp==0) cmp = 1;
@@ -428,7 +428,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
     }
     public static abstract class Itoast<TT> extends Toast<Integer,TT,Btypes.ValsInt> {
-        public int findLoop(Bpage.Sheet page,int k1,int num,int step,Toast<Integer,TT,Btypes.ValsInt>.Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Toast<Integer,TT,Btypes.ValsInt>.Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,null);
                 if (greater & cmp==0) cmp = 1;
@@ -452,7 +452,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             public Data set(double key,float val) { return super.set(key,val); }
             public float val() { return val; }
         }
-        public int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,null);
                 if (greater & cmp==0) cmp = 1;
@@ -473,7 +473,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             public float val() { return Float.parseFloat(val); }
         }
         public Data context() { return new Data(); }
-        public int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,context.keydata);
                 if (greater & cmp==0) cmp = 1;

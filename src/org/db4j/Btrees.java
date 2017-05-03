@@ -21,7 +21,7 @@ public class Btrees {
             public Data set(int $key,String $val) { key = $key; val = $val; return this; }
         }
         public Data context() { return new Data(); }
-        public int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,null);
                 if (greater & cmp==0) cmp = 1;
@@ -53,7 +53,7 @@ public class Btrees {
             public Data set(int $key,byte [] $val) { key = $key; val = $val; return this; }
         }
         public Data context() { return new Data(); }
-        public int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,null);
                 if (greater & cmp==0) cmp = 1;
@@ -73,7 +73,7 @@ public class Btrees {
             public Data set(String $key,int $val) { key = $key; val = $val; return this; }
         }
         public Data context() { return new Data(); }
-        public int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,context.keydata);
                 if (greater & cmp==0) cmp = 1;
@@ -118,7 +118,7 @@ public class Btrees {
         public int compare(Bpage.Sheet page,int index,Data data) {
             return Butil.compare(data.key,key(page,index));
         }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -160,7 +160,7 @@ public class Btrees {
             if (data.prefix==1) return 0;
             return Butil.compare(x2,page.geti(pkey+p1,index));
         }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -203,7 +203,7 @@ public class Btrees {
             if (x2 < y2) return -1;
             return Butil.compare(x3,page.geti(pkey+p2,index));
         }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -245,7 +245,7 @@ public class Btrees {
                         : (x2>y2 ? 1 : -1)
                     :     (x1>y1 ? 1 : -1);
         }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -260,7 +260,7 @@ public class Btrees {
         public IL() { setup(new Btypes.ValsInt(),new Btypes.ValsLong()); }
         public static class Data extends Bmeta.Context<Integer,Long,Data> {}
         public Data context() { return new Data(); }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -275,7 +275,7 @@ public class Btrees {
         public IF() { setup(new Btypes.ValsInt(),new Btypes.ValsFloat()); }
         public static class Data extends Bmeta.Context<Integer,Float,Data> {}
         public Data context() { return new Data(); }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -290,7 +290,7 @@ public class Btrees {
         public ID() { setup(new Btypes.ValsInt(),new Btypes.ValsDouble()); }
         public static class Data extends Bmeta.Context<Integer,Double,Data> {}
         public Data context() { return new Data(); }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -305,7 +305,7 @@ public class Btrees {
         public LL() { setup(new Btypes.ValsLong(),new Btypes.ValsLong()); }
         public static class Data extends Bmeta.Context<Long,Long,Data> {}
         public Data context() { return new Data(); }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
@@ -320,7 +320,7 @@ public class Btrees {
         public LF() { setup(new Btypes.ValsLong(),new Btypes.ValsFloat()); }
         public static class Data extends Bmeta.Context<Long,Float,Data> {}
         public Data context() { return new Data(); }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1 += step) {
                 int cmp = compare(page,k1,context);
                 if (greater&cmp==0) cmp = 1;
@@ -335,7 +335,7 @@ public class Btrees {
         public LD() { setup(new Btypes.ValsLong(),new Btypes.ValsDouble()); }
         public static class Data extends Bmeta.Context<Long,Double,Data> {}
         public Data context() { return new Data(); }
-        int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;

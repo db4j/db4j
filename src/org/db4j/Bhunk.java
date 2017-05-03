@@ -57,7 +57,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     static int copy = 1, slut = 2;
     final boolean fakeLoc = false, stuff = false, fake = false;
-    public Sheet rootz(Sheet page,CC context) throws Pausable {
+    Sheet rootz(Sheet page,CC context) throws Pausable {
         if (fakeLoc) {
             context.depth = d2;
             if (page==null) page = getPage(r2,context,d2==0);
@@ -107,11 +107,11 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     public long offset(int kpage,int index) { return (((long) kpage) << db4j.bb) + index; }
     int d2, r2;
-    public void depth(int level,CC context) throws Pausable {
+    void depth(int level,CC context) throws Pausable {
         context.depth = level;
         d2 = level;
         if (!fakeLoc) db4j.put( context.txn, loc.depth.write(level) );
-        if (!fakeLoc & stuff) db4j.put( context.txn, loc.stuff.write(level+1) );
+        if (!fakeLoc & stuff) db4j.put(context.txn, loc.stuff.write(level+1) );
     }
     public void split(Sheet src,Sheet dst) { src.split(dst); }
     public int shift(Sheet page, int ko) { return page.shift(ko); }
@@ -173,7 +173,13 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     public boolean isToast(CC context) { return false; }
 
-    void slurp(Path<Sheet> p1,Path<Sheet> p2,CC context) throws Pausable {
+    /**
+     * read all pages in a range into the cache. this is much faster than iterating thru the range
+     * @param p1 the start of the range, inclusive
+     * @param p2 the end of the range, exclusive
+     * @param context the context
+     */
+    public void slurp(Path<Sheet> p1,Path<Sheet> p2,CC context) throws Pausable {
         Path<Sheet> [] x1, x2, xi;
         
         x1 = p1.list(context.depth);
@@ -233,7 +239,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         db4j.put( context.txn, offset(page.kpage,0), cmd );
         return index < page.num-1 ? index : (index==0 ? 0:index-1);
     }
-    public void prep(Sheet page) {
+    void prep(Sheet page) {
         if (!page.isset(copy)) page.buf = Util.dup(page.buf);
         page.flag |= copy;
     }
@@ -311,7 +317,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             // compare explicitly, should map all nans as equal
             return Butil.compare(data.key,key(page,index));
         }
-        int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
+        protected int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = compare( page, k1, context );
                 if (greater & cmp==0) cmp = 1;
