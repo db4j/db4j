@@ -308,7 +308,8 @@ public abstract class Command implements Cloneable, Iterable<Command> {
         }
         public void handle(Db4j.QueRunner qr) { qr.handleRef(this); }
     }
-    public static class Demo {
+
+    static class Demo {
         public static void main(String [] args) {
             new org.db4j.Bmeta.Demo().demo();
         }

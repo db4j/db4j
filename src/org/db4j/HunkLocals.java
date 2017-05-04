@@ -5,7 +5,6 @@ package org.db4j;
 import kilim.Pausable;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Transaction;
-import org.db4j.Db4j;
 
 public class HunkLocals extends HunkArray.I {
     public transient LocalInt2 last;
@@ -42,8 +41,5 @@ public class HunkLocals extends HunkArray.I {
     }
     protected void postLoad(Transaction tid) throws Pausable {}
 
-    public static void main(String [] args) throws Exception {
-        Db4j.Demo.main(args);
-    }
 
 }

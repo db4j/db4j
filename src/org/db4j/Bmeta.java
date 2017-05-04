@@ -445,7 +445,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     
     
     
-    public static class DF extends Bmeta<DF.Data,Double,Float,Btypes.ValsDouble> {
+    static class DF extends Bmeta<DF.Data,Double,Float,Btypes.ValsDouble> {
         public DF() { setup(new Btypes.ValsDouble(),new Btypes.ValsFloat()); }
         public static class Data extends Bmeta.Context<Double,Float,Data> implements TestDF.DFcontext<Data> {
             public Data set(double key) { return super.set(key,-1f); }
@@ -464,7 +464,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
         public Data context() { return new Data(); }
     }    
-    public static class DF2 extends Bmeta<DF2.Data,String,String,ValsString> {
+    static class DF2 extends Bmeta<DF2.Data,String,String,ValsString> {
         { setup(new ValsString(),new ValsString()); }
         public static class Data extends Bmeta.Context<String,String,Data> implements TestDF.DFcontext<Data> {
             public Data set(double $key,float $val) { key = $key+""; val = $val+""; return this; }
@@ -498,7 +498,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             }
         }
     }
-    public abstract static class T20<K1,K2,CC extends T20.Context<K1,K2,CC>>
+    abstract static class T20<K1,K2,CC extends T20.Context<K1,K2,CC>>
                                                     extends Bmeta<CC,Object [],Void,ValsTuple> {
         public T20(Element<K1,?> e1,Element<K2,?> e2) { setup( new ValsTuple(e1,e2), new ValsVoid() ); }
         public static class Context<K1,K2,CC extends Context<K1,K2,CC>> extends Bmeta.Context<Object [],Void,CC> {
@@ -506,13 +506,13 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
     }
     
-    public static class DF4 extends T20<Double,Float,DF4.Data> {
+    static class DF4 extends T20<Double,Float,DF4.Data> {
         public DF4() { super(new ValsDouble(),new ValsFloat()); }
         public static class Data extends T20.Context<Double,Float,Data> {}
         public Data context() { return new Data(); }
     }
 
-    public static class Demo {
+    static class Demo {
         Btrees.IA lt;
         String filename = "./db_files/b6.mmap";
         Db4j db4j;
@@ -574,7 +574,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             db4j.fence(null,100);
         }
     }
-    public static class Mindir2 extends BtTests2 {
+    static class Mindir2 extends BtTests2 {
         DF2 lt;
         String filename = "./db_files/b6.mmap";
         Db4j db4j;

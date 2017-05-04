@@ -141,7 +141,7 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
 
 
 
-    public static class Chat1 extends Database {
+    static class Chat1 extends Database {
         HunkCount count;
         Btrees.IK<User> users;
         static Random src = new Random();
@@ -205,25 +205,26 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
             System.out.println(val);
             return null;
         }
+
+        public static void main(String[] args) {
+            Chat1 hello = new Chat1();
+
+            if (args.length==0) {
+                hello.start("./db_files/hunk2.mmap",true);
+                for (int ii = 0; ii < 3000; ii++)
+                    hello.route();
+                hello.db4j.fence(null,100);
+                hello.info();
+                hello.shutdown(true);
+            }
+    //        else 
+            {
+                hello.start("./db_files/hunk2.mmap",false);
+                hello.info();
+            }
+            System.exit(0);
+        }
     }
 
-    public static void main(String[] args) {
-        Chat1 hello = new Chat1();
-
-        if (args.length==0) {
-            hello.start("./db_files/hunk2.mmap",true);
-            for (int ii = 0; ii < 3000; ii++)
-                hello.route();
-            hello.db4j.fence(null,100);
-            hello.info();
-            hello.shutdown(true);
-        }
-//        else 
-        {
-            hello.start("./db_files/hunk2.mmap",false);
-            hello.info();
-        }
-        System.exit(0);
-    }
 
 }

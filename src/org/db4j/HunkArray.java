@@ -5,7 +5,6 @@ package org.db4j;
 import java.io.Serializable;
 import kilim.Pausable;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
@@ -401,8 +400,4 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     }
     
     
-    public static void main(String [] args) throws Exception {
-        Db4j.Demo.main(args);
-    }
-
 }

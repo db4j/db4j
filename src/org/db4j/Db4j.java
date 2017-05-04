@@ -3276,13 +3276,6 @@ public class Db4j implements Serializable {
             return found;
         }
     }
-
-    public static class Demo {
-        public static void main(String [] args) throws Exception {
-            DemoHunker.main(args);
-        }
-    }
-    
 }
 
 

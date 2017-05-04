@@ -493,7 +493,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     
     
     /** base class for comparing hunk-based trees with kilim */
-    public static class Mindir
+    static class Mindir
     <CC extends Bhunk.Context<CC> & TestDF.DFcontext<CC>,TT extends Bhunk<CC>>
     extends TaskTimer.Runner<Void> {
         int nn;
@@ -560,7 +560,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             return ok;
         }
     }
-    public static class Demo {
+    static class Demo {
         DF lt;
         String name = "./db_files/b6.mmap";
         Db4j db4j;

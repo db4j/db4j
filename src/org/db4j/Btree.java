@@ -1049,9 +1049,9 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             public Data context() { return new Data(); }
         }
     }
-    
-    
-    public static class Demo {
+
+
+    static class Demo {
         public static void main(String[] args) throws Exception {
             org.srlutils.btree.TestDF.auto(null,0,1,1,new Tester.Sub(1000000));
             org.srlutils.btree.TestDF.auto(null,0,3,3,new Tester.Sub(1000000));

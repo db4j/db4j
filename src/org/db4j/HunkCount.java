@@ -6,7 +6,6 @@ import java.io.Serializable;
 import kilim.Pausable;
 import org.db4j.Command.RwInt;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
@@ -66,7 +65,7 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
     }
     protected void postLoad(Transaction tid) throws Pausable {}
     
-    public static class Demo {
+    static class Demo {
         HunkCount lt;
         Db4j db4j;
         String name = "./db_files/hunk2.mmap";
@@ -89,9 +88,10 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
             db4j.fence( null, 10 );
             lt.db4j.shutdown();
         }
+
+        public static void main(String [] args) {
+            Demo demo = new Demo();
+            demo.demo();
+        }
     }    
-    public static void main(String [] args) {
-        Demo demo = new Demo();
-        demo.demo();
-    }
 }

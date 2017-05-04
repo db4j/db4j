@@ -1,10 +1,15 @@
+package org.db4j.perf;
+
+
+import org.db4j.Btrees;
+import org.db4j.Database;
+import org.db4j.HunkCount;
+
 // copyright 2017 nqzero - see License.txt for terms
 
-package org.db4j;
 
-import kilim.Pausable;
 
-public class Demox extends Database {
+public class DemoToast extends Database {
     HunkCount count;
     Btrees.IX users;
     static int usize = 1440;
@@ -26,7 +31,7 @@ public class Demox extends Database {
     }
     
     public static void main(String[] args) {
-        Demox hello = new Demox();
+        DemoToast hello = new DemoToast();
 
         if (args.length==0) {
             int num = usize > 1000 ? 200 : 2000;
