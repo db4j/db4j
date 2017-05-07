@@ -259,17 +259,13 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         init(context().set(tid));
     }
     protected void postLoad(Transaction tid) throws Pausable {}
-    public Bhunk init(String $name) {
-        name = $name;
-        db4j.register( this );
-        return this;
-    }
-    public Bhunk set(Db4j $db4j) {
+    protected Bhunk set(Db4j $db4j,String name) {
         db4j = $db4j;
         loc = new Vars();
+        if (name != null) this.name = name;
         return this;
     }
-    public String name() { return name; }
+    protected String name() { return name; }
     protected void createCommit(long locBase) {
         loc.locals.set(db4j, locBase );
     }
@@ -514,8 +510,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         public void init() {
             seed = rand.setSeed(null,false);
             db4j = new Db4j().init( filename, null ); // 1L << 32 );
-            map.set(db4j );
-            map.init("Bushy Tree");
+            db4j.register(map,"Bushy Tree");
             db4j.create();
             db4j.fence(null,100);
             db4j.forceCommit(100);
@@ -599,9 +594,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         
         public void demo() {
             db4j = new Db4j().init( name, null ); // 1L << 32 );
-            lt = new DF();
-            lt.set(db4j );
-            lt.init("Bushy Tree");
+            lt = db4j.register(new DF(),"Bushy Tree");
             int nn = 1347-7;
             db4j.create();
             // break out the final iter to allow tracing in the debugger

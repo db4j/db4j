@@ -7,15 +7,12 @@ import com.esotericsoftware.kryo.io.Output;
 import com.nqzero.orator.Example;
 import java.io.Serializable;
 import java.util.Random;
-import java.util.stream.Collectors;
 import kilim.Pausable;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
-import org.srlutils.Rand;
 import org.srlutils.Simple;
 
 public class HunkLog extends Hunkable<HunkLog> implements Serializable {
@@ -28,7 +25,7 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
     transient public Vars loc;
     transient public int position;
 
-    public String name() { return name; }
+    protected String name() { return name; }
 
     protected String info() {
         return "";
@@ -47,19 +44,10 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
     }
     
 
-    public HunkLog set(Db4j _db4j) {
+    protected HunkLog set(Db4j _db4j,String name) {
         db4j = _db4j;
         loc = new Vars();
-        return this;
-    }
-    /**
-     * initialize the array with size2: initial in bytes, and using the _name
-     * only callable before hunker creation
-     * fixme::useability -- should be able to add components "live"
-     */
-    public HunkLog init(String $name) {
-        name = $name;
-        db4j.register( this );
+        if (name != null) this.name = name;
         return this;
     }
 

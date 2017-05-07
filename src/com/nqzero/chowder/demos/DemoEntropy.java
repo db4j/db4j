@@ -24,12 +24,8 @@ public class DemoEntropy {
     }
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
-        map = new HunkArray.I();
-        map.set(db4j );
-        map.init("Player Entropy");
-        buildSeed = new HunkCount();
-        buildSeed.set(db4j);
-        buildSeed.init("seed used for building player round robin");
+        map = db4j.register(new HunkArray.I(),"Player Entropy");
+        buildSeed = db4j.register(new HunkCount(),"seed used for building player round robin");
         db4j.create();
         db4j.fence(null,100);
         db4j.forceCommit(100);

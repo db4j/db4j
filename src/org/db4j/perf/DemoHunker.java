@@ -320,7 +320,7 @@ public class DemoHunker {
                 db4j.init( name, fileSize );
                 arrays = new HunkArray.L[ nstores ];
                 for (int ii = 0; ii < nstores; ii++)
-                    arrays[ii] = new HunkArray.L().set(db4j ).init( "stuff" + ii );
+                    arrays[ii] = db4j.register(new HunkArray.L(),"stuff" + ii);
                 db4j.create();
             }
             else {

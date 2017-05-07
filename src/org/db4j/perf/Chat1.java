@@ -48,7 +48,8 @@ public class Chat1 extends Database {
     
     public static void main(String[] args) {
         Chat1 hello = new Chat1();
-        hello.start("./db_files/hunk2.mmap",args.length==0);
+        String filename = "./db_files/hunk2.mmap";
+        hello.start(filename,args.length==0);
 
         Btrees.IS k2, k3;
         if (args.length==0) {
@@ -62,11 +63,13 @@ public class Chat1 extends Database {
             }.start().joinb();
             k2 = new Btrees.IS();
             hello.db4j.submitCall(tid -> {
-                hello.db4j.create(tid,k2.init("hello.kryoMap"));
+                hello.db4j.create(tid,k2,"hello.kryoMap");
             }).awaitb();
             hello.db4j.submitCall(tid -> {
                 k2.insert(tid,707,"hello world");
             }).awaitb();
+            hello.shutdown(true);
+            hello.start(filename,false);
         }
         k3 = (Btrees.IS) hello.db4j.lookup("hello.kryoMap");
         String klass = hello.db4j.submit(tid -> k3.find(tid,707)).awaitb().val;

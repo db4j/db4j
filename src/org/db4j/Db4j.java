@@ -117,9 +117,8 @@ public class Db4j implements Serializable {
         protected abstract String info();
         protected abstract int create();
         protected abstract void createCommit(long locBase);
-        public abstract String name();
-        public abstract TT set(Db4j db4j);
-        public abstract TT init(String $name);
+        protected abstract String name();
+        protected abstract TT set(Db4j db4j,String name);
         protected abstract void postInit(Transaction tid) throws Pausable;
         protected abstract void postLoad(Transaction tid) throws Pausable;
     }
@@ -158,6 +157,8 @@ public class Db4j implements Serializable {
     public static final Debug debug = new Debug();
     static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
     static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
+    static final String PATH_COMP_LOCALS = "///db4j/hunker/compLocals";
+    static final String PATH_COMP_RAW = "///db4j/hunker/compRaw";
 
     static int sleeptime = 10;
     transient FileLock flock;
@@ -221,8 +222,10 @@ public class Db4j implements Serializable {
         ld.load( (int) disk.size );
         return ld;
     }
-    public void register(Hunkable ha) {
-        arrays.add( ha );
+    public <HH extends Hunkable> HH register(HH ha,String name) {
+        arrays.add(ha);
+        ha.set(this,name);
+        return ha;
     }
     /** read the range [k1, k2), values are live, ie must be fenced */
     byte [] readRange(Transaction tid,long k1,long k2) {
@@ -294,7 +297,7 @@ public class Db4j implements Serializable {
                     Command.RwInt cmd = compLocals.get(tid,ii);
                     yield();
                     long kloc = cmd.val;
-                    ha.set(Db4j.this ).createCommit(kloc);
+                    ha.set(Db4j.this,null).createCommit(kloc);
                     ha.postLoad(tid);
                     arrays.set( ii, ha );
                     System.out.format( "Hunker.load.comp -- %d done, %s local:%d cmd:%d\n",
@@ -383,11 +386,9 @@ public class Db4j implements Serializable {
      *
      */
     public void create() {
+        kryoMap = register(new Btrees.IS(),PATH_KRYOMAP);
+        logStore = register(new HunkLog(),PATH_LOGSTORE);
         start();
-        kryoMap = new Btrees.IS();
-        kryoMap.set(this).init(PATH_KRYOMAP);
-        logStore = new HunkLog();
-        logStore.set(this).init(PATH_LOGSTORE);
 
         CreateTask ct = new CreateTask();
         offerTask( ct );
@@ -431,7 +432,7 @@ public class Db4j implements Serializable {
             long base = Rounder.rup(pcomp+c1+c2,align);
             Simple.softAssert(base < 1L*Db4j.this.bs*runner.journalBase );
             for (Hunkable ha : arrays)
-                create(tid,ha);
+                create(tid,ha,null);
         }
     }
     // fixme - replace all usages with lookup(tid,index)
@@ -468,12 +469,12 @@ public class Db4j implements Serializable {
         Command.RwInt cmd = compLocals.get(tid,index);
         tid.submitYield();
         long kloc = cmd.val;
-        ha.set(Db4j.this ).createCommit(kloc);
+        ha.set(Db4j.this,null).createCommit(kloc);
         arrays.set(index,ha);
         return ha;
     }
-    public void create(Transaction tid,Hunkable ha) throws Pausable {
-        ha.set(this);
+    public void create(Transaction tid,Hunkable ha,String name) throws Pausable {
+        ha.set(this,name);
         byte [] araw = org.srlutils.Files.save(ha);
         Command.RwInt ncomp = put(tid, loc.ncomp.read());
         tid.submitYield();
@@ -537,8 +538,8 @@ public class Db4j implements Serializable {
             arrays = new ArrayList();
             compRaw = new Btrees.IA();
             compLocals = new HunkLocals();
-            compRaw.set(this);
-            compLocals.set(this);
+            compRaw.set(this,PATH_COMP_LOCALS);
+            compLocals.set(this,PATH_COMP_RAW);
             kryo = new Example.MyKryo(new HunkResolver()).init();
             doRegistration(kryo);
             kryoFactory = new KryoFactory() {

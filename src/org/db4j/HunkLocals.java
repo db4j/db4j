@@ -9,8 +9,8 @@ import org.db4j.Db4j.Transaction;
 public class HunkLocals extends HunkArray.I {
     public transient LocalInt2 last;
 
-    public HunkLocals set(Db4j $db4j) {
-        super.set($db4j);
+    protected HunkLocals set(Db4j $db4j,String name) {
+        super.set($db4j,name);
         last = new LocalInt2( loc.locals );
         return this;
     }

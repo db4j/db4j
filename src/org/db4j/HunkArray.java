@@ -31,7 +31,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     transient public boolean dbg = false;
     transient public int bytesPerHunk;
 
-    public String name() { return name; }
+    protected String name() { return name; }
     
     protected String info() {
         // fixme -- this is all pre-kilim and isn't meaningful anymore
@@ -79,13 +79,14 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
 
     
 
-    public ZZ set(Db4j _db4j) {
+    protected ZZ set(Db4j _db4j,String name) {
         db4j = _db4j;
         loc = new Vars();
         bs = db4j.bs;
         es = cmd().size();
         eph = bs / es;
         initConstants();
+        if (name != null) this.name = name;
         return (ZZ) this;
     }
     private void initConstants() {
@@ -94,16 +95,6 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         maxSlots = 29*mhs;
         bph = 4;
         hpp = bs / bph;
-    }
-    /**
-     * initialize the array with size2: initial in bytes, and using the _name
-     * only callable before hunker creation
-     * fixme::useability -- should be able to add components "live"
-     */
-    public ZZ init(String $name) {
-        name = $name;
-        db4j.register( this );
-        return (ZZ) this;
     }
 
     protected int create() {

@@ -920,9 +920,8 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         // shim implementation of Hunkable
         protected int create() { return 0; }
         protected void createCommit(long locBase) {}
-        public String name() { return null; }
-        public Bhunk set(Db4j db4j) { return null; }
-        public Bhunk init(String $name) { return null; }
+        protected String name() { return null; }
+        protected Bhunk set(Db4j db4j,String name) { return null; }
         protected void postInit(Transaction tid) throws Pausable {}
         protected void postLoad(Transaction tid) throws Pausable {}
     }

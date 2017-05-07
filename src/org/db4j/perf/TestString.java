@@ -279,8 +279,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
     Db4j db4j;
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
-        map.set(db4j );
-        map.init("Bushy Tree");
+        db4j.register(map,"Bushy Tree");
         db4j.create();
         db4j.fence(null,100);
         db4j.forceCommit(100);

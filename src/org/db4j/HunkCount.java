@@ -49,15 +49,11 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         return cap;
     }
     protected void createCommit(long locBase) { loc.locals.set(db4j, locBase ); }
-    public String name() { return name; }
-    public HunkCount set(Db4j $db4j) {
+    protected String name() { return name; }
+    protected HunkCount set(Db4j $db4j,String name) {
         db4j = $db4j;
         loc = new Vars();
-        return this;
-    }
-    public HunkCount init(String $name) { 
-        db4j.register( this );
-        name = $name;
+        if (name != null) this.name = name;
         return this;
     }
     protected void postInit(Transaction tid) throws Pausable {
@@ -80,9 +76,7 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         
         public void demo() {
             db4j = new Db4j().init( name, null );
-            lt = new HunkCount();
-            lt.set(db4j );
-            lt.init("Hunk Count");
+            lt = db4j.register(new HunkCount(),"Hunk Count");
             db4j.create();
             for (int ii = 0; ii < 10; ii++) db4j.submitQuery( new Task() );
             db4j.fence( null, 10 );

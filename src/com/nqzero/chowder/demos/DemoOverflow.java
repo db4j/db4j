@@ -32,9 +32,7 @@ public class DemoOverflow {
     }
     public void init() {
         db4j = new Db4j().init( filename, null );
-        map = new HunkArray.I();
-        map.set(db4j );
-        map.init("Player Overflow");
+        map = db4j.register(new HunkArray.I(),"Player Overflow");
         db4j.create();
         db4j.fence(null,100);
         db4j.forceCommit(100);
