@@ -12,13 +12,13 @@ import org.db4j.Db4j.Transaction;
 
 public class HunkCount extends Hunkable<HunkCount> implements Serializable {
     static final long serialVersionUID = -1693345263933559568L;    
-    public static class Vars {
+    protected static class Vars {
         public Locals locals = new Locals();
         public final LocalInt2 count = new LocalInt2( locals );
     }
-    transient public Vars loc;
-    transient public Db4j db4j;
-    public String name;
+    transient protected Vars loc;
+    transient protected Db4j db4j;
+    protected String name;
 
     protected String info() {
         return "";

@@ -19,11 +19,11 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
 //    static final long serialVersionUID;
 
     
-    transient public Db4j db4j;
-    public String name;
-    transient public long hunksBase;
-    transient public Vars loc;
-    transient public int position;
+    transient protected Db4j db4j;
+    protected String name;
+    transient protected Vars loc;
+    transient protected int position;
+    transient protected int ngrow, tmpBase;
 
     protected String name() { return name; }
 
@@ -32,7 +32,7 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
     }
     
 
-    public static class Vars {
+    protected static class Vars {
         public Locals locals = new Locals();
         public final LocalInt2 nhunks = new LocalInt2( locals );
         public final LocalInt2 kbase = new LocalInt2( locals );
@@ -58,7 +58,6 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
     protected void createCommit(long locBase) {
         loc.locals.set(db4j, locBase);
     }
-    transient int ngrow, tmpBase;
     protected void postInit(Transaction tid) throws Pausable {
         ngrow = 8;
         int base = db4j.request(ngrow, true, tid)[0];
