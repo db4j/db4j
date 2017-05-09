@@ -30,11 +30,17 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
 {
     transient public Db4j db4j;
     transient public Vars loc;
+    int d2, r2;
+    final boolean fakeLoc = false, stuff = false, fake = false;
     transient byte [][] pages = new byte[1<<16][];
     int knext = 1;
     public String name;
+
     private static final boolean useCopy = true;
     private static final boolean extraChecks = false;
+    static int copy = 1, slut = 2;
+    static boolean dbg = false;
+
     public void clear() {
         for (int ii = 1; ii < knext; ii++)
             pages[ii] = null;
@@ -55,8 +61,6 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         public void write(Page buf,int offset) {}
         public int size() { return loc.locals.size(); }
     }
-    static int copy = 1, slut = 2;
-    final boolean fakeLoc = false, stuff = false, fake = false;
     Sheet rootz(Sheet page,CC context) throws Pausable {
         if (fakeLoc) {
             context.depth = d2;
@@ -106,7 +110,6 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         return page;
     }
     public long offset(int kpage,int index) { return (((long) kpage) << db4j.bb) + index; }
-    int d2, r2;
     void depth(int level,CC context) throws Pausable {
         context.depth = level;
         d2 = level;
@@ -345,7 +348,6 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     
     
-    static boolean dbg = false;
     public abstract class ValsVarx<TT,DD> extends Bstring.ValsVar<TT,DD> {
         public void setx(Transaction tid,Sheet page,int index,TT val2,Object cmpr) throws Pausable {
             byte [] val = convert(val2,cmpr);
