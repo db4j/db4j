@@ -30,10 +30,14 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
 {
     transient public Db4j db4j;
     transient public Vars loc;
-    int d2, r2;
-    final boolean fakeLoc = false, stuff = false, fake = false;
-    transient byte [][] pages = new byte[1<<16][];
-    int knext = 1;
+    
+    // variables for running in-memory for troubleshooting and measuring memory effects
+    //   last known use: 2017.07.06
+    transient final boolean fakeLoc = false, fakePages = false;
+    transient byte [][] pages = fakePages ? new byte[1<<16][] : null;
+    transient int fakeNext = 1;
+    transient int fakeDepth, fakeRoot;
+
     public String name;
 
     private static final boolean useCopy = true;
@@ -42,15 +46,16 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     static boolean dbg = false;
 
     public void clear() {
-        for (int ii = 1; ii < knext; ii++)
-            pages[ii] = null;
-        knext = 1;
+        if (fakePages) {
+            for (int ii = 1; ii < fakeNext; ii++)
+                pages[ii] = null;
+            fakeNext = 1;
+        }
     }
     public static class Vars {
         public Locals locals = new Locals();
         public final LocalInt2 kroot = new LocalInt2( locals );
         public final LocalInt2 depth = new LocalInt2( locals );
-        public final LocalInt2 stuff = new LocalInt2( locals );
     }
     public class LocalCommand extends Command.Rw<LocalCommand> {
         int kroot, depth;
@@ -63,9 +68,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     Sheet rootz(Sheet page,CC context) throws Pausable {
         if (fakeLoc) {
-            context.depth = d2;
-            if (page==null) page = getPage(r2,context,d2==0);
-            else r2 = page.kpage;
+            context.depth = fakeDepth;
+            if (page==null) page = getPage(fakeRoot,context,fakeDepth==0);
+            else fakeRoot = page.kpage;
             return page;
         }
         if (page==null) {
@@ -83,14 +88,14 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         return page;
     }
     /** read a page directly from the file, ie without hunker, for debugging */
-    public Sheet fakeGetPage(String filename,int kpage,boolean leaf) {
+    Sheet fakeGetPage(String filename,int kpage,boolean leaf) {
         Sheet page = newPage(leaf,null,true);
         org.srlutils.Files.readbytes(filename,1L*kpage*bs,page.buf,0,-1);
         return page;
     }
     public Sheet getPage(int kpage,CC cc,boolean leaf) throws Pausable {
         Sheet page;
-        if (fake) {
+        if (fakePages) {
             page = newPage(leaf,cc,false);
             page.buf = pages[kpage];
         }
@@ -112,9 +117,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     public long offset(int kpage,int index) { return (((long) kpage) << db4j.bb) + index; }
     void depth(int level,CC context) throws Pausable {
         context.depth = level;
-        d2 = level;
+        fakeDepth = level;
         if (!fakeLoc) db4j.put( context.txn, loc.depth.write(level) );
-        if (!fakeLoc & stuff) db4j.put(context.txn, loc.stuff.write(level+1) );
     }
     public void split(Sheet src,Sheet dst) { src.split(dst); }
     public int shift(Sheet page, int ko) { return page.shift(ko); }
@@ -126,8 +130,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     public Sheet createPage(boolean leaf,CC cc) throws Pausable {
         int kpage;
         Sheet page = newPage(leaf,cc,true);
-        if (fake) {
-            kpage = knext++;
+        if (fakePages) {
+            kpage = fakeNext++;
             pages[kpage] = page.buf;
         }
         else {
@@ -249,7 +253,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     public void commit(Sheet page,CC context) {
         if (extraChecks) Simple.softAssert(page.num > 0 | context.depth==0);
         page.commit();
-        if (fake | page.isset(slut)) return;
+        if (fakePages | page.isset(slut)) return;
         page.flag |= slut;
         // fixme:kludge -- modifications over-write the read cache
         Command.Reference cmd = new Command.Reference().init(true);
