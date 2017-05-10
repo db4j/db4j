@@ -6,6 +6,10 @@ import kilim.Pausable;
 import org.db4j.Db4j.LocalInt2;
 import org.db4j.Db4j.Transaction;
 
+/**
+ * a map from an integer index to variable-sized byte arrays,
+ * implemented as an array with attached auxiliary pages
+ */
 public class HunkLocals extends HunkArray.I {
     public transient LocalInt2 last;
 
@@ -14,7 +18,17 @@ public class HunkLocals extends HunkArray.I {
         last = new LocalInt2( loc.locals );
         return this;
     }
-    
+
+    /**
+     * allocate num contiguous bytes in the auxiliary space.
+     * store the starting offset in the array at index and return it.
+     * note: requests that do not fit in the current page leave a hole at the end of the current page.
+     * reallocating for an existing index leaks the old allocation
+     * @param index the index in the array
+     * @param num the number of bytes to allocate
+     * @param tid the transaction
+     * @return the starting offset in the auxiliary space
+     */    
     public int alloc(int index,int num,Transaction tid) throws Pausable {
         Command.RwInt cmd = last.read();
         if (tid.submit()) kilim.Task.yield();
@@ -29,8 +43,7 @@ public class HunkLocals extends HunkArray.I {
             for (int k1 = 0; k1 < n2; k1++)
                 db4j.put( tid, (khunk+k1) << db4j.bb, new Command.Init() );
         }
-        klast += num;
-        last.write(klast);
+        last.write(klast+num);
         set(tid,index,klast);
         return klast;
     }
