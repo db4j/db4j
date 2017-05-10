@@ -322,7 +322,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
                     stored = get(index);
                     predel(index);
                     Btree.Path path = getPath(c2,index,stored);
-                    map.remove(path,c2,false);
+                    map.remove(path,c2);
                 }
             }
             // fixme:correctness -- on rollback, need to undo preadd, predel

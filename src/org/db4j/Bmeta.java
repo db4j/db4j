@@ -35,10 +35,12 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         extends Bhunk<CC> {
 
     static final long serialVersionUID = -7295474170097215526L;
-    public EE keys;
-    public Element<VV,?> vals;
+    static boolean checkDel = false;
 
-    public void setup(EE $keys,Element<VV,?> $vals) {
+    protected EE keys;
+    protected Element<VV,?> vals;
+
+    protected void setup(EE $keys,Element<VV,?> $vals) {
         keys = $keys;
         vals = $vals;
         keys.config(0);
@@ -50,10 +52,10 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     public static class Context<KK,VV,CC extends Context<KK,VV,CC>> extends Bhunk.Context<CC> {
         public KK key;
         public VV val;
-        public Object keydata, valdata;
+        protected Object keydata, valdata;
         private boolean prepped;
         public CC set(KK $key,VV $val) { key = $key; val = $val; return (CC) this; }
-        public void init(Bmeta<?,KK,VV,?> map) {
+        protected void init(Bmeta<?,KK,VV,?> map) {
             boolean prefix = Btree.modes.prefix(mode);
             keydata = map.keys.compareData(key,prefix,keydata);
             if (val != null) valdata = map.vals.compareData(val,prefix,null);
@@ -70,7 +72,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         // fixme -- should we skip cc.init in some cases eg pop() and first()
         cc.init(this);
     }
-    public void merge(Sheet src,Sheet dst) {
+    protected void merge(Sheet src,Sheet dst) {
         int size = size(dst,src,null,src.leaf==1,null,0);
         boolean dbg = false;
         if (dbg) {
@@ -93,7 +95,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             System.out.println( "--------------------------------------------------------------------------------" );
         }
     }
-    public int compress(Sheet src,Sheet dst,Sheet ref,int jar,int shift) {
+    protected int compress(Sheet src,Sheet dst,Sheet ref,int jar,int shift) {
         int numk = (ref.leaf==1) ? ref.num : ref.num-1;
         if (keys.dynlen)
             for (int ii = numk-1; ii >= 0; ii--)
@@ -103,7 +105,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 jar -= vals.copyPayload(src,dst,ref,ii,jar+shift,jar);
         return jar;
     }
-    public void copyPayload(Sheet src,Sheet dst) {
+    protected void copyPayload(Sheet src,Sheet dst) {
         int jar = dst.bs-dst.pmeta;
         jar = compress(src,dst,dst,jar,0);
         dst.jar = jar;
@@ -128,7 +130,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         int ksplit = bisect(path,context,page1,left,right);
         return page1;
     }
-    public int bisect(Path<Sheet> path,CC cc,Sheet page1,Sheet left,Sheet right) throws Pausable {
+    protected int bisect(Path<Sheet> path,CC cc,Sheet page1,Sheet left,Sheet right) throws Pausable {
         Sheet page = path.page;
         int ko=path.ko, kb=0;
         int cs = left==null 
@@ -215,8 +217,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         int size2 = bs - (page.jar - page.num*page.size) - page.del;
         return size2;
     }
-    
-    public static boolean checkDel = false;
+
     void checkDel(Sheet page,boolean force) {
         if (!(checkDel | force)) return;
         int size1 = mmeta;
@@ -258,23 +259,23 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             checkDel(page,false);
         }
     }
-    public void setcc(Sheet page,CC cc,int ko) {
+    protected void setcc(Sheet page,CC cc,int ko) {
         check(page);
         keys.set(page,ko,cc.key,cc.keydata);
         vals.set(page,ko,cc.val,cc.valdata);
     }
-    public void getcc(Sheet page,CC cc,int ko) {
+    protected void getcc(Sheet page,CC cc,int ko) {
         cc.key = keys.get(page,ko);
         cc.val = vals.get(page,ko);
     }
-    public void key(Sheet p0,int k0,Sheet p1,int k1) {
+    protected void key(Sheet p0,int k0,Sheet p1,int k1) {
         p1.rawcopy(p0,k1,k0,pkey,keysize);
         if (keys.dynlen)
             p0.jar -= keys.copyPayload(p1,p0,p0,k0,p0.jar,p0.jar);
         check(p0);
     }
 
-    public void merge(Sheet p1,Sheet p2,Sheet parent,int n1,int n2,int kp,CC context) {
+    protected void merge(Sheet p1,Sheet p2,Sheet parent,int n1,int n2,int kp,CC context) {
         checkDel(p1,false);
         checkDel(p2,false);
         int ko = p1.num-1;
@@ -294,7 +295,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         return space(page,cc,leaf,left) < 0;
     }
     /** return the number of bytes of free space that would remain after the insertion of cc or left */
-    public int space(Sheet page,CC cc,boolean leaf,Sheet left) {
+    protected int space(Sheet page,CC cc,boolean leaf,Sheet left) {
         int delta = leaf
                 ? keys.size(cc.key,cc.keydata) + vals.size(cc.val,cc.valdata)
                 : keys.size(left,left.num-1) + dexsize;
@@ -332,7 +333,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         checkDel(page,dbg);
         return ret;
     }
-    public int size(Sheet page,Sheet other,CC cc,boolean leaf,Sheet parent,int kp) {
+    protected int size(Sheet page,Sheet other,CC cc,boolean leaf,Sheet parent,int kp) {
         int base = super.size(page,other,null,leaf,parent,kp);
         if (cc != null) {
             base += keys.size(cc.key,cc.keydata);
@@ -344,7 +345,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         return base;
     }
     public CC context() { return (CC) new Context(); }
-    public int compare(Sheet page,int index,CC data) {
+    protected int compare(Sheet page,int index,CC data) {
         return keys.compare( data.key, page, index, data.keydata );
     }
     public VV find(Transaction tid,KK key) throws Pausable {
@@ -397,25 +398,25 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         ValsVarx<VV,Data> v2;
         public class Data extends Bmeta.Context<KK,VV,Data> {}
         public Data context() { return new Data(); }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             return keys.compare( data.key, page, index, data.keydata );
         }
-        void setccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
+        protected void setccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
             check(page);
             keys.set(page,ko,cc.key,cc.keydata);
             v2.setx(cc.txn,page,ko,cc.val,cc.valdata);
         }
-        void getccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
+        protected void getccx(Bpage.Sheet page,Data cc,int ko) throws Pausable {
             check(page);
             cc.key = keys.get(page,ko);
             cc.val = v2.getx(cc.txn,page,ko);
         }
 
-        void prepx(Sheet page,Data context,int ko) {
+        protected void prepx(Sheet page,Data context,int ko) {
             v2.prepx(context.txn,page,ko);
         }
         
-        public boolean isToast(Data data) { return v2.isToast(data.val,data.valdata); }
+        protected boolean isToast(Data data) { return v2.isToast(data.val,data.valdata); }
         protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,null);
@@ -439,13 +440,14 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             return k1;
         }
     }
-    
-    
-    
-    
-    
-    
-    static class DF extends Bmeta<DF.Data,Double,Float,Btypes.ValsDouble> {
+
+
+
+
+
+
+    static class DF extends Bmeta<DF.Data,Double,Float,Btypes.ValsDouble>
+    {
         public DF() { setup(new Btypes.ValsDouble(),new Btypes.ValsFloat()); }
         public static class Data extends Bmeta.Context<Double,Float,Data> implements TestDF.DFcontext<Data> {
             public Data set(double key) { return super.set(key,-1f); }

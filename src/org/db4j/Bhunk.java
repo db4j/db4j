@@ -28,8 +28,8 @@ import org.srlutils.btree.TestDF;
 public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet> 
     implements Serializable
 {
-    transient public Db4j db4j;
-    transient public Vars loc;
+    transient protected Db4j db4j;
+    transient protected Vars loc;
     
     // variables for running in-memory for troubleshooting and measuring memory effects
     //   last known use: 2017.07.06
@@ -38,26 +38,26 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     transient int fakeNext = 1;
     transient int fakeDepth, fakeRoot;
 
-    public String name;
+    protected String name;
 
     private static final boolean useCopy = true;
     private static final boolean extraChecks = false;
     static int copy = 1, slut = 2;
     static boolean dbg = false;
 
-    public void clear() {
+    void clear() {
         if (fakePages) {
             for (int ii = 1; ii < fakeNext; ii++)
                 pages[ii] = null;
             fakeNext = 1;
         }
     }
-    public static class Vars {
+    protected static class Vars {
         public Locals locals = new Locals();
         public final LocalInt2 kroot = new LocalInt2( locals );
         public final LocalInt2 depth = new LocalInt2( locals );
     }
-    public class LocalCommand extends Command.Rw<LocalCommand> {
+    protected class LocalCommand extends Command.Rw<LocalCommand> {
         int kroot, depth;
         public void read(Page buf,int offset) {
             kroot = buf.getInt( offset );
@@ -93,7 +93,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         org.srlutils.Files.readbytes(filename,1L*kpage*bs,page.buf,0,-1);
         return page;
     }
-    public Sheet getPage(int kpage,CC cc,boolean leaf) throws Pausable {
+    protected Sheet getPage(int kpage,CC cc,boolean leaf) throws Pausable {
         Sheet page;
         if (fakePages) {
             page = newPage(leaf,cc,false);
@@ -101,8 +101,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         else {
             Command.Reference refcmd = new Command.Reference().init(false);
-//            Command.RwBytes cmd = new Command.RwBytes().init(false).range( 0, hunker.bs );
-    //        cmd.msg = "Bhunk.get:" + kpage;
+            // Command.RwBytes cmd = new Command.RwBytes().init(false).range( 0, hunker.bs );
+            // cmd.msg = "Bhunk.get:" + kpage;
             db4j.put( cc.txn, offset(kpage,0), refcmd );
             if (cc.txn.submit()) kilim.Task.yield();
             page = newPage(leaf,cc,false);
@@ -114,20 +114,19 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         if (extraChecks) Simple.softAssert(kpage > 0);
         return page;
     }
-    public long offset(int kpage,int index) { return (((long) kpage) << db4j.bb) + index; }
-    void depth(int level,CC context) throws Pausable {
+    protected long offset(int kpage,int index) { return (((long) kpage) << db4j.bb) + index; }
+    protected void depth(int level,CC context) throws Pausable {
         context.depth = level;
         fakeDepth = level;
         if (!fakeLoc) db4j.put( context.txn, loc.depth.write(level) );
     }
-    public void split(Sheet src,Sheet dst) { src.split(dst); }
-    public int shift(Sheet page, int ko) { return page.shift(ko); }
-    public void merge(Sheet page0,Sheet page1) {
+    protected int shift(Sheet page, int ko) { return page.shift(ko); }
+    protected void merge(Sheet page0,Sheet page1) {
         Simple.softAssert(page1.isset(copy));
         page0.merge(page1);
     }
     /** create a new page */
-    public Sheet createPage(boolean leaf,CC cc) throws Pausable {
+    protected Sheet createPage(boolean leaf,CC cc) throws Pausable {
         int kpage;
         Sheet page = newPage(leaf,cc,true);
         if (fakePages) {
@@ -145,7 +144,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         if (extraChecks) Simple.softAssert(kpage > 0);
         return page;
     }
-    public Sheet newPage(boolean leaf,CC cc,boolean alloc) {
+    protected Sheet newPage(boolean leaf,CC cc,boolean alloc) {
         Sheet page = new Sheet();
         page.init( bs, leaf ? mleaf:mbranch, leaf ? pval:pdex, null );
         if (alloc) page.buf = new byte[bs];
@@ -153,10 +152,10 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
 //        if (!fake) cc.txn.addCleaner(page);
         return page;
     }
-    public void key(Sheet p0, int k0,Sheet p1, int k1) {
+    protected void key(Sheet p0, int k0,Sheet p1, int k1) {
         p1.rawcopy(p0,k1,k0,pkey,keysize);
     }
-    public class InsertCommand extends Command.Rw<InsertCommand> {
+    protected class InsertCommand extends Command.Rw<InsertCommand> {
         { super.init(true); }
         int ko;
         Sheet page;
@@ -178,7 +177,6 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         public int size() { return 0; }
     }
-    public boolean isToast(CC context) { return false; }
 
     /**
      * read all pages in a range into the cache. this is much faster than iterating thru the range
@@ -250,7 +248,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         if (!page.isset(copy)) page.buf = Util.dup(page.buf);
         page.flag |= copy;
     }
-    public void commit(Sheet page,CC context) {
+    protected void commit(Sheet page,CC context) {
         if (extraChecks) Simple.softAssert(page.num > 0 | context.depth==0);
         page.commit();
         if (fakePages | page.isset(slut)) return;
@@ -282,7 +280,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     protected String info() { return ""; }
 
-    public void split(Sheet src,Sheet dst,int kb) { src.split(dst,kb); }
+    protected void split(Sheet src,Sheet dst,int kb) { src.split(dst,kb); }
     
     public static class Context<CC extends Context> extends Btree.Context {
         public Transaction txn;
@@ -315,7 +313,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             cc.val = page.getf(pval,ko);
         }
         double key(Sheet page,int index) { return page.getd(pkey,index); }
-        public int compare(Sheet page,int index,Data data) {
+        protected int compare(Sheet page,int index,Data data) {
             // Double.compare is slow
             // compare explicitly, should map all nans as equal
             return Butil.compare(data.key,key(page,index));
@@ -352,7 +350,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     
     
-    public abstract class ValsVarx<TT,DD> extends Bstring.ValsVar<TT,DD> {
+    protected abstract class ValsVarx<TT,DD> extends Bstring.ValsVar<TT,DD> {
         public void setx(Transaction tid,Sheet page,int index,TT val2,Object cmpr) throws Pausable {
             byte [] val = convert(val2,cmpr);
             if (under(val))
@@ -424,11 +422,11 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         int maxlen = 1000;
     }
-    public class ValsBytex extends ValsVarx<byte [],Bstring.Cmpr> {
+    protected class ValsBytex extends ValsVarx<byte [],Bstring.Cmpr> {
         protected byte[] convert(byte[] val,Object cmpr) { return val; }
         protected byte[] convert(byte[] val) { return val; }
     }
-    public class ValsKryo<TT> extends ValsVarx<TT,Bstring.Cmpr> {
+    protected class ValsKryo<TT> extends ValsVarx<TT,Bstring.Cmpr> {
         protected byte[] convert(TT val,Object cmpr) {
             return cmpr==null
                     ? save(val) 
@@ -444,7 +442,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             return buffer.toBytes();
         }
     }
-    public class ValsObject<TT> extends ValsVarx<TT,Bstring.Cmpr> {
+    protected class ValsObject<TT> extends ValsVarx<TT,Bstring.Cmpr> {
         protected byte[] convert(TT val,Object cmpr) {
             return cmpr==null
                     ? org.srlutils.Files.save(val)
@@ -454,7 +452,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             return (TT) org.srlutils.Files.load(bytes,0,-1,Bhunk.this.db4j.userClassLoader);
         }
     }
-    public class ValsStringx extends ValsVarx<String,Bstring.Cmpr> {
+    protected class ValsStringx extends ValsVarx<String,Bstring.Cmpr> {
         protected byte[] convert(String val,Object cmpr) {
             return val.getBytes();
         }

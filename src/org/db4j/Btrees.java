@@ -31,7 +31,7 @@ public class Btrees {
                 return findLoop(page,k1-step,num,1,context,greater);
             return k1;
         }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             return keys.compare( data.key, page, index, data.keydata );
         }
     }
@@ -63,7 +63,7 @@ public class Btrees {
                 return findLoop(page,k1-step,num,1,context,greater);
             return k1;
         }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             return keys.compare( data.key, page, index, data.keydata );
         }
     }
@@ -83,7 +83,7 @@ public class Btrees {
                 return findLoop(page,k1-step,num,1,context,greater);
             return k1;
         }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             return keys.compare( data.key, page, index, data.keydata );
         }
         /** return a Join for entries that match all terms */
@@ -115,7 +115,7 @@ public class Btrees {
             cc.val = page.geti(pval,ko);
         }
         int key(Bpage.Sheet page,int index) { return page.geti(pkey,index); }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             return Butil.compare(data.key,key(page,index));
         }
         protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
@@ -152,7 +152,7 @@ public class Btrees {
             cc.val = page.getd(pval,ko);
         }
         int key(Bpage.Sheet page,int index) { return page.geti(pkey,index); }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             int x1=data.key1, x2=data.key2;
             int y1 = page.geti(pkey,index);
             if (x1 > y1) return 1;
@@ -192,7 +192,7 @@ public class Btrees {
             cc.key2 = page.getd(pkey+p1,ko);
             cc.key3 = page.geti(pkey+p2,ko);
         }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             int x1=data.key1, x3=data.key3;
             double x2=data.key2;
             int y1 = page.geti(pkey,index);
@@ -234,7 +234,7 @@ public class Btrees {
             cc.key2 = page.geti(pkey+p1,ko);
             cc.key3 = page.geti(pkey+p2,ko);
         }
-        public int compare(Bpage.Sheet page,int index,Data data) {
+        protected int compare(Bpage.Sheet page,int index,Data data) {
             int x1=data.key1, x2=data.key2, x3=data.key3;
             int y1 = page.geti(pkey   ,index);
             int y2 = page.geti(pkey+p1,index);
