@@ -145,7 +145,7 @@ public class DemoHunker {
     public static class DemoInfo extends Demo<DemoInfo> {
         public void test() {
             new Query() { public void task() throws Pausable {
-                arrays[0].info2(tid);
+                arrays[0].printMetaHunkInfo(tid);
             }}.offer(db4j).awaitb();
         }
     }
@@ -247,7 +247,7 @@ public class DemoHunker {
             db4j.dontneed();
             if (taskKlass==WriteTask.class && false)
                 new Query() { public void task() throws Pausable {
-                    arrays[0].info2(tid);
+                    arrays[0].printMetaHunkInfo(tid);
                 }}.offer(db4j).awaitb();
         }
     }

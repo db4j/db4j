@@ -15,21 +15,18 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     static final long serialVersionUID = -9057551081001858374L;
 
     
-    /** the superblock indices, ie the khunk of the first hunk in each superblock */
-    // transient public int hunks[];
     /** block size, entry size (fixme -- needs to be calc'd based on type), entries per hunk */
-    public int bs, es = 8, eph;
-    transient public Db4j db4j;
-    public String name;
-    transient public long hunksBase;
-    transient public Vars loc;
+    protected int bs, es = 8, eph;
+    transient protected Db4j db4j;
+    protected String name;
+    transient protected long hunksBase;
+    transient protected Vars loc;
     /** maximum number of slots, hunks per page, bytes per hunk */
-    transient public int maxSlots, hpp, bph;
-    // transient public int hunkSlots[];
+    transient protected int maxSlots, hpp, bph;
     /** meta hunk size, ie the number of superblocks in a metahunk */
-    public int mhs;
-    transient public boolean dbg = false;
-    transient public int bytesPerHunk;
+    protected int mhs;
+    transient protected boolean dbg = false;
+    transient protected int bytesPerHunk;
 
     protected String name() { return name; }
     
@@ -70,7 +67,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         return txt;
     }
 
-    public static class Vars {
+    protected static class Vars {
         public Locals locals = new Locals();
         public final LocalInt2 nhunks = new LocalInt2( locals );
         public final LocalInt2 nlive = new LocalInt2( locals );
@@ -154,7 +151,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     
 
     /** use Command.Init to initialize pages as they're "appended" */
-    public void initPages(long index,Transaction tid) throws Pausable {
+    protected void initPages(long index,Transaction tid) throws Pausable {
         int khunk = (int) ((index-1) / eph);
         Command.RwInt nlive = db4j.put( tid, loc.nlive.read() );
         if (tid.submit()) kilim.Task.yield();
@@ -169,7 +166,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     // fixme::optimize -- do the allocs grow in size quickly enough ???
 
     /** allocate space in the array to ensure that index is contained */
-    public void allocHunks(long index,Transaction tid) throws Pausable {
+    protected void allocHunks(long index,Transaction tid) throws Pausable {
         int khunk = (int) ((index-1) / eph);
         Command.RwInt cmd = db4j.put( tid, loc.nhunks.read() );
         if (tid.submit()) kilim.Task.yield();
@@ -248,7 +245,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
      * ie, each level doubles the size of the array
      * the metahunk describes the location of a block
      */
-    public class MetaHunk {
+    protected class MetaHunk {
         /** the hunk index                             */  public int khunk;
         /** the level that contains the hunk           */  public int level;
         /** superblock size in blocks                  */  public int sbsize;
@@ -328,7 +325,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         return get( tid, index, cmd );
     }
 
-    public int hunkSlot(int index,Transaction tid) throws Pausable {
+    protected int hunkSlot(int index,Transaction tid) throws Pausable {
         long pos = hunksBase + index*bytesPerHunk;
         Command.RwInt cmd = new Command.RwInt().init(false);
         db4j.put( tid, pos, cmd );
@@ -336,8 +333,8 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         return cmd.val;
     }
     
-    public long hunkOffset(int page) { return ((long) page) << db4j.bb; }
-    public long offset(long index, Transaction tid) throws Pausable {
+    protected long hunkOffset(int page) { return ((long) page) << db4j.bb; }
+    protected long offset(long index, Transaction tid) throws Pausable {
         int kh = (int) (index / eph);
         int ke = (int) (index % eph);
         MetaHunk meta = new MetaHunk().setKhunk( kh );
@@ -356,7 +353,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         long offset = hunkOffset(kb) + ke * es;
         return String.format( "[[%8d:%5d --> (%5d::%12d) %8d, %8d]]", kh, ke, sbi, pntr, kb, offset );
     }
-    public void info2(Transaction tid) throws Pausable {
+    public void printMetaHunkInfo(Transaction tid) throws Pausable {
         Command.RwInt cmd = db4j.put( tid, loc.nhunks.read() );
         if (tid.submit()) kilim.Task.yield();
         int nhunks = cmd.val;
@@ -371,7 +368,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     }
 
 
-    public abstract CC cmd();
+    protected abstract CC cmd();
 
     public static class Y extends HunkArray<Byte,Command.RwByte,Y> {
         public Command.RwByte cmd() { return new Command.RwByte(); }
