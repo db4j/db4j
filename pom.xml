@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.db4j</groupId>
     <artifactId>db4j</artifactId>
-    <version>0.9.4</version>
+    <version>0.9.5</version>
     <parent>
         <groupId>com.nqzero</groupId>
         <artifactId>soup-project</artifactId>
@@ -29,12 +29,12 @@
         <dependency>
             <groupId>com.nqzero</groupId>
             <artifactId>srlutils</artifactId>
-            <version>0.9.1</version>
+            <version>0.9.2</version>
         </dependency>
         <dependency>
             <groupId>com.nqzero</groupId>
             <artifactId>orator</artifactId>
-            <version>0.9.0</version>
+            <version>0.9.1</version>
         </dependency>
     </dependencies>
     <build>
