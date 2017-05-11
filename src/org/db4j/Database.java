@@ -10,24 +10,32 @@ import static org.srlutils.Simple.Reflect.getFields;
 /** a generic database that takes it's configuration from it's variables */
 public class Database {
     public Db4j db4j;
-    public Table [] tables;
-    public Database init(Db4j $db4j) { db4j = $db4j; return this; }
-    public static class Self extends Table {}
-    public Self self = new Self();
+    Table [] tables;
+    Self self = new Self();
     Thread shutdownThread;
 
-    public static String base(Field field) {
+    static class Self extends Table {
+        public Self() {}
+    }
+
+    static String base(Field field) {
         return field.getDeclaringClass().getSimpleName() + "/";
     }
 
     
-    /** build all the tables in the database, overwrite (existing Loadables) if set */
-    public void build(boolean overwrite) {
-        Field [] fields = getFields(this.getClass(),Table.class);
+    /** 
+     * build all the tables in the database
+     * @param db4j the already initialized instance
+     * @param overwrite if set, overwrite existing columns
+     */
+    public void build(Db4j db4j,boolean overwrite) {
+        this.db4j = db4j;
+        Field [] fields = getFields(this.getClass(),Database.class,Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;
         for (Field field : fields) {
-            Table table = (Table) Simple.Reflect.alloc(  field.getType() );
+            Table table;
+            table = (Table) Simple.Reflect.alloc(field.getType(),false );
             tables[ ktable++ ] = table;
             table.init(base(field), db4j );
             table.build(table,overwrite);
@@ -45,15 +53,21 @@ public class Database {
         db4j.shutdown();
         db4j.close();
     }
-    public Database start(String base,boolean init) {
-        db4j = init ? new Db4j() : Db4j.load( base );
+    /**
+     * initialize db4j and either build or load the database
+     * @param filename the name of the file to use to initialize db4j
+     * @param build if set, build the tables, overwriting any existing columns
+     * @return this
+     */
+    public Database start(String filename,boolean build) {
+        db4j = build ? new Db4j() : Db4j.load(filename );
         db4j.userClassLoader = this.getClass().getClassLoader();
-        if (init) {
-            db4j.init( base, -(2L<<30) );
-            build(true);
+        if (build) {
+            db4j.init(filename, -(2L<<30) );
+            build(db4j,true);
             db4j.create();
         }
-        else load();
+        else load(db4j);
         shutdownThread = new Thread(new Runnable() {
             public void run() {
                 shutdown(false);
@@ -62,13 +76,17 @@ public class Database {
         Runtime.getRuntime().addShutdownHook(shutdownThread);
         return this;
     }
-    /** load all the tables in the database */
-    public void load() {
-        Field [] fields = getFields(this.getClass(),Table.class);
+    /** 
+     * load all the tables in the database
+     * @param db4j the already initialized instance
+     */
+    public void load(Db4j db4j) {
+        this.db4j = db4j;
+        Field [] fields = getFields(this.getClass(),Database.class,Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;
         for (Field field : fields) {
-            Table table = (Table) Simple.Reflect.alloc(  field.getType() );
+            Table table = (Table) Simple.Reflect.alloc(field.getType(),false );
             table.init(base(field), db4j );
             table.load(table);
             tables[ ktable++ ] = table;
@@ -77,33 +95,29 @@ public class Database {
         self.init(null,db4j);
         self.load(this);
     }
-    /** close the resourses associated with the database */
-    public void close() {
-        for (Table table : tables) table.close();
-    }
 
     
     
     
-    /** a colection of columns */
+    /** a collection of columns */
     public static class Table {
         String root;
         public Db4j db4j;
-        public Hunkable [] columns;
-        public Table init(String _root,Db4j db4j) {
+        Hunkable [] columns;
+        Table init(String _root,Db4j db4j) {
             this.db4j = db4j;
             root = _root;
             return this;
         }
-        public void build(Object source,boolean overwrite) {
-            Field [] fields = getFields(source.getClass(),Hunkable.class);
+        void build(Object source,boolean overwrite) {
+            Field [] fields = getFields(source.getClass(),Object.class,Hunkable.class);
             columns = new Hunkable[ fields.length ];
             int ktable = 0;
             for (Field field : fields) {
                 String name = filename(field);
                 Hunkable composite = db4j.lookup( name );
                 if (overwrite || composite == null) {
-                    composite = (Hunkable) Simple.Reflect.alloc( field.getType() );
+                    composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false );
                     db4j.register(composite,name);
                 }
                 columns[ ktable++ ] = composite;
@@ -111,8 +125,8 @@ public class Database {
             }
         }
 
-        public void load(Object source) {
-            Field [] fields = getFields(source.getClass(),Hunkable.class);
+        void load(Object source) {
+            Field [] fields = getFields(source.getClass(),Object.class,Hunkable.class);
             columns = new Hunkable[ fields.length ];
             int kcol = 0;
             for (Field field : fields) {
@@ -128,10 +142,7 @@ public class Database {
                 Simple.Reflect.set(source, field.getName(), composite);
             }
         }
-        public void close() {
-            for (Hunkable column : columns) {}
-        }
-        public String filename(Field field) {
+        String filename(Field field) {
             String base = root==null ? base(field) : root;
             String table = "/" + this.getClass().getSimpleName() + "/";
             return base + table + field.getName();
