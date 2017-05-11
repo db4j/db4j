@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import org.db4j.Db4j.Hunkable;
 import org.srlutils.DynArray;
 import org.srlutils.Simple;
+import static org.srlutils.Simple.Reflect.getFields;
 
 /** a generic database that takes it's configuration from it's variables */
 public class Database {
@@ -20,21 +21,9 @@ public class Database {
     }
 
     
-    /** get all the fields of obj assignable from filter using reflection */
-    public static Field[] getFields(Object obj,Class filter) {
-        DynArray.Objects<Field> result = new DynArray.Objects().init(Field.class);
-        for (Class klass = obj.getClass(); klass != Object.class; klass = klass.getSuperclass()) {
-            Field[] fields = klass.getDeclaredFields();
-            for (Field field : fields) {
-                Class fc = field.getType();
-                if (filter.isAssignableFrom( fc )) result.add( field );
-            }
-        }
-        return result.trim();
-    }
     /** build all the tables in the database, overwrite (existing Loadables) if set */
     public void build(boolean overwrite) {
-        Field [] fields = getFields(this,Table.class);
+        Field [] fields = getFields(this.getClass(),Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;
         for (Field field : fields) {
@@ -74,7 +63,7 @@ public class Database {
     }
     /** load all the tables in the database */
     public void load() {
-        Field [] fields = getFields(this,Table.class);
+        Field [] fields = getFields(this.getClass(),Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;
         for (Field field : fields) {
@@ -110,7 +99,7 @@ public class Database {
             return this;
         }
         public void build(Object source,boolean overwrite) {
-            Field [] fields = Database.getFields(source,Hunkable.class);
+            Field [] fields = getFields(source.getClass(),Hunkable.class);
             columns = new Hunkable[ fields.length ];
             int ktable = 0;
             for (Field field : fields) {
@@ -126,7 +115,7 @@ public class Database {
         }
 
         public void load(Object source) {
-            Field [] fields = Database.getFields(source,Hunkable.class);
+            Field [] fields = getFields(source.getClass(),Hunkable.class);
             columns = new Hunkable[ fields.length ];
             int kcol = 0;
             for (Field field : fields) {
