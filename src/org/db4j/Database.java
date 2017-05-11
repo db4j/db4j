@@ -4,7 +4,6 @@ package org.db4j;
 
 import java.lang.reflect.Field;
 import org.db4j.Db4j.Hunkable;
-import org.srlutils.DynArray;
 import org.srlutils.Simple;
 import static org.srlutils.Simple.Reflect.getFields;
 
@@ -15,6 +14,7 @@ public class Database {
     public Database init(Db4j $db4j) { db4j = $db4j; return this; }
     public static class Self extends Table {}
     public Self self = new Self();
+    Thread shutdownThread;
 
     public static String base(Field field) {
         return field.getDeclaringClass().getSimpleName() + "/";
@@ -37,13 +37,14 @@ public class Database {
         self.build(this,overwrite);
     }
     public synchronized void shutdown(boolean orig) {
+        // fixme - synchronized but db4j.shutdown() doesn't appear to be safe to call twice
+        //         there needs to be some sort of guard in place
         if (orig && shutdownThread != null)
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
         shutdownThread = null;
         db4j.shutdown();
         db4j.close();
     }
-    Thread shutdownThread;
     public Database start(String base,boolean init) {
         db4j = init ? new Db4j() : Db4j.load( base );
         db4j.userClassLoader = this.getClass().getClassLoader();
@@ -79,10 +80,6 @@ public class Database {
     /** close the resourses associated with the database */
     public void close() {
         for (Table table : tables) table.close();
-    }
-    public abstract class Task<TT extends Task> extends Db4j.Query<TT> {
-        // fixme -- report bug in kilim. if task() is added here as abstract, weave fails
-        public TT offer() { return (TT) db4j.submitQuery(this); }
     }
 
     
