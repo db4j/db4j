@@ -249,7 +249,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         page.flag |= copy;
     }
     protected void commit(Sheet page,CC context) {
-        if (extraChecks) Simple.softAssert(page.num > 0 | context.depth==0);
+        if (extraChecks)
+            Simple.softAssert(page.isset(copy) & (page.num > 0 | context.depth==0));
+
         page.commit();
         if (fakePages | page.isset(slut)) return;
         page.flag |= slut;
