@@ -1917,6 +1917,7 @@ public class Db4j implements Serializable {
         boolean counted;
         /** linked list of cache for this kblock */
         CachedBlock older, newer;
+        /** outstanding and naked, ie a member of the byUpdate list, ie neither covered, covering nor current */
         boolean out;
 
         static class ListEntry extends Listee<ListEntry> {
