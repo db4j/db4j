@@ -1206,6 +1206,8 @@ public class Db4j implements Serializable {
             }
         }
 
+        // fixme - not finished and never tested and never used
+        // probably needs to dc.cover and map.addWrite
         void handleRef(Command.Reference cmd) {
             BlockNode block = getBlock(cmd.offset>>db4j.bb,null,map);
             Simple.softAssert(block.cache==null || block.cache.ready());
@@ -1342,8 +1344,8 @@ public class Db4j implements Serializable {
                 //   and as such, shouldn't be in the cache
                 //   but would like to confirm this before fixing it
                 System.out.format( "overwritten::cacheNotFount -- " );
-                Command.print(db4j,false,cmd);
-                Command.print(db4j,true,first);
+                Command.print(db4j,cmd);
+                Command.printAll(db4j,first);
             }
             if (cb==null) {
                 // the block must have been init'd ... verify that by runCache()
@@ -1821,7 +1823,7 @@ public class Db4j implements Serializable {
         public void handle(Db4j db4j) {
             if (diskAnomaly != null) {
                 System.out.format( "BlockNode.anomaly -- kblock:%d, num\n", kblock, diskAnomaly.numRead );
-                Command.print(db4j,true,cmds);
+                Command.print(db4j,cmds);
                 for (Command cmd : cmds) {
                     Transaction txn = cmd.txn;
                     Task task = txn==null ? null : txn.task;

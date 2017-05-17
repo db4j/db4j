@@ -384,7 +384,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     }
 
     public static class L2 extends HunkArray<long[],Command.RwLongs,L2> {
-        public Command.RwLongs cmd() { Command.RwLongs cmd=new Command.RwLongs(); cmd.nn=2; return cmd; }
+        public Command.RwLongs cmd() { return new Command.RwLongs().range(0,2); }
     }
     
     
