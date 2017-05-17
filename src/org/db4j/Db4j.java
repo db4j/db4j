@@ -83,7 +83,7 @@ public class Db4j implements Serializable {
         public int size() { return size; }
     }
 
-    /** an atomic integer that also occupies a spot on disk */
+    /** an integer that occupies a spot on disk */
     public static class LocalInt2 {
         public final int offset;
         Locals locals;

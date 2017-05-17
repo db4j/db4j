@@ -30,7 +30,7 @@ public class HunkLocals extends HunkArray.I {
      * @return the starting offset in the auxiliary space
      */    
     public int alloc(int index,int num,Transaction tid) throws Pausable {
-        Command.RwInt cmd = last.read();
+        Command.RwInt cmd = last.read().add(db4j,tid);
         if (tid.submit()) kilim.Task.yield();
         int klast = cmd.val;
         int chunk = (klast-1) >> db4j.bb;
@@ -43,14 +43,14 @@ public class HunkLocals extends HunkArray.I {
             for (int k1 = 0; k1 < n2; k1++)
                 db4j.put( tid, (khunk+k1) << db4j.bb, new Command.Init() );
         }
-        last.write(klast+num);
+        last.write(klast+num).add(db4j,tid);
         set(tid,index,klast);
         return klast;
     }
 
     protected void postInit(Transaction tid) throws Pausable {
         super.postInit(tid);
-        last.write(0);
+        last.write(0).add(db4j,tid);
     }
     protected void postLoad(Transaction tid) throws Pausable {}
 
