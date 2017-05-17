@@ -83,19 +83,24 @@ public class Db4j implements Serializable {
         public int size() { return size; }
     }
 
+    // fixme - use abstract base, break out cmd(), and allow Locals to read all values
+    
     /** an integer that occupies a spot on disk */
     public static class LocalInt2 {
-        public final int offset;
+        protected final int offset;
         Locals locals;
         public LocalInt2(Locals locals) {
             offset = locals.size;
             locals.size += size();
             this.locals = locals;
         }
-        public int size() { return Types.Enum._int.size(); }
-        public long offset() { return locals.base + offset; }
+        protected int size() { return Types.Enum._int.size(); }
+        protected long offset() { return locals.base + offset; }
+        public Command.RwInt write(Db4j.Transaction txn,int val) {
+            return write(val).add(locals.db4j,txn);
+        }
         /** return a command that will write val to disk */
-        public Command.RwInt write(int val) {
+        protected Command.RwInt write(int val) {
             Command.RwInt cmd = new Command.RwInt().init( true);
             cmd.msg = "LocalInt::write";
             cmd.offset = offset();
@@ -103,7 +108,11 @@ public class Db4j implements Serializable {
             return cmd;
         }
         /** return a command that will read the atomic from the stored location on disk */
-        public Command.RwInt read() {
+        public Command.RwInt read(Db4j.Transaction txn) {
+            return read().add(locals.db4j,txn);
+        }
+        /** return a command that will read the atomic from the stored location on disk */
+        protected Command.RwInt read() {
             Command.RwInt cmd = new Command.RwInt().init( false);
             cmd.msg = "LocalInt::read";
             cmd.offset = offset();

@@ -179,7 +179,7 @@ public abstract class Command implements Cloneable {
             txn.submitYield();
             return (SS) this;
         }
-        public SS add(Db4j db4j,Db4j.Transaction txn) { db4j.put(txn,this); return (SS) this; }
+        protected SS add(Db4j db4j,Db4j.Transaction txn) { db4j.put(txn,this); return (SS) this; }
     }
 
 
