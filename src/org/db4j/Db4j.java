@@ -70,6 +70,7 @@ public class Db4j implements Serializable {
     
 
 
+    /** a convenience class for handling offsets for the local allocation variables */
     public static class Locals {
         public Db4j db4j;
         public int size;
@@ -85,17 +86,25 @@ public class Db4j implements Serializable {
 
     // fixme - use abstract base, break out cmd(), and allow Locals to read all values
     
-    /** an integer that occupies a spot on disk */
+    /** an integer that occupies a spot in the local allocation */
     public static class LocalInt {
-        protected final int offset;
-        Locals locals;
+        /** the byte position within the Locals tuple */
+        protected final int position;
+        /** the Locals tuple that contains this value */
+        protected Locals locals;
         public LocalInt(Locals locals) {
-            offset = locals.size;
+            position = locals.size;
             locals.size += size();
             this.locals = locals;
         }
         protected int size() { return Types.Enum._int.size(); }
-        protected long offset() { return locals.base + offset; }
+        protected long offset() { return locals.base + position; }
+        /**
+         * add a command to the transaction that will write a value to the stored location on disk
+         * @param txn the transaction
+         * @param val the new value
+         * @return 
+         */
         public Command.RwInt write(Db4j.Transaction txn,int val) {
             return write(val).add(locals.db4j,txn);
         }
@@ -107,11 +116,15 @@ public class Db4j implements Serializable {
             cmd.val = val;
             return cmd;
         }
-        /** return a command that will read the atomic from the stored location on disk */
+        /**
+         * add a command to the transaction that will read the value from the stored location on disk
+         * @param txn the transaction to add the command to
+         * @return the command
+         */
         public Command.RwInt read(Db4j.Transaction txn) {
             return read().add(locals.db4j,txn);
         }
-        /** return a command that will read the atomic from the stored location on disk */
+        /** return a command that will read the value from the stored location on disk */
         protected Command.RwInt read() {
             Command.RwInt cmd = new Command.RwInt().init( false);
             cmd.msg = "LocalInt::read";

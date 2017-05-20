@@ -61,7 +61,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         int kroot, depth;
         public void read(Page buf,int offset) {
             kroot = buf.getInt( offset );
-            depth = buf.getInt( offset+loc.depth.offset );
+            depth = buf.getInt( offset+loc.depth.position );
         }
         public void write(Page buf,int offset) {}
         public int size() { return loc.locals.size(); }
