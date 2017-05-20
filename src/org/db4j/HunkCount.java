@@ -6,7 +6,7 @@ import java.io.Serializable;
 import kilim.Pausable;
 import org.db4j.Command.RwInt;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.LocalInt2;
+import org.db4j.Db4j.LocalInt;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
 
@@ -14,7 +14,7 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
     static final long serialVersionUID = -1693345263933559568L;    
     protected static class Vars {
         public Locals locals = new Locals();
-        public final LocalInt2 count = new LocalInt2( locals );
+        public final LocalInt count = new LocalInt( locals );
     }
     transient protected Vars loc;
     transient protected Db4j db4j;

@@ -5,7 +5,7 @@ package org.db4j;
 import java.io.Serializable;
 import kilim.Pausable;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.LocalInt2;
+import org.db4j.Db4j.LocalInt;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.Simple.Rounder;
@@ -69,8 +69,8 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
 
     protected static class Vars {
         public Locals locals = new Locals();
-        public final LocalInt2 nhunks = new LocalInt2( locals );
-        public final LocalInt2 nlive = new LocalInt2( locals );
+        public final LocalInt nhunks = new LocalInt( locals );
+        public final LocalInt nlive = new LocalInt( locals );
     }
 
 

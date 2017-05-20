@@ -10,7 +10,7 @@ import java.util.Random;
 import kilim.Pausable;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.LocalInt2;
+import org.db4j.Db4j.LocalInt;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.Simple;
@@ -34,8 +34,8 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
 
     protected static class Vars {
         public Locals locals = new Locals();
-        public final LocalInt2 nhunks = new LocalInt2( locals );
-        public final LocalInt2 kbase = new LocalInt2( locals );
+        public final LocalInt nhunks = new LocalInt( locals );
+        public final LocalInt kbase = new LocalInt( locals );
     }
 
 

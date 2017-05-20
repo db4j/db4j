@@ -86,10 +86,10 @@ public class Db4j implements Serializable {
     // fixme - use abstract base, break out cmd(), and allow Locals to read all values
     
     /** an integer that occupies a spot on disk */
-    public static class LocalInt2 {
+    public static class LocalInt {
         protected final int offset;
         Locals locals;
-        public LocalInt2(Locals locals) {
+        public LocalInt(Locals locals) {
             offset = locals.size;
             locals.size += size();
             this.locals = locals;
@@ -218,9 +218,9 @@ public class Db4j implements Serializable {
     static class Loc {
         Locals locals = new Locals();
         /** number of allocated blocks - stored on disk */
-        final LocalInt2 nblocks = new LocalInt2( locals );
+        final LocalInt nblocks = new LocalInt( locals );
         /** number of allocated components */
-        LocalInt2 ncomp = new LocalInt2( locals );
+        LocalInt ncomp = new LocalInt( locals );
     }
 
     /** load the Composite from the name'd file */

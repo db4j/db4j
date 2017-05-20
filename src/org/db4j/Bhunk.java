@@ -10,7 +10,7 @@ import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
 import org.db4j.Db4j;
-import org.db4j.Db4j.LocalInt2;
+import org.db4j.Db4j.LocalInt;
 import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Query;
 import org.srlutils.Rand;
@@ -54,8 +54,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     protected static class Vars {
         public Locals locals = new Locals();
-        public final LocalInt2 kroot = new LocalInt2( locals );
-        public final LocalInt2 depth = new LocalInt2( locals );
+        public final LocalInt kroot = new LocalInt( locals );
+        public final LocalInt depth = new LocalInt( locals );
     }
     protected class LocalCommand extends Command.Rw<LocalCommand> {
         int kroot, depth;

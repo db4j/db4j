@@ -3,7 +3,7 @@
 package org.db4j;
 
 import kilim.Pausable;
-import org.db4j.Db4j.LocalInt2;
+import org.db4j.Db4j.LocalInt;
 import org.db4j.Db4j.Transaction;
 
 /**
@@ -11,11 +11,11 @@ import org.db4j.Db4j.Transaction;
  * implemented as an array with attached auxiliary pages
  */
 public class HunkLocals extends HunkArray.I {
-    public transient LocalInt2 last;
+    public transient LocalInt last;
 
     protected HunkLocals set(Db4j $db4j,String name) {
         super.set($db4j,name);
-        last = new LocalInt2( loc.locals );
+        last = new LocalInt( loc.locals );
         return this;
     }
 
