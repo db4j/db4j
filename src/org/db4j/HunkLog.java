@@ -9,13 +9,10 @@ import java.io.Serializable;
 import java.util.Random;
 import kilim.Pausable;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.LocalInt;
-import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.Simple;
 
-public class HunkLog extends Hunkable<HunkLog> implements Serializable {
+public class HunkLog extends Db4j.Hunkable<HunkLog> implements Serializable {
 //    static final long serialVersionUID;
 
     

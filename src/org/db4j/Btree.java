@@ -16,7 +16,6 @@ import org.srlutils.btree.Butil;
 
 // can run either kilimized or kilim-free (comment out the following import)
 import kilim.Pausable;
-import org.db4j.Db4j.Hunkable;
 import org.db4j.Db4j.Transaction;
 
 /*
@@ -50,7 +49,7 @@ import org.db4j.Db4j.Transaction;
  * PP: page type
  */
 public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
-    extends Hunkable<Btree> implements Serializable
+    extends Db4j.Hunkable<Btree> implements Serializable
 {
     public static final Modes modes = new Modes();
     public int bb = 12;

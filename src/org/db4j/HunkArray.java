@@ -4,14 +4,11 @@ package org.db4j;
 
 import java.io.Serializable;
 import kilim.Pausable;
-import org.db4j.Db4j.Hunkable;
-import org.db4j.Db4j.LocalInt;
-import org.db4j.Db4j.Locals;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.Simple.Rounder;
 
 public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ extends HunkArray>
-        extends Hunkable<HunkArray> implements Serializable {
+        extends Db4j.Hunkable<HunkArray> implements Serializable {
     static final long serialVersionUID = -9057551081001858374L;
 
     

@@ -3,7 +3,6 @@
 package org.db4j;
 
 import kilim.Pausable;
-import org.db4j.Db4j.LocalInt;
 import org.db4j.Db4j.Transaction;
 
 /**
