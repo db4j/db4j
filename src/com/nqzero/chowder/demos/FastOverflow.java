@@ -6,6 +6,7 @@ import kilim.Pausable;
 import org.db4j.Command;
 import org.db4j.Db4j;
 import org.db4j.HunkArray;
+import static org.db4j.perf.DemoHunker.resolve;
 import org.srlutils.Simple;
 import org.srlutils.Util;
 
@@ -15,7 +16,7 @@ import org.srlutils.Util;
  */
 
 public class FastOverflow {
-    String filename = "./db_files/b6.mmap";
+    String filename = resolve("./db_files/b6.mmap");
     Db4j db4j;
     HunkArray.I map;
     void load() {

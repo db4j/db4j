@@ -6,6 +6,7 @@ import java.io.Serializable;
 import kilim.Pausable;
 import org.db4j.Command.RwInt;
 import org.db4j.Db4j.Transaction;
+import org.db4j.perf.DemoHunker;
 
 public class HunkCount extends Db4j.Hunkable<HunkCount> implements Serializable {
     static final long serialVersionUID = -1693345263933559568L;    
@@ -61,7 +62,7 @@ public class HunkCount extends Db4j.Hunkable<HunkCount> implements Serializable 
     static class Demo {
         HunkCount lt;
         Db4j db4j;
-        String name = "./db_files/hunk2.mmap";
+        String name = DemoHunker.resolve("./db_files/hunk2.mmap");
         
         public class Task extends Db4j.Query {
             public void task() throws Pausable {

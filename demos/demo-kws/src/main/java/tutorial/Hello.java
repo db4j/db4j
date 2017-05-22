@@ -3,11 +3,13 @@
 package tutorial;
 
 import kilim.Pausable;
+import static org.db4j.perf.DemoHunker.resolve;
+
 public class Hello extends Chat {
     
     public static void main(String[] args) throws Exception {
         Hello hello = new Hello();
-        hello.start("./db_files/chat.mmap",args.length==0);
+        hello.start(resolve("./db_files/chat.mmap"),args.length==0);
         
         new kilim.Task() { public void execute() throws Pausable {
             hello.route("/new/hello/world");

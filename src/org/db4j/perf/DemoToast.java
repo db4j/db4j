@@ -32,10 +32,11 @@ public class DemoToast extends Database {
     
     public static void main(String[] args) {
         DemoToast hello = new DemoToast();
+        String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
 
         if (args.length==0) {
             int num = usize > 1000 ? 200 : 2000;
-            hello.start("./db_files/hunk2.mmap",true);
+            hello.start(filename,true);
             for (int ii=0; ii < num; ii++)
                 hello.addUser();
             hello.db4j.fence(null,100);
@@ -43,7 +44,7 @@ public class DemoToast extends Database {
         }
 //        else 
         {
-            hello.start("./db_files/hunk2.mmap",false);
+            hello.start(filename,false);
             hello.getUser();
             hello.db4j.fence(null,100);
         }

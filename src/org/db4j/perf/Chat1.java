@@ -48,7 +48,7 @@ public class Chat1 extends Database {
     
     public static void main(String[] args) {
         Chat1 hello = new Chat1();
-        String filename = "./db_files/hunk2.mmap";
+        String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
         hello.start(filename,args.length==0);
 
         Btrees.IS k2, k3;
@@ -78,7 +78,7 @@ public class Chat1 extends Database {
     }
     public static void main2(String[] args) throws Exception {
         Chat1 chat = new Chat1();
-        chat.start("../db_files/hunk2.mmap",args.length > 0);
+        chat.start(DemoHunker.resolve("../db_files/hunk2.mmap"),args.length > 0);
         new kilim.http.HttpServer(8080, req -> chat.route(req.uriPath));
         System.in.read();
         System.exit(0);

@@ -275,7 +275,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
         LS.Data ccset(LS.Data cc,long key,int index) { return cc.set(key,index >= 0 ? sprout(key) : ""); }
     }
     abstract CC ccset(CC cc,long key,int index);
-    String filename = "./db_files/b6.mmap";
+    String filename = DemoHunker.resolve("./db_files/b6.mmap");
     Db4j db4j;
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );

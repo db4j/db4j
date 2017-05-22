@@ -9,6 +9,7 @@ import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
 import org.db4j.Db4j.Query;
+import static org.db4j.perf.DemoHunker.resolve;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
 import org.srlutils.Types;
@@ -501,7 +502,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         {
             rand.init(seedSeed,true);
         }
-        String filename = "./db_files/b6.mmap";
+        String filename = resolve("./db_files/b6.mmap");
         Db4j db4j;
         boolean ok = true;
         boolean reopen = false;
@@ -559,7 +560,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     }
     static class Demo {
         DF lt;
-        String name = "./db_files/b6.mmap";
+        String name = resolve("./db_files/b6.mmap");
         Db4j db4j;
         float val, vo = 97f;
         double ko = 7.1;

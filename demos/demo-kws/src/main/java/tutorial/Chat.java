@@ -9,6 +9,7 @@ import org.db4j.Btrees;
 import org.db4j.Database;
 import org.db4j.HunkCount;
 import org.apache.commons.lang3.RandomStringUtils;
+import static org.db4j.perf.DemoHunker.resolve;
 import org.srlutils.Rand;
 
 public class Chat extends Database {
@@ -47,7 +48,7 @@ public class Chat extends Database {
     }
     public static void main(String[] args) throws Exception {
         Chat chat = new Chat();
-        chat.start("../db_files/chat.mmap",args.length > 0);
+        chat.start(resolve("./db_files/chat.mmap"),args.length > 0);
         new kilim.http.HttpServer(8080, req -> chat.route(req.uriPath)+"\n");
         System.in.read();
         System.exit(0);

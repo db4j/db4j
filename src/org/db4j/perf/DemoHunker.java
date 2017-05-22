@@ -358,7 +358,7 @@ public class DemoHunker {
             return 0;
         }
     }
-    public static String mapFilename = "./db_files/b6.mmap";
+    public static String mapFilename;
 
     static String parse(String arg,String prefix) {
         if (arg.startsWith(prefix)) return arg.substring(prefix.length());
@@ -404,7 +404,7 @@ public class DemoHunker {
             else if ((val = parse(arg,"seed:")) != null) seed        = Long.parseLong(val);
             else if ((val = parse(arg,"mode:")) != null) mode        = val;
         }
-        mapFilename = filename==null ? resolve(mapFilename) : filename;
+        mapFilename = filename==null ? resolve("./db_files/b6.mmap") : filename;
 
         for (char cc:mode.toCharArray()) {
             if (cc=='w') write = true;

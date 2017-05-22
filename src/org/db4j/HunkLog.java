@@ -10,6 +10,7 @@ import java.util.Random;
 import kilim.Pausable;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.db4j.Db4j.Transaction;
+import org.db4j.perf.DemoHunker;
 import org.srlutils.Simple;
 
 public class HunkLog extends Db4j.Hunkable<HunkLog> implements Serializable {
@@ -192,9 +193,10 @@ public class HunkLog extends Db4j.Hunkable<HunkLog> implements Serializable {
 
         public static void main(String[] args) {
             Chat1 hello = new Chat1();
+            String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
 
             if (args.length==0) {
-                hello.start("./db_files/hunk2.mmap",true);
+                hello.start(filename,true);
                 for (int ii = 0; ii < 3000; ii++)
                     hello.route();
                 hello.db4j.fence(null,100);
@@ -203,7 +205,7 @@ public class HunkLog extends Db4j.Hunkable<HunkLog> implements Serializable {
             }
     //        else 
             {
-                hello.start("./db_files/hunk2.mmap",false);
+                hello.start(filename,false);
                 hello.info();
             }
             System.exit(0);

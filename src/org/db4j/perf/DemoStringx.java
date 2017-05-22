@@ -45,9 +45,10 @@ public class DemoStringx {
 
     public static void main(String[] args) {
         Chat1 hello = new Chat1();
+        String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
 
         if (args.length==1) {
-            hello.start("./db_files/hunk2.mmap",true);
+            hello.start(filename,true);
             for (int ii = 0; ii < 3000; ii++)
                 hello.route();
             hello.db4j.fence(null,100);
@@ -56,7 +57,7 @@ public class DemoStringx {
         }
         else 
         {
-            hello.start("./db_files/hunk2.mmap",false);
+            hello.start(filename,false);
             hello.info();
         }
         System.exit(0);

@@ -11,6 +11,7 @@ import kilim.Pausable;
 import org.db4j.Db4j;
 import org.db4j.Db4j.Query;
 import org.db4j.Db4j.Transaction;
+import org.db4j.perf.DemoHunker;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
 import org.srlutils.TaskTimer;
@@ -516,7 +517,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
 
     static class Demo {
         Btrees.IA lt;
-        String filename = "./db_files/b6.mmap";
+        String filename = DemoHunker.resolve("./db_files/b6.mmap");
         Db4j db4j;
         int [] keys;
         public static void main2(String [] args) {
@@ -576,7 +577,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     }
     static class Mindir2 extends BtTests2 {
         DF2 lt;
-        String filename = "./db_files/b6.mmap";
+        String filename = DemoHunker.resolve("./db_files/b6.mmap");
         Db4j db4j;
         boolean ok = true;
         boolean nocheck = true;
