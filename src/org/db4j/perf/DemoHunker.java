@@ -364,7 +364,29 @@ public class DemoHunker {
         if (arg.startsWith(prefix)) return arg.substring(prefix.length());
         return null;
     }
-    
+
+    /**
+     * some automated tools execute maven projects from the target directory which complicates demos.
+     * if name is a relative path, target is the current directory and the file doesn't exist in it,
+     * and the file exists in the parent directory, use that file name and print a warning.
+     * otherwise return the name unchanged
+     * @param name the filename
+     * @return the resolved filename
+     */
+    public static String resolve(String name) {
+        File file = new File(name);
+        if (! file.exists() & ! file.isAbsolute()) {
+            File dir = new File("");
+            String dirname = dir.getAbsoluteFile().getName();
+            String newname = "../" + name;
+            if ("target".equals(dirname) & new File(newname).exists()) {
+                System.out.println(
+                        "db4j.DemoHunker.resolve: using database filename for parent directory, ie " + newname);
+                return newname;
+            }
+        }
+        return name;
+    }
     
     public static void main(String [] args) throws Exception {
         boolean write = false, copy = false, rock = false, read = false, check = false, count = false;
@@ -373,14 +395,16 @@ public class DemoHunker {
         long size = (9L << 28) / nstores;
         Long seed = null;
         String mode = "wkn";
+        String filename = null;
 
         String val;
         for (String arg:args) {
-            if      ((val = parse(arg,"name:")) != null) mapFilename = val;
+            if      ((val = parse(arg,"name:")) != null) filename    = val;
             else if ((val = parse(arg,"num:"))  != null) nn          = Integer.parseInt(val);
             else if ((val = parse(arg,"seed:")) != null) seed        = Long.parseLong(val);
             else if ((val = parse(arg,"mode:")) != null) mode        = val;
         }
+        mapFilename = filename==null ? resolve(mapFilename) : filename;
 
         for (char cc:mode.toCharArray()) {
             if (cc=='w') write = true;
