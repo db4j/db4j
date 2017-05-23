@@ -706,53 +706,53 @@ public class Db4j implements Serializable {
 
     
     public class Guts {
-    /** force the cache to be committed to disk ... on return the commit is complete */
-    public void forceCommit(int delay) {
-        Db4j.ForceCommit commit = new Db4j.ForceCommit();
-        guts.offerTask( commit );
-        while (!commit.done)
-            Simple.sleep(delay);
-    }
-    /** sync the backing file to disk */
-    public void sync() {
-        guts.forceCommit(10);
-        try { chan.force( false ); }
-        catch (IOException ex) {
-            throw rte( ex, "attempt to sync Hunker file failed" );
-        }
-    }
-
-    /** use fadvise to tell the OS that the entire backing file is "dontneed" in the cache */
-    public void dontneed() {
-        try { DioNative.fadvise( ufd, 0, size<<bb, DioNative.Enum.dontneed ); }
-        catch(Exception ex) {}
-    }
-    public void fence(Db4j.Task task,int delay) {
-        Db4j.Task oldest = null;
-        while (task != null && task.id==0) Simple.sleep(delay);
-        while (true) {
-            OldestTask ot = new OldestTask();
-            guts.offerTask( ot );
-            while (! ot.done())
+        /** force the cache to be committed to disk ... on return the commit is complete */
+        public void forceCommit(int delay) {
+            Db4j.ForceCommit commit = new Db4j.ForceCommit();
+            guts.offerTask( commit );
+            while (!commit.done)
                 Simple.sleep(delay);
-            oldest = ot.oldest;
-            if (task==null) task = ot;
-            if (oldest==null || oldest.id >= task.id) break;
-            Simple.sleep( delay );
         }
-    }
-    public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
-    public int stats2() { return runner.stats.nwait; }
-    public void info() {
-        for (Hunkable array : arrays)
-            System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
-    }
+        /** sync the backing file to disk */
+        public void sync() {
+            guts.forceCommit(10);
+            try { chan.force( false ); }
+            catch (IOException ex) {
+                throw rte( ex, "attempt to sync Hunker file failed" );
+            }
+        }
 
-    /** offer a new task and return it */
-    public <TT extends Queable> TT offerTask(TT task) {
-        qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
-        return task;
-    }
+        /** use fadvise to tell the OS that the entire backing file is "dontneed" in the cache */
+        public void dontneed() {
+            try { DioNative.fadvise( ufd, 0, size<<bb, DioNative.Enum.dontneed ); }
+            catch(Exception ex) {}
+        }
+        public void fence(Db4j.Task task,int delay) {
+            Db4j.Task oldest = null;
+            while (task != null && task.id==0) Simple.sleep(delay);
+            while (true) {
+                OldestTask ot = new OldestTask();
+                guts.offerTask( ot );
+                while (! ot.done())
+                    Simple.sleep(delay);
+                oldest = ot.oldest;
+                if (task==null) task = ot;
+                if (oldest==null || oldest.id >= task.id) break;
+                Simple.sleep( delay );
+            }
+        }
+        public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
+        public int stats2() { return runner.stats.nwait; }
+        public void info() {
+            for (Hunkable array : arrays)
+                System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
+        }
+
+        /** offer a new task and return it */
+        public <TT extends Queable> TT offerTask(TT task) {
+            qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
+            return task;
+        }
     }
 
 
