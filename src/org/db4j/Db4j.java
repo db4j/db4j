@@ -257,10 +257,6 @@ public class Db4j implements Serializable {
         iocmd( tid, k1, araw, false );
         return araw;
     }
-    public void info() {
-        for (Hunkable array : arrays)
-            System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
-    }
     class LoadTask extends Task {
         volatile int count;
         int ncomp;
@@ -738,6 +734,13 @@ public class Db4j implements Serializable {
             Simple.sleep( delay );
         }
     }
+    public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
+    public int stats2() { return runner.stats.nwait; }
+    public void info() {
+        for (Hunkable array : arrays)
+            System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
+    }
+
     /** offer a new task and return it */
     public <TT extends Queable> TT offerTask(TT task) {
         qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
@@ -825,8 +828,6 @@ public class Db4j implements Serializable {
         qrunner.ntask++;
         qrunner.state.completedTasks++;
     }
-    public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
-    public int stats2() { return runner.stats.nwait; }
 
 
     /** 
