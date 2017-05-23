@@ -186,6 +186,7 @@ public class Db4j implements Serializable {
     static int sleeptime = 10;
     transient FileLock flock;
     transient ClassLoader userClassLoader;
+    public transient Guts guts;
 
     /** for each field, null it out and call gc() -- use -verbose:gc to find deltas */
     void checkLeaks() {
@@ -274,12 +275,12 @@ public class Db4j implements Serializable {
             compRaw.createCommit(pcomp);
             compLocals.createCommit(pcomp+c1);
             long base = Rounder.rup(pcomp+c1+c2,align);
-            offerTask(this);
+            guts.offerTask(this);
             while (done==false) Simple.sleep(10);
             CompTask [] cts = new CompTask[ncomp];
             for (int ii = 0; ii < ncomp; ii++) {
                 arrays.add( null );
-                offerTask( cts[ii] = new CompTask(ii) );
+                guts.offerTask( cts[ii] = new CompTask(ii) );
             }
             for (int ii=0; ii < ncomp; ii++)
                 cts[ii].awaitb();
@@ -390,6 +391,8 @@ public class Db4j implements Serializable {
     }
     /**
      * create the structure on disk
+     */
+    /*
      * ---------------------------------
      * 0:
      *   serialized java object
@@ -410,9 +413,9 @@ public class Db4j implements Serializable {
         start();
 
         CreateTask ct = new CreateTask();
-        offerTask( ct );
-        fence( ct, 10 );
-        fence( null, 10 );
+        guts.offerTask( ct );
+        guts.fence( ct, 10 );
+        guts.fence( null, 10 );
     }
     static final int align = 16;
     /*
@@ -545,6 +548,7 @@ public class Db4j implements Serializable {
             chan = raf.getChannel();
             chan.force( false );
             flock = chan.tryLock();
+            guts = new Guts();
             if (flock==null) {
                 System.out.println( "Hunker.lock -- not acquired: " + name );
                 throw new RuntimeException( "could not acquire file lock on: " + name );
@@ -684,7 +688,7 @@ public class Db4j implements Serializable {
 
     /** shut down the hunker - callable from outside the qrunner threads */
     public void shutdown() {
-        offerTask( new Shutdown() );
+        guts.offerTask( new Shutdown() );
         try {
             qthread.join();
             qthread = null;
@@ -699,16 +703,19 @@ public class Db4j implements Serializable {
         System.out.format("shutdown.stats -- disk:%5d, diskTime:%8.3f, diskWait:%8.3f, back:%5d\n",
                 stats.nwait, stats.diskTime, stats.waitTime, qrunner.nback );
     }
+
+    
+    public class Guts {
     /** force the cache to be committed to disk ... on return the commit is complete */
     public void forceCommit(int delay) {
         Db4j.ForceCommit commit = new Db4j.ForceCommit();
-        offerTask( commit );
+        guts.offerTask( commit );
         while (!commit.done)
             Simple.sleep(delay);
     }
     /** sync the backing file to disk */
     public void sync() {
-        forceCommit(10);
+        guts.forceCommit(10);
         try { chan.force( false ); }
         catch (IOException ex) {
             throw rte( ex, "attempt to sync Hunker file failed" );
@@ -725,7 +732,7 @@ public class Db4j implements Serializable {
         while (task != null && task.id==0) Simple.sleep(delay);
         while (true) {
             OldestTask ot = new OldestTask();
-            offerTask( ot );
+            guts.offerTask( ot );
             while (! ot.done())
                 Simple.sleep(delay);
             oldest = ot.oldest;
@@ -745,6 +752,7 @@ public class Db4j implements Serializable {
     public <TT extends Queable> TT offerTask(TT task) {
         qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
         return task;
+    }
     }
 
 
@@ -801,7 +809,7 @@ public class Db4j implements Serializable {
      */
     public <TT> LambdaQuery<TT> submit(Queryable<TT> body) {
         LambdaQuery<TT> invoke = new LambdaQuery(body);
-        return offerTask(invoke);
+        return guts.offerTask(invoke);
     }
     /**
      * create a new query that delegates to return-value-less body, and submit it to the execution engine
@@ -810,7 +818,7 @@ public class Db4j implements Serializable {
      */
     public LambdaCallQuery submitCall(QueryCallable body) {
         LambdaCallQuery implore = new LambdaCallQuery(body);
-        return offerTask(implore);
+        return guts.offerTask(implore);
     }
     /**
      * submit query to the dbms execution engine
@@ -819,7 +827,7 @@ public class Db4j implements Serializable {
      * @return query, preserving the type to allow chaining
      */
     public <TT extends Query> TT submitQuery(TT query) {
-        return offerTask(query);
+        return guts.offerTask(query);
     }
 
     /** task has completed (or been cancelled???) - clean up the accounting info */
@@ -847,7 +855,7 @@ public class Db4j implements Serializable {
             if (!diskCommit || !pre) mbx.putnb(0);
             return diskCommit;
         }
-        public TT offer(Db4j db4j) { return db4j.offerTask((TT) this); }
+        public TT offer(Db4j db4j) { return db4j.guts.offerTask((TT) this); }
         /** pausing wait for the task to complete, if the task threw an exception, rethrow it */
         public TT await() throws Pausable {
             Integer msg = mbx.get();

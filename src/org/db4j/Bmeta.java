@@ -529,8 +529,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             db4j = new Db4j().init( filename, null );
             lt = db4j.register(new Btrees.IA(),"Bushy Tree");
             db4j.create();
-            db4j.fence(null,100);
-            db4j.forceCommit(100);
+            db4j.guts.fence(null,100);
+            db4j.guts.forceCommit(100);
             final int ipt=8, bpe=770, size=1<<25, len=Simple.Rounder.rup(size/bpe,ipt);
             keys = Rand.source.rand( new int[len], 0, 1<<30 );
             for (int ii=0; ii < keys.length; ii += ipt) {
@@ -548,7 +548,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 }};
                 new Insert().offer(db4j);
             }
-            db4j.fence(null,100);
+            db4j.guts.fence(null,100);
             db4j.shutdown();
             db4j.close();
             db4j = Db4j.load(filename);
@@ -572,7 +572,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 }};
                 new Check().offer(db4j);
             }
-            db4j.fence(null,100);
+            db4j.guts.fence(null,100);
         }
     }
     static class Mindir2 extends BtTests2 {
@@ -587,8 +587,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             db4j = new Db4j().init( filename, null ); // 1L << 32 );
             lt = db4j.register(new DF2(),"Bushy Tree");
             db4j.create();
-            db4j.fence(null,100);
-            db4j.forceCommit(100);
+            db4j.guts.fence(null,100);
+            db4j.guts.forceCommit(100);
         }
         public void run(int stage) throws Exception {
             if (reopen)
@@ -643,7 +643,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 task.offer(db4j);
                 if (chk) task.awaitb();
             }
-            db4j.fence(null,10);
+            db4j.guts.fence(null,10);
         }
         public boolean finish() throws Exception {
             db4j.shutdown();

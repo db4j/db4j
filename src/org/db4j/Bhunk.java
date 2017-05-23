@@ -515,8 +515,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             db4j = new Db4j().init( filename, null ); // 1L << 32 );
             db4j.register(map,"Bushy Tree");
             db4j.create();
-            db4j.fence(null,100);
-            db4j.forceCommit(100);
+            db4j.guts.fence(null,100);
+            db4j.guts.forceCommit(100);
             if (reopen) close();
         }
         public void run(final int stage) throws Exception {
@@ -549,7 +549,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                         ok = false;
                 } }.offer(db4j);
             }
-            db4j.fence(null,10);
+            db4j.guts.fence(null,10);
             if (reopen) close();
         }
         public boolean finish() throws Exception {
@@ -603,12 +603,12 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             // break out the final iter to allow tracing in the debugger
             for (int ii = 0; ii < nn; ii++)
                 new PutTask(ii,ii+ko,ii+vo).offer(db4j);
-            db4j.fence(null,100);
+            db4j.guts.fence(null,100);
             new PutTask(nn,nn+ko,nn+vo).offer(db4j).awaitb();
             for (int ii = 0; ii < nn; ii++) 
                 new GetTask(ii+ko,ii+vo).offer(db4j);
             new GetTask(nn+ko,nn+vo).offer(db4j);
-            db4j.fence(null,100);
+            db4j.guts.fence(null,100);
             new CheckTask().offer(db4j).awaitb();
             lt.db4j.shutdown();
         }

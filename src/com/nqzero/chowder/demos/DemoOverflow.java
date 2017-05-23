@@ -35,8 +35,8 @@ public class DemoOverflow {
         db4j = new Db4j().init( filename, null );
         map = db4j.register(new HunkArray.I(),"Player Overflow");
         db4j.create();
-        db4j.fence(null,100);
-        db4j.forceCommit(100);
+        db4j.guts.fence(null,100);
+        db4j.guts.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source();
     { 
@@ -70,7 +70,7 @@ public class DemoOverflow {
                 }
             }.offer(db4j);
         }
-        db4j.fence(null,10);
+        db4j.guts.fence(null,10);
         System.out.println("insert complete");
     }
     long running;
@@ -84,7 +84,7 @@ public class DemoOverflow {
     public void dorotate() {
         for (int ii = 0; ii < np; ii++)
             rot0(ii);
-        db4j.fence(null,10);
+        db4j.guts.fence(null,10);
     }
     void swap1(int [] d1,int [] d2,int k1,int k2) {
         int delta = (d1[k1] - d2[k2])/2;

@@ -51,7 +51,7 @@ public class DemoStringx {
             hello.start(filename,true);
             for (int ii = 0; ii < 3000; ii++)
                 hello.route();
-            hello.db4j.fence(null,100);
+            hello.db4j.guts.fence(null,100);
             hello.info();
             hello.shutdown(true);
         }

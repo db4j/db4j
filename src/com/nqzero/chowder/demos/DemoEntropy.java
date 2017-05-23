@@ -28,8 +28,8 @@ public class DemoEntropy {
         map = db4j.register(new HunkArray.I(),"Player Entropy");
         buildSeed = db4j.register(new HunkCount(),"seed used for building player round robin");
         db4j.create();
-        db4j.fence(null,100);
-        db4j.forceCommit(100);
+        db4j.guts.fence(null,100);
+        db4j.guts.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source(), r2 = new org.srlutils.rand.Source();
     { 
@@ -72,7 +72,7 @@ public class DemoEntropy {
                 }
             }.offer(db4j);
         }
-        db4j.fence(null,10);
+        db4j.guts.fence(null,10);
         System.out.println("insert complete");
         build();
     }
@@ -139,7 +139,7 @@ public class DemoEntropy {
     public void dorotate(int numReps) {
         for (int ii = 0; ii < numReps; ii++)
             rot1(ii);
-        db4j.fence(null,10);
+        db4j.guts.fence(null,10);
     }
     void swap1(int [] d1,int [] d2,int k1,int k2) {
         int delta = (d1[k1] - d2[k2])/2;
@@ -191,7 +191,7 @@ public class DemoEntropy {
                 }
             }.offer(db4j);
         }
-        db4j.fence(null,10);
+        db4j.guts.fence(null,10);
         long avg = Simple.Rounder.divup(asum,1L*np*nv);
         System.out.format("validate data load complete: %12d --> %5d, %5d\n", asum, avg, suma);
         validateSums();

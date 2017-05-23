@@ -281,8 +281,8 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
         db4j.register(map,"Bushy Tree");
         db4j.create();
-        db4j.fence(null,100);
-        db4j.forceCommit(100);
+        db4j.guts.fence(null,100);
+        db4j.guts.forceCommit(100);
     }
     public long process(final int jo) {
         final long magic = r1.nextLong();
