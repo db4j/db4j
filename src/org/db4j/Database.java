@@ -22,6 +22,10 @@ public class Database {
         return field.getDeclaringClass().getSimpleName() + "/";
     }
 
+    public static <TT extends Database> TT start(TT database,String filename,boolean build) {
+        database.start(filename,build);
+        return database;
+    }
     
     /** 
      * build all the tables in the database
