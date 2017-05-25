@@ -317,7 +317,7 @@ public class DemoHunker {
             if ( ! file.exists() || force ) {
                 // don't auto delete the file ... it takes forever to recreate it (limit of linux/ext3)
                 //                file.delete();
-                long fileSize = (size*8 + size*8/128)*nstores + (1<<20);
+                long fileSize = (size*8 + size*8/128)*nstores + (1<<20) + (1<<30);
                 db4j.init( name, fileSize );
                 arrays = new HunkArray.L[ nstores ];
                 for (int ii = 0; ii < nstores; ii++)
