@@ -22,7 +22,7 @@ public class FastOverflow {
     void load() {
         db4j = Db4j.load(filename);
 //        hunker.qrunner.genc = Integer.MAX_VALUE - (1<<23);
-        map = (HunkArray.I) db4j.lookup(0);
+        map = (HunkArray.I) db4j.guts.lookup(0);
     }
     long sum(int [] vals) {
         long sum = Util.Ranged.sum(1,vals.length,vals);

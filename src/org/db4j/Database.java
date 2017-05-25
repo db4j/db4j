@@ -119,7 +119,7 @@ public class Database {
             int ktable = 0;
             for (Field field : fields) {
                 String name = filename(field);
-                Hunkable composite = db4j.lookup( name );
+                Hunkable composite = db4j.guts.lookup( name );
                 if (overwrite || composite == null) {
                     composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false );
                     db4j.register(composite,name);
@@ -136,7 +136,7 @@ public class Database {
             for (Field field : fields) {
                 Hunkable composite = null;
                 String filename = filename(field);
-                composite = (Hunkable) db4j.lookup( filename );
+                composite = (Hunkable) db4j.guts.lookup( filename );
                 if (composite == null) {
                     String err = String.format( "failed to find Hunkable: %s, as field: %s",
                             filename, field.getName() );

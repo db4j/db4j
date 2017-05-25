@@ -284,8 +284,8 @@ public class Db4j implements Serializable {
             }
             for (int ii=0; ii < ncomp; ii++)
                 cts[ii].awaitb();
-            kryoMap = (Btrees.IS) lookup(PATH_KRYOMAP);
-            logStore = (HunkLog) lookup(PATH_LOGSTORE);
+            kryoMap = (Btrees.IS) guts.lookup(PATH_KRYOMAP);
+            logStore = (HunkLog) guts.lookup(PATH_LOGSTORE);
 
             System.out.format( "Hunker.load -- %d\n", ncomp );
         }
@@ -457,43 +457,13 @@ public class Db4j implements Serializable {
                 create(tid,ha,null);
         }
     }
-    // fixme - replace all usages with lookup(tid,index)
-    public Hunkable lookup(int index) { return arrays.get(index); }
-    
     public Hunkable lookup(Transaction tid,String name) throws Pausable {
         Command.RwInt ncomp = put(tid, loc.ncomp.read());
         tid.submitYield();
         int num = arrays.size();
         for (int ii=num; ii < ncomp.val; ii++)
-            lookup(tid,ii);
-        return lookup(name);
-    }
-    // fixme:untested
-    public Hunkable lookup(Transaction tid,int index) throws Pausable {
-        Hunkable ha;
-        if (index < arrays.size()) {
-            while ((ha = arrays.get(index))==null) kilim.Task.sleep(10);
-            return ha;
-        }
-        Command.RwInt ncomp = put(tid, loc.ncomp.read());
-        tid.submitYield();
-        if (index >= ncomp.val) return null;
-        boolean conflict = false;
-        synchronized (arrays) {
-            if (index < arrays.size())
-                conflict = true;
-            else
-                arrays.set(index,null);
-        }
-        if (conflict) return lookup(tid,index);
-        byte [] b2 = compRaw.context().set(tid).set(index,null).get(compRaw).val;
-        ha = (Hunkable) org.srlutils.Files.load(b2);
-        Command.RwInt cmd = compLocals.get(tid,index);
-        tid.submitYield();
-        long kloc = cmd.val;
-        ha.set(Db4j.this,null).createCommit(kloc);
-        arrays.set(index,ha);
-        return ha;
+            guts.lookup(tid,ii);
+        return guts.lookup(name);
     }
     public void create(Transaction tid,Hunkable ha,String name) throws Pausable {
         ha.set(this,name);
@@ -673,11 +643,6 @@ public class Db4j implements Serializable {
         for (int ii = 0; ii < nreq; ii++) alloc[ii] = nblock + ii;
         return alloc;
     }
-    public Hunkable lookup(String name) {
-        for (Hunkable ha : arrays)
-            if (ha.name().equals( name )) return ha;
-        return null;
-    }
 
     void start() {
         thread = new Thread( runner, "Disk Loop" );
@@ -752,6 +717,41 @@ public class Db4j implements Serializable {
         public <TT extends Queable> TT offerTask(TT task) {
             qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
             return task;
+        }
+        public Hunkable lookup(String name) {
+            for (Hunkable ha : arrays)
+                if (ha.name().equals( name )) return ha;
+            return null;
+        }
+        // fixme - replace all usages with lookup(tid,index)
+        public Hunkable lookup(int index) { return arrays.get(index); }
+
+        // fixme:untested
+        public Hunkable lookup(Transaction tid,int index) throws Pausable {
+            Hunkable ha;
+            if (index < arrays.size()) {
+                while ((ha = arrays.get(index))==null) kilim.Task.sleep(10);
+                return ha;
+            }
+            Command.RwInt ncomp = put(tid, loc.ncomp.read());
+            tid.submitYield();
+            if (index >= ncomp.val) return null;
+            boolean conflict = false;
+            synchronized (arrays) {
+                if (index < arrays.size())
+                    conflict = true;
+                else
+                    arrays.set(index,null);
+            }
+            if (conflict) return guts.lookup(tid,index);
+            byte [] b2 = compRaw.context().set(tid).set(index,null).get(compRaw).val;
+            ha = (Hunkable) org.srlutils.Files.load(b2);
+            Command.RwInt cmd = compLocals.get(tid,index);
+            tid.submitYield();
+            long kloc = cmd.val;
+            ha.set(Db4j.this,null).createCommit(kloc);
+            arrays.set(index,ha);
+            return ha;
         }
     }
 

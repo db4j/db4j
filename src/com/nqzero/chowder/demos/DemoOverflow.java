@@ -29,7 +29,7 @@ public class DemoOverflow {
     HunkArray.I map;
     void load() {
         db4j = Db4j.load(filename);
-        map = (HunkArray.I) db4j.lookup(0);
+        map = (HunkArray.I) db4j.guts.lookup(0);
     }
     public void init() {
         db4j = new Db4j().init( filename, null );

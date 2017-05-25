@@ -20,8 +20,8 @@ public class DemoEntropy {
     HunkCount buildSeed;
     void load() {
         db4j = Db4j.load(filename);
-        map = (HunkArray.I) db4j.lookup(0);
-        buildSeed = (HunkCount) db4j.lookup(1);
+        map = (HunkArray.I) db4j.guts.lookup(0);
+        buildSeed = (HunkCount) db4j.guts.lookup(1);
     }
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
