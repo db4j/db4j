@@ -186,6 +186,11 @@ public class Db4j implements Serializable {
     static int sleeptime = 10;
     transient FileLock flock;
     transient ClassLoader userClassLoader;
+    /**
+     * a proxy allowing access to deprecated, experimental and internal methods.
+     * the api and semantics of these methods is expected to change in future versions
+     * @deprecated 
+     */
     public transient Guts guts;
 
     /** for each field, null it out and call gc() -- use -verbose:gc to find deltas */
@@ -671,6 +676,7 @@ public class Db4j implements Serializable {
 
     
     public class Guts {
+        protected Guts() {}
         /** force the cache to be committed to disk ... on return the commit is complete */
         public void forceCommit(int delay) {
             Db4j.ForceCommit commit = new Db4j.ForceCommit();
