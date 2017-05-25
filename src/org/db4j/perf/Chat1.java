@@ -47,12 +47,13 @@ public class Chat1 extends Database {
     }
     
     public static void main(String[] args) {
-        Chat1 hello = new Chat1();
         String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
-        hello.start(filename,args.length==0);
-
-        Btrees.IS k2, k3;
+        String PATH_K2 = "///chat1/k2";
+        int key = 707;
+        
         if (args.length==0) {
+            Chat1 hello = Database.start(new Chat1(),filename,args.length==0);
+            org.db4j.Db4j db4j = hello.db4j;
             new kilim.Task() {
                 public void execute() throws Pausable {
                     hello.route("/new/hello/world");
@@ -61,19 +62,19 @@ public class Chat1 extends Database {
                     System.out.println(hello.route("/get/2"));
                 }
             }.start().joinb();
-            k2 = new Btrees.IS();
-            hello.db4j.submitCall(tid -> {
-                hello.db4j.create(tid,k2,"hello.kryoMap");
-            }).awaitb();
-            hello.db4j.submitCall(tid -> {
-                k2.insert(tid,707,"hello world");
-            }).awaitb();
+            Btrees.IS k2 = new Btrees.IS();
+            db4j.submitCall(tid -> { db4j.create(tid,k2,PATH_K2); }).awaitb();
+            db4j.submitCall(tid -> { k2.insert(tid,key,"hello world"); }).awaitb();
             hello.shutdown(true);
-            hello.start(filename,false);
         }
-        k3 = (Btrees.IS) hello.db4j.lookup("hello.kryoMap");
-        String klass = hello.db4j.submit(tid -> k3.find(tid,707)).awaitb().val;
-        System.out.println(klass);
+        
+        {
+            Chat1 hello = Database.start(new Chat1(),filename,false);
+            String klass = hello.db4j.submit(tid -> 
+                    ((Btrees.IS) hello.db4j.lookup(tid,PATH_K2)).find(tid,key)
+            ).awaitb().val;
+            System.out.println(klass);
+        }
         System.exit(0);
     }
     public static void main2(String[] args) throws Exception {
