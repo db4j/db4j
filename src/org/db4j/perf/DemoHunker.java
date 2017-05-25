@@ -19,6 +19,7 @@ import org.srlutils.hash.LongHash;
 public class DemoHunker {
     static boolean async = true;
     static boolean useSort = false;
+    static final String PATH_BASE = "///db4j/demohunker/store_";
 
     public static class DemoRollback extends DemoWithTasks {
         public int [] counts;
@@ -320,14 +321,17 @@ public class DemoHunker {
                 db4j.init( name, fileSize );
                 arrays = new HunkArray.L[ nstores ];
                 for (int ii = 0; ii < nstores; ii++)
-                    arrays[ii] = db4j.register(new HunkArray.L(),"stuff" + ii);
+                    arrays[ii] = db4j.register(new HunkArray.L(),PATH_BASE + ii);
                 db4j.create();
             }
             else {
                 db4j = Db4j.load( name );
                 arrays = new HunkArray.L[ nstores ];
-                for (int ii = 0; ii < nstores; ii++)
-                    arrays[ii] = (HunkArray.L) db4j.lookup( ii );
+
+                db4j.submitCall(tid -> {
+                    for (int ii=0; ii < nstores; ii++)
+                        arrays[ii] = (HunkArray.L) db4j.lookup(tid,PATH_BASE + ii);
+                }).awaitb();
             }
         }
         public TT run() {
