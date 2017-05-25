@@ -762,7 +762,7 @@ public class Db4j implements Serializable {
      * accepting a transaction and returning a value
      * @param <TT> the type of the return value
      */
-    public interface Queryable<TT> {
+    public interface QueryFunction<TT> {
         TT query(Db4j.Transaction tid) throws Pausable;
     }
     /**
@@ -782,14 +782,14 @@ public class Db4j implements Serializable {
      * @param <TT> the type of the lambda return value
      */
     public static class LambdaQuery<TT> extends Query<LambdaQuery<TT>> {
-        Queryable<TT> body;
+        QueryFunction<TT> body;
         /** the captured return value from the wrapped lambda, valid after query completion */
         public TT val;
         /**
          * create a new query wrapping body
          * @param body the lambda to delegate to during query task execution
          */
-        public LambdaQuery(Queryable body) { this.body = body; }
+        public LambdaQuery(QueryFunction body) { this.body = body; }
         public void task() throws Pausable { val = body.query(tid); }
     }
     /**
@@ -807,7 +807,7 @@ public class Db4j implements Serializable {
      * @param body a lambda or equivalent that is called during the query task execution, with a return value
      * @return the new query
      */
-    public <TT> LambdaQuery<TT> submit(Queryable<TT> body) {
+    public <TT> LambdaQuery<TT> submit(QueryFunction<TT> body) {
         LambdaQuery<TT> invoke = new LambdaQuery(body);
         return guts.offerTask(invoke);
     }
