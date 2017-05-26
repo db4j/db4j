@@ -509,7 +509,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         public Mindir(int $nn,TT $map) { nn=$nn; map=$map; }
         { stageNames = "put look rem chk".split(" "); }
         public void alloc() { setup(stageNames.length, "Bhunk.DF"); }
-        void close() { db4j.shutdown(); db4j.close(); }
+        void close() { db4j.shutdown(); }
         public void init() {
             seed = rand.setSeed(null,false);
             db4j = new Db4j().init( filename, null ); // 1L << 32 );

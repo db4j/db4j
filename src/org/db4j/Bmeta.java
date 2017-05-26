@@ -550,12 +550,10 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             }
             db4j.guts.fence(null,100);
             db4j.shutdown();
-            db4j.close();
             db4j = Db4j.load(filename);
             lt = (Btrees.IA) db4j.arrays.get(0);
             check(keys.length);
             db4j.shutdown();
-            db4j.close();
             lt.clear();
         }
         void check(int nn) {
@@ -597,7 +595,6 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             stage(stage);
             if (reopen) {
                 db4j.shutdown();
-                db4j.close();
             }
         }
         public void stage(final int stage) {
@@ -647,7 +644,6 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
         public boolean finish() throws Exception {
             db4j.shutdown();
-            db4j.close();
             lt.clear();
             return ok;
         }

@@ -54,7 +54,6 @@ public class FastOverflow {
     long asum = 0;
     public void close() {
         db4j.shutdown();
-        db4j.close();
     }
     public static class Demo {
         public static void main(String [] args) {

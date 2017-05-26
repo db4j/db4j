@@ -18,6 +18,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import kilim.EventSubscriber;
 import kilim.Pausable;
@@ -188,7 +189,8 @@ public class Db4j implements Serializable {
     transient ClassLoader userClassLoader;
     /**
      * a proxy allowing access to deprecated, experimental and internal methods.
-     * the api and semantics of these methods is expected to change in future versions
+     * the api and semantics of these methods is expected to change in future versions,
+     * and as such should be avoided
      * @deprecated 
      */
     public transient Guts guts;
@@ -483,14 +485,6 @@ public class Db4j implements Serializable {
         ha.postInit(tid);
         System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
     }
-    /** attempt to close the backing file, returning any exception (instead of throwing) */
-    public Exception close() {
-        Exception ex = null;
-        try { raf.close(); }
-        catch (Exception e2) { ex = e2; }
-        System.out.format( "Hunker.close: %s\n", ex==null ? "ok" : ex );
-        return ex;
-    }
     /** 
      * initialize all the transient fields
      * called for both initial creation and after loading from disk
@@ -658,6 +652,8 @@ public class Db4j implements Serializable {
 
     /** shut down the hunker - callable from outside the qrunner threads */
     public void shutdown() {
+        ShutdownException sdx = new ShutdownException();
+        LinkedList<Exception> causes = sdx.causes;
         guts.offerTask( new Shutdown() );
         try {
             qthread.join();
@@ -665,15 +661,39 @@ public class Db4j implements Serializable {
             thread.join();
             thread = null;
         }
-        catch (InterruptedException ex) { throw irte( ex ); }
+        catch (InterruptedException ex) { causes.add(sdx.join = ex); }
+        catch (Exception ex) { causes.add(ex); }
 
         try { chan.force( false ); }
-        catch (IOException ex) { System.out.println( "sync failed" ); }
+        catch (IOException ex) { causes.add(sdx.force = ex); }
+        catch (Exception ex) { causes.add(ex); }
+
         Stats stats = runner.stats;
         System.out.format("shutdown.stats -- disk:%5d, diskTime:%8.3f, diskWait:%8.3f, back:%5d\n",
                 stats.nwait, stats.diskTime, stats.waitTime, qrunner.nback );
+
+        try { raf.close(); }
+        catch (IOException ex) { causes.add(sdx.close = ex); }
+        catch (Exception ex) { causes.add(ex); }
+        
+        if (! causes.isEmpty()) throw sdx;
     }
 
+    public static class ShutdownException extends RuntimeException {
+        public InterruptedException join;
+        public IOException force, close;
+        public LinkedList<Exception> causes = new LinkedList();
+
+        public String toString() {
+            if (causes.size()==1) return causes.element().toString();
+            String txt = "multiple exceptions were captured:";
+            for (Exception ex : causes) {
+                txt += ex;
+                txt += "---------------------------------------------";
+            }
+            return txt;
+        }
+    }
     
     public class Guts {
         protected Guts() {}

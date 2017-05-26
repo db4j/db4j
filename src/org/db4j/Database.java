@@ -55,7 +55,6 @@ public class Database {
             Runtime.getRuntime().removeShutdownHook(shutdownThread);
         shutdownThread = null;
         db4j.shutdown();
-        db4j.close();
     }
     /**
      * initialize db4j and either build or load the database

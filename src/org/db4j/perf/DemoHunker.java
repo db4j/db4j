@@ -346,7 +346,6 @@ public class DemoHunker {
                 db4j.shutdown();
             }
             catch (Exception ex) { throw Simple.Exceptions.rte(ex); }
-            finally { db4j.close(); }
             return (TT) this;
         }
         public abstract void test();

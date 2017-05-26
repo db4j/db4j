@@ -225,7 +225,6 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
             jo = timedLoop(size,jj,jo,operationsPerPass);
         }
         db4j.shutdown();
-        db4j.close();
     }
     public abstract void check(CC cc,long key1,String sprout1);
     public static class Key extends TestString<SI.Data> {
