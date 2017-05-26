@@ -20,6 +20,7 @@ public class DemoHunker {
     static boolean async = true;
     static boolean useSort = false;
     static final String PATH_BASE = "///db4j/demohunker/store_";
+    static boolean debugCheck = true;
 
     public static class DemoRollback extends DemoWithTasks {
         public int [] counts;
@@ -352,7 +353,7 @@ public class DemoHunker {
         public int check(Transaction tid,int val,int goal,int alt,int ii,int jj) throws Pausable {
             long offset2 = (alt < 0 || alt >= offsets.length) ? -1 : offsets[alt];
             if ( val != goal && offsets[ii] != offset2 ) {
-                if ( Db4j.debug.test ) System.out.format(
+                if (debugCheck) System.out.format(
                             "testRead: %5d, %8d --> %8d --> %8d v %8d -- %s\n",
                             jj, ii, val, offsets[ii], offset2,
                             arrays[jj].offsetInfo( tid, offsets[ii] ) );

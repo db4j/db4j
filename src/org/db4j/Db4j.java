@@ -178,7 +178,7 @@ public class Db4j implements Serializable {
     transient KryoPool kryoPool;
     Example.MyKryo kryo() { return ((Example.MyKryo) kryoPool.borrow()).pool(kryoPool); }
 
-    public static final Debug debug = new Debug();
+    protected static final Debug debug = new Debug();
     static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
     static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
     static final String PATH_COMP_LOCALS = "///db4j/hunker/compLocals";
@@ -222,8 +222,8 @@ public class Db4j implements Serializable {
         long address(int kblock) { return ((long) kblock) << bb; }
     }
 
-    public static class Debug {
-        public final boolean test = true, intp = false, alloc = false;
+    protected static class Debug {
+        public final boolean intp = false, alloc = false;
         public final boolean cache = false, disk = false;
         /** print out reads that miss cache */
         public final boolean eeeread = false;
