@@ -1959,7 +1959,7 @@ public class Db4j implements Serializable {
             return (int) (kblock - o.kblock);
         }
     }
-    public static class CachedBlock extends Listee<CachedBlock> implements Comparable<CachedBlock> {
+    protected static class CachedBlock extends Listee<CachedBlock> implements Comparable<CachedBlock> {
         long kblock;
         byte [] data;
         /** the generation of the latest write or zero for pure reads */
