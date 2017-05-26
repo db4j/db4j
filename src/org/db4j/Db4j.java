@@ -3215,39 +3215,6 @@ public class Db4j implements Serializable {
             //            }
             //            throw ex;
             //        }
-            // not obvious what should be done with an exception in production
-            //   but for debugging during developing, it's convenient to be able to attach
-            //   and continue where we left off, uncomment the following ...
-            //        catch (RuntimeException ex) {
-            //            boolean stop = true;
-            //            while (stop) {
-            //                System.out.format( "Task3.runTask -- exception: %s, %s\n", ex, this );
-            //                Simple.sleep( 1000 );
-            //            }
-            //            throw ex;
-            //        }
-            // not obvious what should be done with an exception in production
-            //   but for debugging during developing, it's convenient to be able to attach
-            //   and continue where we left off, uncomment the following ...
-            //        catch (RuntimeException ex) {
-            //            boolean stop = true;
-            //            while (stop) {
-            //                System.out.format( "Task3.runTask -- exception: %s, %s\n", ex, this );
-            //                Simple.sleep( 1000 );
-            //            }
-            //            throw ex;
-            //        }
-            // not obvious what should be done with an exception in production
-            //   but for debugging during developing, it's convenient to be able to attach
-            //   and continue where we left off, uncomment the following ...
-            //        catch (RuntimeException ex) {
-            //            boolean stop = true;
-            //            while (stop) {
-            //                System.out.format( "Task3.runTask -- exception: %s, %s\n", ex, this );
-            //                Simple.sleep( 1000 );
-            //            }
-            //            throw ex;
-            //        }
         }
         public void rollback(Db4j db4j,boolean restart) {
             status( Status.Roll );
