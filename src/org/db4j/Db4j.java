@@ -231,7 +231,7 @@ public class Db4j implements Serializable {
         public final int que = 0;
         /** Runner info, 0:none, 1:per-gen summary, 2:1+start, 3:2+dots */
         public final int tree = 0;
-        public final boolean reason = false;
+        public final boolean reason = true;
         /** record timing info for the disk loop */
         public final boolean dtime = false;
         public final boolean checkTasksList = false;
@@ -308,13 +308,16 @@ public class Db4j implements Serializable {
             { done = true; }
         }
         class CompTask extends Query {
-            Db4j.Reason reasons;
+            { saveReasons |= 0x01; }
+            Reason reasons;
             byte [] rdata, ldata;
             int ii;
             CompTask(int $ii) { ii = $ii; }
-            public void reason(Db4j.Reason reason) { reasons = reasons.append(reasons,reason); }
+            public void addReason(String txt) {
+                reasons = Reason.append(reasons,new Reason(txt));
+            }
             public void reason() {
-                for (Db4j.Reason reason=reasons; reason != null; reason = reason.next(reasons))
+                for (Reason reason=reasons; reason != null; reason = reason.next(reasons))
                     System.out.println( reason );
             }
             public void task() throws Pausable {
@@ -2667,7 +2670,7 @@ public class Db4j implements Serializable {
         void restart(Db4j db4j) {
             if (tasks != null) {
                 for (Db4j.Task task : tasks) {
-                    if (Db4j.debug.reason) task.pure().reason( "BlockNode.restartLatches" );
+                    if (Db4j.debug.reason) task.reason( "BlockNode.restartLatches" );
                     db4j.qrunner.backlog.put(task);
                 }
             }
@@ -2790,7 +2793,7 @@ public class Db4j implements Serializable {
                 Latch owner = qr.latchMap.get( cmd.kpage );
                 if (owner==null) continue;
                 if (Db4j.debug.reason)
-                    task.pure().reason(
+                    task.reason(
                             "latch already held ... appending block:%s, owner:%s", cmd.kpage, owner );
                 if (owner.tasks != null) for (Task t2 : owner.tasks) {
                     if (t2==task) {
@@ -2806,7 +2809,7 @@ public class Db4j implements Serializable {
                 return true;
             }
             if (Db4j.debug.reason)
-                task.pure().reason( "successfully latching" );
+                task.reason( "successfully latching" );
             for (cmd = latches; cmd != null; cmd = cmd.next) {
                 cmd.init();
                 qr.latchMap.put( cmd.kpage, cmd );
@@ -2884,7 +2887,7 @@ public class Db4j implements Serializable {
             uptodate = true;
             if (! inuse) db4j.qrunner.register( this );
             boolean found = entreeReads(db4j.qrunner );
-            if (Db4j.debug.reason) task.pure().reason( "txn.submit -- found:%b", found );
+            if (Db4j.debug.reason) task.reason( "txn.submit -- found:%b", found );
             if (found)
                 return false;
             else {
@@ -3044,6 +3047,12 @@ public class Db4j implements Serializable {
         static kilim.Task dummyKilimTask = new DummyKilimTask();
         int dogyears;
         RuntimeException ex;
+        /**
+         * at various points in the processing of queries, db4j can track the query lifecycle.
+         * this variable controls whether to save this tracking information, ie reasons.
+         * if the first bit is set, db4j reasons will be formatted and reason(reason) will be called
+         */
+        protected byte saveReasons = 0;
 
         public Task() {}
 
@@ -3102,7 +3111,7 @@ public class Db4j implements Serializable {
             status = Status.Init;
             dogyears = 0;
             db4j.qrunner.state.addedTasks++;
-            if (Db4j.debug.reason) pure().reason( "task.init" );
+            if (Db4j.debug.reason) reason( "task.init" );
         }
 
         void preRun(Db4j db4j) {
@@ -3141,7 +3150,7 @@ public class Db4j implements Serializable {
             boolean defer = false;
             try {
                 while (found) {
-                if (Db4j.debug.reason) pure().reason( "runTask" );
+                if (Db4j.debug.reason) reason( "runTask" );
                 tid.uptodate = false;
                 if (!done) {
                     if (useRestart) {
@@ -3162,7 +3171,7 @@ public class Db4j implements Serializable {
                 }
                 alive = ! tid.committed;
                 if (Db4j.debug.reason)
-                    pure().reason( "runTask.resolve -- done:%b, alive:%b", done, alive );
+                    reason( "runTask.resolve -- done:%b, alive:%b", done, alive );
                 if (alive) {
                     // fixme -- should have a programmatic way of distinguishing
                     //   between reads and commit
@@ -3172,7 +3181,7 @@ public class Db4j implements Serializable {
                     found = tid.entree(db4j.qrunner );
                     if (tid==null) return;                                       // the task has been rolled back
                     if (! found && ! tid.rollback) {
-                        if (Db4j.debug.reason) pure().reason( "runTask.moveToBlock" );
+                        if (Db4j.debug.reason) reason( "runTask.moveToBlock" );
                         status( Status.Blok );
                     }
                 }
@@ -3186,14 +3195,14 @@ public class Db4j implements Serializable {
                 if (done && !alive) {
                     if (tid.nwrits==0) postRun(true);
                     db4j.cleanupTask( this );
-                    if (Db4j.debug.reason) pure().reason( "runTask.finished" );
+                    if (Db4j.debug.reason) reason( "runTask.finished" );
                     return;
                 }
                 }
                 dogyears++;
             }
             catch (DropOutstandingException ex) {
-                if (Db4j.debug.reason) pure().reason( "runTask.dropOutstanding: " + ex.toString() );
+                if (Db4j.debug.reason) reason( "runTask.dropOutstanding: " + ex.toString() );
                 // fixme -- ensure that we're not in the middle of a write !!!
                 rollback(db4j, true );
                 throw ex;
@@ -3201,7 +3210,7 @@ public class Db4j implements Serializable {
             /* the task has been deferred and the deferree will handle restarting it */
             catch (ClosedException ex) {
                 System.out.println( "Closed: " + this );
-                if (Db4j.debug.reason) pure().reason( "runTask.closed: " + ex.toString() );
+                if (Db4j.debug.reason) reason( "runTask.closed: " + ex.toString() );
                 rollback(db4j, true );
             }
             // not obvious what should be done with an exception in production
@@ -3221,7 +3230,7 @@ public class Db4j implements Serializable {
             // fixme -- cleanup txn ???
             if (! tid.restart)
                 db4j.qrunner.nback++;
-            if (Db4j.debug.reason) pure().reason( "Transaction.handle.rollback" );
+            if (Db4j.debug.reason) reason( "Transaction.handle.rollback" );
             if (tid.rollbackers != null)
                 for (Rollbacker rb : tid.rollbackers) rb.runRollback(tid);
             tid.cancelReads();
@@ -3238,27 +3247,21 @@ public class Db4j implements Serializable {
         public String toString() {
             return super.toString() + ":" + id;
         }
-        /** attach a reason to the task. the default implmentation is a no-op */
-        public void reason(Reason reason) {}
+        /** attach a reason to the task. the default implementation is a no-op */
+        protected void addReason(String reason) {}
         /** 
          * format and attach a reason to the task.
-         * the default implemtentation is a no-op.
+         * the default implementation is a no-op.
          * this is called by the Db4j query engine at various points during execution of the task
          * @param fmt a format string
          * @param args arguments referenced by the format string
          */
-        public void reason(String fmt,Object ... args) {
-//            ReasonString rs = new ReasonString();
-//            rs.set( String.format(fmt,args) );
-//            reason(rs);
+        void reason(String fmt,Object ... args) {
+            if ((saveReasons&1)==1)
+                addReason(String.format(fmt,args));
         }
         /** display the reasons for this task. the default implementation is a no-op */
         public void reason() {}
-        /** 
-         * return a Task object to which Db4j attaches reasons.
-         * the default implementation returns a dummy object that discards all reasons.
-         */
-        public Task pure() { return silentTask; }
 
         public void entree(QueRunner qr) {
             id = qr.taskID++;
@@ -3278,15 +3281,12 @@ public class Db4j implements Serializable {
         }
     }
     static class DummyTask extends Task { public void task() throws Pausable {} }
-    /** a utility class for reasons with list-like behaviors */
-    public static class Reason extends Listee<Reason> {}
     /** a utility class for reasons with list-like behaviors that stores a string value */
-    public static class ReasonString extends Reason {
+    public static class Reason extends Listee<Reason> {
         String txt;
-        public ReasonString set(String $txt) { txt = $txt; return this; }
+        public Reason(String $txt) { txt = $txt; }
         public String toString() { return txt; }
     }
-    static Task silentTask = new DummyTask();
     static class DiskAnomaly {
         int numRead;
     }
