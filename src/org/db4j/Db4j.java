@@ -308,13 +308,13 @@ public class Db4j implements Serializable {
             { done = true; }
         }
         class CompTask extends Query {
-            Listee.Lister<Db4j.Reason> reasons = new Listee.Lister();
+            Db4j.Reason reasons;
             byte [] rdata, ldata;
             int ii;
             CompTask(int $ii) { ii = $ii; }
-            public void reason(Db4j.Reason reason) { reasons.append( reason ); }
+            public void reason(Db4j.Reason reason) { reasons = reasons.append(reasons,reason); }
             public void reason() {
-                for (Db4j.Reason reason : reasons)
+                for (Db4j.Reason reason=reasons; reason != null; reason = reason.next(reasons))
                     System.out.println( reason );
             }
             public void task() throws Pausable {
