@@ -3238,15 +3238,26 @@ public class Db4j implements Serializable {
         public String toString() {
             return super.toString() + ":" + id;
         }
+        /** attach a reason to the task. the default implmentation is a no-op */
         public void reason(Reason reason) {}
-//        public <TT> void reason(TT reason) { reason( new ReasonObject().set(reason) ); }
+        /** 
+         * format and attach a reason to the task.
+         * the default implemtentation is a no-op.
+         * this is called by the Db4j query engine at various points during execution of the task
+         * @param fmt a format string
+         * @param args arguments referenced by the format string
+         */
         public void reason(String fmt,Object ... args) {
 //            ReasonString rs = new ReasonString();
 //            rs.set( String.format(fmt,args) );
 //            reason(rs);
         }
-        /** print the reasons to stdout */
+        /** display the reasons for this task. the default implementation is a no-op */
         public void reason() {}
+        /** 
+         * return a Task object to which Db4j attaches reasons.
+         * the default implementation returns a dummy object that discards all reasons.
+         */
         public Task pure() { return silentTask; }
 
         public void entree(QueRunner qr) {
@@ -3267,12 +3278,9 @@ public class Db4j implements Serializable {
         }
     }
     static class DummyTask extends Task { public void task() throws Pausable {} }
+    /** a utility class for reasons with list-like behaviors */
     public static class Reason extends Listee<Reason> {}
-    public static class ReasonObject<TT> extends Reason {
-        TT object;
-        public ReasonObject<TT> set(TT $obj) { object = $obj; return this; }
-        public String toString() { return object.toString(); }
-    }
+    /** a utility class for reasons with list-like behaviors that stores a string value */
     public static class ReasonString extends Reason {
         String txt;
         public ReasonString set(String $txt) { txt = $txt; return this; }
