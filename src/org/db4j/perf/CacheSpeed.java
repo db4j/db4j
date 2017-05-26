@@ -2,7 +2,6 @@
 
 package org.db4j.perf;
 
-import org.db4j.Db4j.CachedBlock;
 import org.srlutils.DynArray;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
@@ -132,11 +131,6 @@ public class CacheSpeed {
     
     /**
      *  a tree storing cached blocks
-     *  a decade is an approximate unit of time (or number of ios)
-     *    that is on the order of that which would be
-     *  required to fill the cache - a block that is accessed each decade should be saved
-     *  blocks that have been accessed for fewer decades should be discarded when space is needed
-     *  QRT-only
      * 
      *  Note: this tree was once used by Db4j as the cache, but has long since been unused
      */
@@ -144,7 +138,26 @@ public class CacheSpeed {
         /** returns 1 if v1 > v2 */
         public int compare(CachedBlock v1, CachedBlock v2,Void cc) { return v1.compareTo( v2 ); }
     }
-    
+
+
+    /** a stripped down version of Db4j.CachedBlock to support this speed test */
+    public static class CachedBlock implements Comparable<CachedBlock> {
+        long kblock;
+        /** the generation of the latest write or zero for pure reads */
+        long gen = 0;
+
+        /** the the key */
+        public CachedBlock setKey(long $kblock,long $gen)
+            { kblock = $kblock; gen = $gen; return this; }
+        /** sort by kblock, then gen */
+        public int compareTo(CachedBlock o) {
+            if (true)
+                return Long.signum( kblock - o.kblock );
+            return (kblock == o.kblock)
+                    ? Long.signum( gen-o.gen )
+                    : Long   .signum( kblock - o.kblock );
+        }
+    }
     
 }
 
