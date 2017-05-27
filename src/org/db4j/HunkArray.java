@@ -8,7 +8,7 @@ import org.db4j.Db4j.Transaction;
 import org.srlutils.Simple.Rounder;
 
 public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ extends HunkArray>
-        extends Db4j.Hunkable<HunkArray> implements Serializable {
+        extends Hunkable<HunkArray> implements Serializable {
     static final long serialVersionUID = -9057551081001858374L;
 
     

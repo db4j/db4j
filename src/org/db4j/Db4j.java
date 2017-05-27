@@ -40,7 +40,7 @@ import org.srlutils.hash.LongHash;
 import static org.db4j.Db4j.debug;
 import org.db4j.TaskUtils.Lister;
 import org.srlutils.Callbacks.Cleanable;
-
+import org.db4j.Db4j.Utils.*;
 
 
 // todo
@@ -72,81 +72,6 @@ public class Db4j implements Serializable {
 
 
 
-    public static abstract class Hunkable<TT extends Hunkable> {
-        protected abstract String info();
-        protected abstract int create();
-        protected abstract void createCommit(long locBase);
-        protected abstract String name();
-        protected abstract TT set(Db4j db4j,String name);
-        protected abstract void postInit(Transaction tid) throws Pausable;
-        protected abstract void postLoad(Transaction tid) throws Pausable;
-    
-        /** a convenience class for handling offsets for the local allocation variables */
-        public static class Locals {
-            public Db4j db4j;
-            public int size;
-            public long base;
-            public Locals() { size = 0; }
-            public Locals set(Db4j db4j,long base) {
-                this.db4j = db4j;
-                this.base = base;
-                return this;
-            }
-            public int size() { return size; }
-        }
-    
-        // fixme - use abstract base, break out cmd(), and allow Locals to read all values
-    
-        /** an integer that occupies a spot in the local allocation */
-        public static class LocalInt {
-            /** the byte position within the Locals tuple */
-            protected final int position;
-            /** the Locals tuple that contains this value */
-            protected Locals locals;
-            public LocalInt(Locals locals) {
-                position = locals.size;
-                locals.size += size();
-                this.locals = locals;
-            }
-            protected int size() { return Types.Enum._int.size(); }
-            protected long offset() { return locals.base + position; }
-            /**
-             * add a command to the transaction that will write a value to the stored location on disk
-             * @param txn the transaction
-             * @param val the new value
-             * @return 
-             */
-            public Command.RwInt write(Db4j.Transaction txn,int val) {
-                return write(val).add(locals.db4j,txn);
-            }
-            /** return a command that will write val to disk */
-            protected Command.RwInt write(int val) {
-                Command.RwInt cmd = new Command.RwInt().init( true);
-                cmd.msg = "LocalInt::write";
-                cmd.offset = offset();
-                cmd.val = val;
-                return cmd;
-            }
-            /**
-             * add a command to the transaction that will read the value from the stored location on disk
-             * @param txn the transaction to add the command to
-             * @return the command
-             */
-            public Command.RwInt read(Db4j.Transaction txn) {
-                return read().add(locals.db4j,txn);
-            }
-            /** return a command that will read the value from the stored location on disk */
-            protected Command.RwInt read() {
-                Command.RwInt cmd = new Command.RwInt().init( false);
-                cmd.msg = "LocalInt::read";
-                cmd.offset = offset();
-                return cmd;
-            }
-        }
-
-    
-
-    }
 
 
     // this seems to work with 10-13 ... not sure why 9 bits is breaking
@@ -683,21 +608,6 @@ public class Db4j implements Serializable {
         if (! causes.isEmpty()) throw sdx;
     }
 
-    public static class ShutdownException extends RuntimeException {
-        public InterruptedException join;
-        public IOException force, close;
-        public LinkedList<Exception> causes = new LinkedList();
-
-        public String toString() {
-            if (causes.size()==1) return causes.element().toString();
-            String txt = "multiple exceptions were captured:";
-            for (Exception ex : causes) {
-                txt += ex;
-                txt += "---------------------------------------------";
-            }
-            return txt;
-        }
-    }
     
     public class Guts {
         protected Guts() {}
@@ -787,50 +697,6 @@ public class Db4j implements Serializable {
 
 
 
-    /**
-     * a functonal interface, with a return value, that can be called during query execution by the db4j execution engine,
-     * accepting a transaction and returning a value
-     * @param <TT> the type of the return value
-     */
-    public interface QueryFunction<TT> {
-        TT query(Db4j.Transaction tid) throws Pausable;
-    }
-    /**
-     * a functional interface without a return value that can be called during query execution by the db4j execution engine,
-     * accepting a transaction and not returning a value
-     */
-    public interface QueryCallable {
-        /**
-         * the query to execute
-         * @param tid the transaction tied to the query
-         * @throws Pausable 
-         */
-        void query(Db4j.Transaction tid) throws Pausable;
-    }
-    /**
-     * a query that delegates to a functional interface with a return value, ie wrapping a lambda
-     * @param <TT> the type of the lambda return value
-     */
-    public static class LambdaQuery<TT> extends Query<LambdaQuery<TT>> {
-        QueryFunction<TT> body;
-        /** the captured return value from the wrapped lambda, valid after query completion */
-        public TT val;
-        /**
-         * create a new query wrapping body
-         * @param body the lambda to delegate to during query task execution
-         */
-        public LambdaQuery(QueryFunction body) { this.body = body; }
-        public void task() throws Pausable { val = body.query(tid); }
-    }
-    /**
-     * a query that delegates to a functional interface with a return value, ie wrapping a lambda
-     * @param <TT> the type of the lambda return value
-     */
-    public static class LambdaCallQuery extends Query<LambdaCallQuery> {
-        QueryCallable body;
-        public LambdaCallQuery(QueryCallable body) { this.body = body; }
-        public void task() throws Pausable { body.query(tid); }
-    }
     /**
      * create a new query that delegates to body, capturing the return value, and submit it to the execution engine
      * @param <TT> the return type of body
@@ -1451,12 +1317,6 @@ public class Db4j implements Serializable {
         }
     }
 
-    public static class Stats {
-        public int totalReads = 0;
-        public int totalWrites = 0;
-        public int nwait = 0;
-        public double diskTime = 0, waitTime = 0;
-    }
 
     /**
      *  thread that handles disk io
@@ -2651,15 +2511,6 @@ public class Db4j implements Serializable {
 
 
 
-    public interface Queable {
-        /** add the contents to the iotree */
-        public void entree(QueRunner qr);
-    }
-
-    public interface Predicable {
-        /** Runner has completed processing */
-        public void handle(Db4j db4j);
-    }
     /** a cooperatively latch a page, ie first caller is owner, later callers are deferred */
     static class Latch {
         Latch next;
@@ -3288,12 +3139,6 @@ public class Db4j implements Serializable {
         }
     }
     static class DummyTask extends Task { public void task() throws Pausable {} }
-    /** a utility class for reasons with list-like behaviors that stores a string value */
-    public static class Reason extends Listee<Reason> {
-        String txt;
-        public Reason(String $txt) { txt = $txt; }
-        public String toString() { return txt; }
-    }
     static class DiskAnomaly {
         int numRead;
     }
@@ -3320,6 +3165,89 @@ public class Db4j implements Serializable {
             return found;
         }
     }
+
+    public static class Utils {
+        public interface Queable {
+            /** add the contents to the iotree */
+            public void entree(QueRunner qr);
+        }
+
+        public interface Predicable {
+            /** Runner has completed processing */
+            public void handle(Db4j db4j);
+        }
+        /** a utility class for reasons with list-like behaviors that stores a string value */
+        public static class Reason extends Listee<Reason> {
+            String txt;
+            public Reason(String $txt) { txt = $txt; }
+            public String toString() { return txt; }
+        }
+        public static class ShutdownException extends RuntimeException {
+            public InterruptedException join;
+            public IOException force, close;
+            public LinkedList<Exception> causes = new LinkedList();
+
+            public String toString() {
+                if (causes.size()==1) return causes.element().toString();
+                String txt = "multiple exceptions were captured:";
+                for (Exception ex : causes) {
+                    txt += ex;
+                    txt += "---------------------------------------------";
+                }
+                return txt;
+            }
+        }
+        /**
+         * a functonal interface, with a return value, that can be called during query execution by the db4j execution engine,
+         * accepting a transaction and returning a value
+         * @param <TT> the type of the return value
+         */
+        public interface QueryFunction<TT> {
+            TT query(Db4j.Transaction tid) throws Pausable;
+        }
+        /**
+         * a functional interface without a return value that can be called during query execution by the db4j execution engine,
+         * accepting a transaction and not returning a value
+         */
+        public interface QueryCallable {
+            /**
+             * the query to execute
+             * @param tid the transaction tied to the query
+             * @throws Pausable 
+             */
+            void query(Db4j.Transaction tid) throws Pausable;
+        }
+        /**
+         * a query that delegates to a functional interface with a return value, ie wrapping a lambda
+         * @param <TT> the type of the lambda return value
+         */
+        public static class LambdaQuery<TT> extends Db4j.Query<LambdaQuery<TT>> {
+            QueryFunction<TT> body;
+            /** the captured return value from the wrapped lambda, valid after query completion */
+            public TT val;
+            /**
+             * create a new query wrapping body
+             * @param body the lambda to delegate to during query task execution
+             */
+            public LambdaQuery(QueryFunction body) { this.body = body; }
+            public void task() throws Pausable { val = body.query(tid); }
+        }
+        /**
+         * a query that delegates to a functional interface with a return value, ie wrapping a lambda
+         * @param <TT> the type of the lambda return value
+         */
+        public static class LambdaCallQuery extends Db4j.Query<LambdaCallQuery> {
+            QueryCallable body;
+            public LambdaCallQuery(QueryCallable body) { this.body = body; }
+            public void task() throws Pausable { body.query(tid); }
+        }
+        public static class Stats {
+            public int totalReads = 0;
+            public int totalWrites = 0;
+            public int nwait = 0;
+            public double diskTime = 0, waitTime = 0;
+        }
+    }    
 }
 
 

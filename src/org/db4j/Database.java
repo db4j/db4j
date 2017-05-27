@@ -3,7 +3,6 @@
 package org.db4j;
 
 import java.lang.reflect.Field;
-import org.db4j.Db4j.Hunkable;
 import org.srlutils.Simple;
 import static org.srlutils.Simple.Reflect.getFields;
 

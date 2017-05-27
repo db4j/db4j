@@ -49,7 +49,7 @@ import org.db4j.Db4j.Transaction;
  * PP: page type
  */
 public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
-    extends Db4j.Hunkable<Btree> implements Serializable
+    extends Hunkable<Btree> implements Serializable
 {
     public static final Modes modes = new Modes();
     public int bb = 12;

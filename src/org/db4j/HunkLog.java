@@ -13,7 +13,7 @@ import org.db4j.Db4j.Transaction;
 import org.db4j.perf.DemoHunker;
 import org.srlutils.Simple;
 
-public class HunkLog extends Db4j.Hunkable<HunkLog> implements Serializable {
+public class HunkLog extends Hunkable<HunkLog> implements Serializable {
 //    static final long serialVersionUID;
 
     

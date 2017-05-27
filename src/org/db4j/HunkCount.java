@@ -8,7 +8,7 @@ import org.db4j.Command.RwInt;
 import org.db4j.Db4j.Transaction;
 import org.db4j.perf.DemoHunker;
 
-public class HunkCount extends Db4j.Hunkable<HunkCount> implements Serializable {
+public class HunkCount extends Hunkable<HunkCount> implements Serializable {
     static final long serialVersionUID = -1693345263933559568L;    
     protected static class Vars {
         public Locals locals = new Locals();
