@@ -38,6 +38,7 @@ import org.srlutils.data.Quetastic;
 import org.srlutils.data.TreeDisk;
 import org.srlutils.hash.LongHash;
 import static org.db4j.Db4j.debug;
+import org.db4j.TaskUtils.Lister;
 import org.srlutils.Callbacks.Cleanable;
 
 
@@ -992,7 +993,7 @@ public class Db4j implements Serializable {
         /** tree of rollback tasks ... they've been rolled back, need to be run from scratch */
         TaskTree backlog = new TaskTree();
         /** list of all unfinished tasks */
-        Listee.Lister<Db4j.Task> tasks = new Listee.Lister();
+        Lister tasks = new Lister();
         /** list of tasks that have returned from BlockNode, waiting to be run */
         TaskTree waiting = new TaskTree();
         /** number of rollbacks in this generation */
@@ -3030,6 +3031,10 @@ public class Db4j implements Serializable {
         WrapperException(Exception cause) { super(cause); }
     }
 
+
+
+
+
     
     /** 
      * an abstract task
@@ -3037,7 +3042,7 @@ public class Db4j implements Serializable {
      *   then once to write (even if no writes occur)
      *   and then once after the commit
      */
-    public abstract static class Task extends Listee<Task> implements Queable {
+    public abstract static class Task implements Queable {
         int id;
         Status status = Status.None;
         public Transaction tid;
@@ -3053,6 +3058,8 @@ public class Db4j implements Serializable {
          * if the first bit is set, db4j reasons will be formatted and reason(reason) will be called
          */
         protected byte saveReasons = 0;
+        /** for TaskLister, ie replacing the extends of Listee */
+        Task next, prev;
 
         public Task() {}
 
