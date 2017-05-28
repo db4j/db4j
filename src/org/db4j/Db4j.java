@@ -19,6 +19,7 @@ import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import kilim.EventSubscriber;
 import kilim.Pausable;
@@ -56,7 +57,7 @@ import org.db4j.Db4j.Utils.*;
 
 
 
-public class Db4j implements Serializable {
+public class Db4j extends ConnectionBase implements Serializable {
     
     /** don't drop cache that's newer than the last iogen that's completed */
     static final boolean useLastgen = false;
@@ -121,6 +122,34 @@ public class Db4j implements Serializable {
      */
     public transient Guts guts;
 
+    public Db4j() {
+        super(null,false);
+    }
+
+    public Connection connect() { return new Connection(this); }
+
+    public static class Connection extends ConnectionBase {
+        protected ConcurrentLinkedDeque<Query> queries = new ConcurrentLinkedDeque();
+        Connection(Db4j proxy) {
+            super(proxy,true);
+        }
+
+        protected void connectionAddQuery(Query query) {
+            queries.add(query);
+        }
+        
+        public void await() throws Pausable {
+            for (Query query; (query = queries.poll()) != null; )
+                query.await();
+        }
+        public void awaitb() {
+            for (Query query; (query = queries.poll()) != null; )
+                query.awaitb();
+        }
+        
+    }
+    
+    
     /** for each field, null it out and call gc() -- use -verbose:gc to find deltas */
     void checkLeaks() {
         System.out.println( "gc^10" );
@@ -697,34 +726,6 @@ public class Db4j implements Serializable {
 
 
 
-    /**
-     * create a new query that delegates to body, capturing the return value, and submit it to the execution engine
-     * @param <TT> the return type of body
-     * @param body a lambda or equivalent that is called during the query task execution, with a return value
-     * @return the new query
-     */
-    public <TT> LambdaQuery<TT> submit(QueryFunction<TT> body) {
-        LambdaQuery<TT> invoke = new LambdaQuery(body);
-        return guts.offerTask(invoke);
-    }
-    /**
-     * create a new query that delegates to return-value-less body, and submit it to the execution engine
-     * @param body a lambda or equivalent that is called during the query task execution, without a return value
-     * @return the new query
-     */
-    public LambdaCallQuery submitCall(QueryCallable body) {
-        LambdaCallQuery implore = new LambdaCallQuery(body);
-        return guts.offerTask(implore);
-    }
-    /**
-     * submit query to the dbms execution engine
-     * @param <TT> the type of the query, which is used for the return value to allow chaining
-     * @param query the query to execute
-     * @return query, preserving the type to allow chaining
-     */
-    public <TT extends Query> TT submitQuery(TT query) {
-        return guts.offerTask(query);
-    }
 
     /** task has completed (or been cancelled???) - clean up the accounting info */
     void cleanupTask(Db4j.Task task) {
