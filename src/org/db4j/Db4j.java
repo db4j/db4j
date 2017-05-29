@@ -752,7 +752,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             if (!diskCommit || !pre) mbx.putnb(0);
             return diskCommit;
         }
-        public TT offer(Db4j db4j) { return db4j.guts.offerTask((TT) this); }
+        public TT offer(ConnectionBase db4j) { return db4j.submitQuery((TT) this); }
         /** pausing wait for the task to complete, if the task threw an exception, rethrow it */
         public TT await() throws Pausable {
             Integer msg = mbx.get();
