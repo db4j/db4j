@@ -62,14 +62,14 @@ public class Database {
      * @return this
      */
     public Database start(String filename,boolean build) {
-        db4j = build ? new Db4j() : Db4j.load(filename );
-        db4j.userClassLoader = this.getClass().getClassLoader();
+        Db4j local = build ? new Db4j() : Db4j.load(filename );
+        local.userClassLoader = this.getClass().getClassLoader();
         if (build) {
-            db4j.init(filename, -(2L<<30) );
-            build(db4j,true);
-            db4j.create();
+            local.init(filename, -(2L<<30) );
+            build(local,true);
+            local.create();
         }
-        else load(db4j);
+        else load(local);
         shutdownThread = new Thread(new Runnable() {
             public void run() {
                 shutdown(false);
