@@ -123,7 +123,7 @@ public class Db4j extends ConnectionBase implements Serializable {
     public transient Guts guts;
 
     public Db4j() {
-        super(null,false);
+        super.connectionSetProxy(null,false);
     }
 
     public Connection connect() { return new Connection(this); }
@@ -131,7 +131,7 @@ public class Db4j extends ConnectionBase implements Serializable {
     public static class Connection extends ConnectionBase {
         protected ConcurrentLinkedDeque<Query> queries = new ConcurrentLinkedDeque();
         Connection(Db4j proxy) {
-            super(proxy,true);
+            super.connectionSetProxy(proxy,true);
         }
 
         protected void connectionAddQuery(Query query) {
@@ -378,9 +378,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         start();
 
         CreateTask ct = new CreateTask();
-        guts.offerTask( ct );
-        guts.fence( ct, 10 );
-        guts.fence( null, 10 );
+        submitQuery(ct).awaitb();
     }
     static final int align = 16;
     /*
@@ -392,7 +390,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      *   base (ie, base is aligned)
      * fixme -- need to verify that the locals aren't split across page boundries
      */
-    class CreateTask extends Task {
+    class CreateTask extends Query {
         public void task() throws Pausable {
             live = true;
             byte [] raw = org.srlutils.Files.save(Db4j.this );

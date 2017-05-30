@@ -16,19 +16,21 @@ import org.srlutils.Util;
 public class DemoEntropy {
     String filename = resolve("./db_files/b6.mmap");
     Db4j db4j;
+    Db4j.Connection conn;
     HunkArray.I map;
     HunkCount buildSeed;
     void load() {
         db4j = Db4j.load(filename);
+        conn = db4j.connect();
         map = (HunkArray.I) db4j.guts.lookup(0);
         buildSeed = (HunkCount) db4j.guts.lookup(1);
     }
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
+        conn = db4j.connect();
         map = db4j.register(new HunkArray.I(),"Player Entropy");
         buildSeed = db4j.register(new HunkCount(),"seed used for building player round robin");
         db4j.create();
-        db4j.guts.fence(null,100);
         db4j.guts.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source(), r2 = new org.srlutils.rand.Source();
@@ -53,10 +55,7 @@ public class DemoEntropy {
         init();
         final int bs = (int) r1.nextLong();
         build(bs);
-        new Db4j.Query() { public void task() throws Pausable {
-            buildSeed.set(tid,bs);
-        } }.offer(db4j);
-        System.out.println("build complete: " + bs);
+        conn.submitCall(tid -> { buildSeed.set(tid,bs); });
         for (int ii = 0; ii < np; ii++) {
             final int kplayer = ii;
             final int [] vals = r1.rand(new int[nv],1-rmax,rmax);
@@ -70,9 +69,9 @@ public class DemoEntropy {
                 public void task() throws Pausable {
                     map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
-            }.offer(db4j);
+            }.offer(conn);
         }
-        db4j.guts.fence(null,10);
+        conn.awaitb();
         System.out.println("insert complete");
         build();
     }
@@ -139,7 +138,7 @@ public class DemoEntropy {
     public void dorotate(int numReps) {
         for (int ii = 0; ii < numReps; ii++)
             rot1(ii);
-        db4j.guts.fence(null,10);
+        conn.awaitb();
     }
     void swap1(int [] d1,int [] d2,int k1,int k2) {
         int delta = (d1[k1] - d2[k2])/2;
@@ -169,7 +168,7 @@ public class DemoEntropy {
                 }
                 map.setdata(tid,kplayer*nv,data,new Command.RwInts().init(true),nv);
             }
-        }.offer(db4j);
+        }.offer(conn);
     }
     long [] sums = new long[np];
     long asum = 0, suma=0;
@@ -189,9 +188,9 @@ public class DemoEntropy {
                     Simple.softAssert(data[0]==order[kplayer],"validate: %d, %d != %d\n",
                             kplayer,data[0],order[kplayer]);
                 }
-            }.offer(db4j);
+            }.offer(conn);
         }
-        db4j.guts.fence(null,10);
+        conn.awaitb();
         long avg = Simple.Rounder.divup(asum,1L*np*nv);
         System.out.format("validate data load complete: %12d --> %5d, %5d\n", asum, avg, suma);
         validateSums();

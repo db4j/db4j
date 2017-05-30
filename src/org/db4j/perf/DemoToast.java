@@ -3,6 +3,7 @@ package org.db4j.perf;
 
 import org.db4j.Btrees;
 import org.db4j.Database;
+import org.db4j.Db4j;
 import org.db4j.HunkCount;
 
 // copyright 2017 nqzero - see License.txt for terms
@@ -14,16 +15,16 @@ public class DemoToast extends Database {
     Btrees.IX users;
     static int usize = 1440;
     
-    void addUser() {
+    void addUser(Db4j.Connection conn) {
         byte [] user = new byte[usize];
-        db4j.submitCall(tid -> {
+        conn.submitCall(tid -> {
             int index = count.plus(tid,1);
             users.insert(tid,index,user);
             if (index%10 == 0) System.out.println("user: " + index);
         });
     }
-    void getUser() {
-        db4j.submitCall(tid -> {
+    void getUser(Db4j.Connection conn) {
+        conn.submitCall(tid -> {
             int index = 9;
             byte[] find = users.find(tid,index);
             System.out.println("user: " + find.length);
@@ -37,16 +38,18 @@ public class DemoToast extends Database {
         if (args.length==0) {
             int num = usize > 1000 ? 200 : 2000;
             hello.start(filename,true);
+            Db4j.Connection conn = hello.db4j.connect();
             for (int ii=0; ii < num; ii++)
-                hello.addUser();
-            hello.db4j.guts.fence(null,100);
+                hello.addUser(conn);
+            conn.awaitb();
             hello.shutdown(true);
         }
 //        else 
         {
             hello.start(filename,false);
-            hello.getUser();
-            hello.db4j.guts.fence(null,100);
+            Db4j.Connection conn = hello.db4j.connect();
+            hello.getUser(conn);
+            conn.awaitb();
         }
         System.exit(0);
     }

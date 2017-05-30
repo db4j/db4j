@@ -6,6 +6,7 @@ import java.util.Random;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.db4j.Btrees;
 import org.db4j.Database;
+import org.db4j.Db4j;
 import org.db4j.HunkCount;
 import org.srlutils.Simple;
 
@@ -15,7 +16,7 @@ public class DemoStringx {
         Btrees.IS users;
         static Random src = new Random();
 
-        public void route() {
+        public void route(Db4j.Connection conn) {
             String bio = RandomStringUtils.randomAlphanumeric(src.nextInt(8000));
             db4j.submitCall(tid -> {
                 int num = count.get(tid);
@@ -47,11 +48,12 @@ public class DemoStringx {
         Chat1 hello = new Chat1();
         String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
 
-        if (args.length==1) {
+        if (args.length==0) {
             hello.start(filename,true);
+            Db4j.Connection conn = hello.db4j.connect();
             for (int ii = 0; ii < 3000; ii++)
-                hello.route();
-            hello.db4j.guts.fence(null,100);
+                hello.route(conn);
+            conn.awaitb();
             hello.info();
             hello.shutdown(true);
         }

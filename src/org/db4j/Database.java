@@ -31,8 +31,8 @@ public class Database {
      * @param db4j the already initialized instance
      * @param overwrite if set, overwrite existing columns
      */
-    public void build(Db4j db4j,boolean overwrite) {
-        this.db4j = db4j;
+    public void build(Db4j $db4j,boolean overwrite) {
+        db4j = $db4j;
         Field [] fields = getFields(this.getClass(),Database.class,Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;
@@ -82,8 +82,8 @@ public class Database {
      * load all the tables in the database
      * @param db4j the already initialized instance
      */
-    public void load(Db4j db4j) {
-        this.db4j = db4j;
+    public void load(Db4j $db4j) {
+        db4j = $db4j;
         Field [] fields = getFields(this.getClass(),Database.class,Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;

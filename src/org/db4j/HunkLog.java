@@ -165,8 +165,8 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
             }
         }
         
-        public void route() {
-            db4j.submitCall(tid -> {
+        public void route(Db4j.Connection conn) {
+            conn.submitCall(tid -> {
                 int num = count.get(tid);
                 users.insert(tid,num,randUser());
                 count.plus(tid,1);
@@ -193,13 +193,15 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
 
         public static void main(String[] args) {
             Chat1 hello = new Chat1();
+
             String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
 
             if (args.length==0) {
                 hello.start(filename,true);
+                Db4j.Connection conn = hello.db4j.connect();
                 for (int ii = 0; ii < 3000; ii++)
-                    hello.route();
-                hello.db4j.guts.fence(null,100);
+                    hello.route(conn);
+                conn.awaitb();
                 hello.info();
                 hello.shutdown(true);
             }

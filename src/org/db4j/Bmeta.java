@@ -529,7 +529,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             db4j = new Db4j().init( filename, null );
             lt = db4j.register(new Btrees.IA(),"Bushy Tree");
             db4j.create();
-            db4j.guts.fence(null,100);
+            Db4j.Connection conn = db4j.connect();
             db4j.guts.forceCommit(100);
             final int ipt=8, bpe=770, size=1<<25, len=Simple.Rounder.rup(size/bpe,ipt);
             keys = Rand.source.rand( new int[len], 0, 1<<30 );
@@ -546,9 +546,9 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                         lt.context().set(tid).set(key,bytes).insert(lt);
                     }
                 }};
-                new Insert().offer(db4j);
+                new Insert().offer(conn);
             }
-            db4j.guts.fence(null,100);
+            conn.awaitb();
             db4j.shutdown();
             db4j = Db4j.load(filename);
             lt = (Btrees.IA) db4j.arrays.get(0);
@@ -557,6 +557,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             lt.clear();
         }
         void check(int nn) {
+            Db4j.Connection conn = db4j.connect();
             for (int ii=0; ii < nn; ii++) {
                 final int i2 = ii;
                 class Check extends Db4j.Query { public void task() throws Pausable {
@@ -568,9 +569,9 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                         Simple.softAssert(val==i2 || keys[val]==key);
                     }
                 }};
-                new Check().offer(db4j);
+                new Check().offer(conn);
             }
-            db4j.guts.fence(null,100);
+            conn.awaitb();
         }
     }
     static class Mindir2 extends BtTests2 {
@@ -585,7 +586,6 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             db4j = new Db4j().init( filename, null ); // 1L << 32 );
             lt = db4j.register(new DF2(),"Bushy Tree");
             db4j.create();
-            db4j.guts.fence(null,100);
             db4j.guts.forceCommit(100);
         }
         public void run(int stage) throws Exception {
@@ -598,6 +598,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             }
         }
         public void stage(final int stage) {
+            Db4j.Connection conn = db4j.connect();
             for (int ii = 0; ii < tc.nn; ii++) {
                 final int jj = ii;
                 final float v1 = 0.01f*jj;
@@ -637,10 +638,10 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                     }
                 }
                 };
-                task.offer(db4j);
+                task.offer(conn);
                 if (chk) task.awaitb();
             }
-            db4j.guts.fence(null,10);
+            conn.awaitb();
         }
         public boolean finish() throws Exception {
             db4j.shutdown();

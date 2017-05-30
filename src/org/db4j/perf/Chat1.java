@@ -53,7 +53,6 @@ public class Chat1 extends Database {
         
         if (args.length==0) {
             Chat1 hello = Database.start(new Chat1(),filename,args.length==0);
-            org.db4j.Db4j db4j = hello.db4j;
             new kilim.Task() {
                 public void execute() throws Pausable {
                     hello.route("/new/hello/world");
@@ -63,8 +62,8 @@ public class Chat1 extends Database {
                 }
             }.start().joinb();
             Btrees.IS k2 = new Btrees.IS();
-            db4j.submitCall(tid -> { db4j.create(tid,k2,PATH_K2); }).awaitb();
-            db4j.submitCall(tid -> { k2.insert(tid,key,"hello world"); }).awaitb();
+            hello.db4j.submitCall(tid -> { hello.db4j.create(tid,k2,PATH_K2); }).awaitb();
+            hello.db4j.submitCall(tid -> { k2.insert(tid,key,"hello world"); }).awaitb();
             hello.shutdown(true);
         }
         

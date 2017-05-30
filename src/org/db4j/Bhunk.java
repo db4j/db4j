@@ -515,13 +515,13 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             db4j = new Db4j().init( filename, null ); // 1L << 32 );
             db4j.register(map,"Bushy Tree");
             db4j.create();
-            db4j.guts.fence(null,100);
             db4j.guts.forceCommit(100);
             if (reopen) close();
         }
         public void run(final int stage) throws Exception {
             rand.setSeed(seed,false);
             if (reopen) db4j = Db4j.load(filename);
+            Db4j.Connection conn = db4j.connect();
             map = (TT) db4j.arrays.get(0);
             for (int ii = 0; ii < nn; ii++) {
                 final int jj = ii;
@@ -547,9 +547,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                     else               map.findData(cc);
                     if (stage > 0 && (cc.val() != goal))
                         ok = false;
-                } }.offer(db4j);
+                } }.offer(conn);
             }
-            db4j.guts.fence(null,10);
+            conn.awaitb();
             if (reopen) close();
         }
         public boolean finish() throws Exception {
@@ -600,17 +600,18 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             lt = db4j.register(new DF(),"Bushy Tree");
             int nn = 1347-7;
             db4j.create();
+            Db4j.Connection conn = db4j.connect();
             // break out the final iter to allow tracing in the debugger
             for (int ii = 0; ii < nn; ii++)
-                new PutTask(ii,ii+ko,ii+vo).offer(db4j);
-            db4j.guts.fence(null,100);
-            new PutTask(nn,nn+ko,nn+vo).offer(db4j).awaitb();
+                new PutTask(ii,ii+ko,ii+vo).offer(conn);
+            conn.awaitb();
+            new PutTask(nn,nn+ko,nn+vo).offer(conn).awaitb();
             for (int ii = 0; ii < nn; ii++) 
-                new GetTask(ii+ko,ii+vo).offer(db4j);
-            new GetTask(nn+ko,nn+vo).offer(db4j);
-            db4j.guts.fence(null,100);
-            new CheckTask().offer(db4j).awaitb();
-            lt.db4j.shutdown();
+                new GetTask(ii+ko,ii+vo).offer(conn);
+            new GetTask(nn+ko,nn+vo).offer(conn);
+            conn.awaitb();
+            new CheckTask().offer(conn).awaitb();
+            db4j.shutdown();
         }
         public static void auto(int passes,int npp,TaskTimer.Runner ... runners) throws Exception {
             Simple.Scripts.cpufreqStash( 2300000 );

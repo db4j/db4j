@@ -27,15 +27,17 @@ public class DemoOverflow {
     String filename = resolve("./db_files/b6.mmap");
     Db4j db4j;
     HunkArray.I map;
+    Db4j.Connection conn;
     void load() {
         db4j = Db4j.load(filename);
+        conn = db4j.connect();
         map = (HunkArray.I) db4j.guts.lookup(0);
     }
     public void init() {
         db4j = new Db4j().init( filename, null );
+        conn = db4j.connect();
         map = db4j.register(new HunkArray.I(),"Player Overflow");
         db4j.create();
-        db4j.guts.fence(null,100);
         db4j.guts.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source();
@@ -68,9 +70,9 @@ public class DemoOverflow {
                 public void task() throws Pausable {
                     map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
-            }.offer(db4j);
+            }.offer(conn);
         }
-        db4j.guts.fence(null,10);
+        conn.awaitb();
         System.out.println("insert complete");
     }
     long running;
@@ -84,7 +86,7 @@ public class DemoOverflow {
     public void dorotate() {
         for (int ii = 0; ii < np; ii++)
             rot0(ii);
-        db4j.guts.fence(null,10);
+        conn.awaitb();
     }
     void swap1(int [] d1,int [] d2,int k1,int k2) {
         int delta = (d1[k1] - d2[k2])/2;
@@ -115,16 +117,17 @@ public class DemoOverflow {
                 swap1(data,data,vals[0],vals[1]);
                 map.setdata(tid,kplayer*nv,data,new Command.RwInts().init(true),nv);
             }
-        }.offer(db4j);
+        }.offer(conn);
     }
     public void close() {
         db4j.shutdown();
     }
     public static class Demo {
         public static void main(String [] args) {
+            System.out.println("conn-based");
             Simple.Scripts.cpufreqStash( 2300000 );
             DemoOverflow test = new DemoOverflow();
-            if (false)
+            if (args.length==0)
                 test.doinit();
             else {
                 test.load();
@@ -136,3 +139,6 @@ public class DemoOverflow {
     }
     
 }
+
+
+// 2017.05.30 - ran to completion (ie rotate complete 999) in approximately 7 hours on takashi

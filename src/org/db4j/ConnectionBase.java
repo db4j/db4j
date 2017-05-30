@@ -13,9 +13,10 @@ public class ConnectionBase implements Serializable {
      * @param proxy the db4j instance
      * @param track enable tracking
      */
-    ConnectionBase(Db4j proxy,boolean track) {
+    ConnectionBase connectionSetProxy(Db4j proxy,boolean track) {
         this.track = track;
         this.proxy = proxy==null ? (Db4j) this:proxy;
+        return this;
     }
     
     /**
