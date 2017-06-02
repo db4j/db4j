@@ -9,8 +9,8 @@ public abstract class Hunkable<TT extends Hunkable> {
     protected abstract void createCommit(long locBase);
     protected abstract String name();
     protected abstract TT set(Db4j db4j,String name);
-    protected abstract void postInit(Db4j.Transaction tid) throws Pausable;
-    protected abstract void postLoad(Db4j.Transaction tid) throws Pausable;
+    protected abstract void postInit(Db4j.Transaction txn) throws Pausable;
+    protected abstract void postLoad(Db4j.Transaction txn) throws Pausable;
 
     /** a convenience class for handling offsets for the local allocation variables */
     public static class Locals {

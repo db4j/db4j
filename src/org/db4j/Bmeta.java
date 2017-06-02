@@ -302,8 +302,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 : keys.size(left,left.num-1) + dexsize;
         return (page.jar+page.del) - (page.size*page.num + delta);
     }
-    public CC insert(Transaction tid,KK key,VV value) throws Pausable {
-        CC context = context().set(tid).set(key,value);
+    public CC insert(Transaction txn,KK key,VV value) throws Pausable {
+        CC context = context().set(txn).set(key,value);
         insert(context);
         return context;
     }
@@ -349,8 +349,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     protected int compare(Sheet page,int index,CC data) {
         return keys.compare( data.key, page, index, data.keydata );
     }
-    public VV find(Transaction tid,KK key) throws Pausable {
-        CC context = (CC) context().set(tid).set(key,null);
+    public VV find(Transaction txn,KK key) throws Pausable {
+        CC context = (CC) context().set(txn).set(key,null);
         findData(context);
         return context.match ? context.val : null;
     }
@@ -373,16 +373,16 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             return this;
         }
     }
-    public Range findRange(Transaction tid,KK key1,KK key2) throws Pausable {
-        return (Range) findRange(context().set( tid ).set(key1, null),
-                context().set( tid ).set(key2, null));
+    public Range findRange(Transaction txn,KK key1,KK key2) throws Pausable {
+        return (Range) findRange(context().set( txn ).set(key1, null),
+                context().set( txn ).set(key2, null));
     }
-    public Range findPrefix(Transaction tid,KK key) throws Pausable {
-        return (Range) findPrefix(context().set( tid ).set(key, null));
+    public Range findPrefix(Transaction txn,KK key) throws Pausable {
+        return (Range) findPrefix(context().set( txn ).set(key, null));
     }
 
     public Range getall(CC context) throws Pausable { return (Range) super.getall(context); }
-    public Range getall(Transaction tid) throws Pausable { return (Range) super.getall(context().set(tid)); }
+    public Range getall(Transaction txn) throws Pausable { return (Range) super.getall(context().set(txn)); }
     
     protected Range range() { return new Range(); }
 
@@ -543,7 +543,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                         Arrays.fill(bytes,(byte) ko);
                         Command.Page.wrap(bytes).putInt(0,ko);
                         int key = keys[ko];
-                        lt.context().set(tid).set(key,bytes).insert(lt);
+                        lt.context().set(txn).set(key,bytes).insert(lt);
                     }
                 }};
                 new Insert().offer(conn);
@@ -562,7 +562,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 final int i2 = ii;
                 class Check extends Db4j.Query { public void task() throws Pausable {
                     int key = keys[i2];
-                    Btrees.IA.Data data = lt.context().set(tid).set(key,null).find(lt);
+                    Btrees.IA.Data data = lt.context().set(txn).set(key,null).find(lt);
                     int val = Command.Page.wrap(data.val).getInt(0);
                     if (val != i2) {
                         System.out.format( "check -- %5d %5d %5d %5d\n", val, i2, keys[val], key );
@@ -605,7 +605,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 final int jo = 1000000, step = 1;
                 final boolean chk = !nocheck && stage==2 && jj >= jo && (jj%step==0);
                 Db4j.Query task = new Db4j.Query() { public void task() throws Pausable {
-                    DF2.Data context = lt.context().set(tid).set(keys[jj],stage==0 ? v1:-1f);
+                    DF2.Data context = lt.context().set(txn).set(keys[jj],stage==0 ? v1:-1f);
                     if (jj==0 && stage==2) check(1,tc.nn,1);
                     if (chk && stage==2)
                         Simple.nop();
@@ -630,7 +630,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 public void check(int ko,int nn,int delta) throws Pausable {
                     if (nocheck) return;
                     for (int kk = ko; kk < nn; kk += delta) {
-                        DF2.Data context = lt.context().set(tid).set(keys[kk],-1f).find(lt);
+                        DF2.Data context = lt.context().set(txn).set(keys[kk],-1f).find(lt);
                         float goal = (kk <= jj) ? -1f : 0.01f*kk;
                         Float val = context.match ? context.get2() : -1f;
                         if (val != goal)

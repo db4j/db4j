@@ -17,16 +17,16 @@ public class DemoToast extends Database {
     
     void addUser(Db4j.Connection conn) {
         byte [] user = new byte[usize];
-        conn.submitCall(tid -> {
-            int index = count.plus(tid,1);
-            users.insert(tid,index,user);
+        conn.submitCall(txn -> {
+            int index = count.plus(txn,1);
+            users.insert(txn,index,user);
             if (index%10 == 0) System.out.println("user: " + index);
         });
     }
     void getUser(Db4j.Connection conn) {
-        conn.submitCall(tid -> {
+        conn.submitCall(txn -> {
             int index = 9;
-            byte[] find = users.find(tid,index);
+            byte[] find = users.find(txn,index);
             System.out.println("user: " + find.length);
         });
     }

@@ -34,7 +34,7 @@ public class DemoHunker {
             boolean post;
             public void task() throws Pausable {
                 {
-                    cmd = arrays[0].get( tid, offsets[ii] );
+                    cmd = arrays[0].get( txn, offsets[ii] );
                     yield();
                 }
                 {
@@ -128,14 +128,14 @@ public class DemoHunker {
                     int jo = ni-1-jj;
                     int ix = io[jj];
                     int iy = io[jo];
-                    cmd = arrays[0].get( tid, offsets[ix] );
+                    cmd = arrays[0].get( txn, offsets[ix] );
                     yield();
                     ko[jj] = cmd.val;
-                    cmd = arrays[0].get( tid, offsets[iy] );
+                    cmd = arrays[0].get( txn, offsets[iy] );
                     yield();
                     ko[jo] = cmd.val;
-                    arrays[0].set( tid, offsets[ix], ko[jo] );
-                    arrays[0].set( tid, offsets[iy], ko[jj] );
+                    arrays[0].set( txn, offsets[ix], ko[jo] );
+                    arrays[0].set( txn, offsets[iy], ko[jj] );
                 }
             }
         }
@@ -147,7 +147,7 @@ public class DemoHunker {
     public static class DemoInfo extends Demo<DemoInfo> {
         public void test() {
             new Query() { public void task() throws Pausable {
-                arrays[0].printMetaHunkInfo(tid);
+                arrays[0].printMetaHunkInfo(txn);
             }}.offer(db4j).awaitb();
         }
     }
@@ -201,19 +201,19 @@ public class DemoHunker {
         public class CopyTask extends BaseKask {
             public void task() throws Pausable {
                 if (dbg) System.out.format( "CopyTask::task -- %5d, %5d, %8d\n", ii, 0, offsets[ii] );
-                cmd = arrays[0].get( tid, offsets[ii] ); yield();
-                cmd = arrays[1].set( tid, offsets[ii], cmd.val+delta ); yield();
+                cmd = arrays[0].get( txn, offsets[ii] ); yield();
+                cmd = arrays[1].set( txn, offsets[ii], cmd.val+delta ); yield();
                 if (dbg) System.out.format( "CopyTask::done -- wrote to location %d\n", ii );
             }
         }
         public class WriteTask extends BaseKask {
             public void task() throws Pausable {
-                cmd = arrays[0].set( tid, offsets[ii], (long) (ii) );
+                cmd = arrays[0].set( txn, offsets[ii], (long) (ii) );
             }
         }
         public class ReadTask extends BaseKask {
             public void task() throws Pausable {
-                cmd = arrays[0].get( tid, offsets[ii] );
+                cmd = arrays[0].get( txn, offsets[ii] );
                 yield();
                 wrong += cmd.val;
                 done++;
@@ -222,10 +222,10 @@ public class DemoHunker {
         }
         public class CheckTask extends BaseKask {
             public void task() throws Pausable {
-                cmd = arrays[1].get( tid, offsets[ii] );
+                cmd = arrays[1].get( txn, offsets[ii] );
                 yield();
                 int val = (int) cmd.val;
-                wrong += check( tid, val, ii+delta, val-delta, ii, 1 );
+                wrong += check( txn, val, ii+delta, val-delta, ii, 1 );
                 done++;
             }
             public String report() { return String.format( ", %d unmatched, %8.3f %%", wrong, 1.0*wrong/nn ); }
@@ -249,7 +249,7 @@ public class DemoHunker {
             db4j.guts.dontneed();
             if (taskKlass==WriteTask.class && false)
                 new Query() { public void task() throws Pausable {
-                    arrays[0].printMetaHunkInfo(tid);
+                    arrays[0].printMetaHunkInfo(txn);
                 }}.offer(db4j).awaitb();
         }
     }
@@ -329,9 +329,9 @@ public class DemoHunker {
                 db4j = Db4j.load( name );
                 arrays = new HunkArray.L[ nstores ];
 
-                db4j.submitCall(tid -> {
+                db4j.submitCall(txn -> {
                     for (int ii=0; ii < nstores; ii++)
-                        arrays[ii] = (HunkArray.L) db4j.lookup(tid,PATH_BASE + ii);
+                        arrays[ii] = (HunkArray.L) db4j.lookup(txn,PATH_BASE + ii);
                 }).awaitb();
             }
         }
@@ -350,13 +350,13 @@ public class DemoHunker {
             return (TT) this;
         }
         public abstract void test();
-        public int check(Transaction tid,int val,int goal,int alt,int ii,int jj) throws Pausable {
+        public int check(Transaction txn,int val,int goal,int alt,int ii,int jj) throws Pausable {
             long offset2 = (alt < 0 || alt >= offsets.length) ? -1 : offsets[alt];
             if ( val != goal && offsets[ii] != offset2 ) {
                 if (debugCheck) System.out.format(
                             "testRead: %5d, %8d --> %8d --> %8d v %8d -- %s\n",
                             jj, ii, val, offsets[ii], offset2,
-                            arrays[jj].offsetInfo( tid, offsets[ii] ) );
+                            arrays[jj].offsetInfo( txn, offsets[ii] ) );
                 return 1;
             }
             return 0;

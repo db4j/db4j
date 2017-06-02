@@ -43,7 +43,7 @@ public class FastOverflow {
             new Db4j.Query() {
                 public void task() throws Pausable {
                     int [] data = new int[nv];
-                    map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);
+                    map.setdata(txn,kplayer*nv,data,new Command.RwInts(),nv);
 //                    yield();
 //                    asum += sum(data);
                 }

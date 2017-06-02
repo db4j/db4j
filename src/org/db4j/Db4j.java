@@ -214,10 +214,10 @@ public class Db4j extends ConnectionBase implements Serializable {
         return ha;
     }
     /** read the range [k1, k2), values are live, ie must be fenced */
-    byte [] readRange(Transaction tid,long k1,long k2) {
+    byte [] readRange(Transaction txn,long k1,long k2) {
         int len = (int) (k2 - k1);
         byte [] araw = new byte[ len ];
-        iocmd( tid, k1, araw, false );
+        iocmd( txn, k1, araw, false );
         return araw;
     }
     class LoadTask extends Task {
@@ -253,8 +253,8 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
         public void task() throws Pausable {
             { 
-                nbc = put( tid, loc.nblocks.read() );
-                ncc = put( tid, loc.ncomp.read() );
+                nbc = put( txn, loc.nblocks.read() );
+                ncc = put( txn, loc.ncomp.read() );
                 yield();
             }
             {
@@ -277,13 +277,13 @@ public class Db4j extends ConnectionBase implements Serializable {
             }
             public void task() throws Pausable {
                 {
-                    byte [] b2 = compRaw.context().set(tid).set(ii,null).get(compRaw).val;
+                    byte [] b2 = compRaw.context().set(txn).set(ii,null).get(compRaw).val;
                     Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
-                    Command.RwInt cmd = compLocals.get(tid,ii);
+                    Command.RwInt cmd = compLocals.get(txn,ii);
                     yield();
                     long kloc = cmd.val;
                     ha.set(Db4j.this,null).createCommit(kloc);
-                    ha.postLoad(tid);
+                    ha.postLoad(txn);
                     arrays.set( ii, ha );
                     System.out.format( "Hunker.load.comp -- %d done, %s local:%d cmd:%d\n",
                             ii, ha.name(), kloc, cmd.val );
@@ -297,30 +297,30 @@ public class Db4j extends ConnectionBase implements Serializable {
         live = true;
         new LoadTask().load(start);
     }
-    /** if doWrite then write, else read, data from tid at offset */
-    Command.RwBytes [] iocmd(Transaction tid,long offset,byte [] data,boolean doWrite) {
-        return write( tid, offset, data, Types.Enum._byte.size(), data.length,
+    /** if doWrite then write, else read, data from txn at offset */
+    Command.RwBytes [] iocmd(Transaction txn,long offset,byte [] data,boolean doWrite) {
+        return write( txn, offset, data, Types.Enum._byte.size(), data.length,
                 new Command.RwBytes().init(doWrite) );
     }
-    /** if doWrite then write, else read, data from tid at offset */
-    Command.RwInts  [] iocmd(Transaction tid,long offset,int [] data,boolean doWrite) {
-        return write( tid, offset, data, Types.Enum._int.size(), data.length,
+    /** if doWrite then write, else read, data from txn at offset */
+    Command.RwInts  [] iocmd(Transaction txn,long offset,int [] data,boolean doWrite) {
+        return write( txn, offset, data, Types.Enum._int.size(), data.length,
                 new Command.RwInts().init(doWrite) );
     }
-    /** if doWrite then write, else read, data from tid at offset */
-    Command.RwLongs [] iocmd(Transaction tid,long offset,long [] data,boolean doWrite) {
-        return write( tid, offset, data, Types.Enum._long.size(), data.length,
+    /** if doWrite then write, else read, data from txn at offset */
+    Command.RwLongs [] iocmd(Transaction txn,long offset,long [] data,boolean doWrite) {
+        return write( txn, offset, data, Types.Enum._long.size(), data.length,
                 new Command.RwLongs().init(doWrite) );
     }
     /**
      * use cmd as a template for an array-based action
      * apply it to data[0:length)
      * siz is the element size of data
-     * add it to tid (if non-null) at offset
-     * return the array of commands that have been created and added to tid
+     * add it to txn (if non-null) at offset
+     * return the array of commands that have been created and added to txn
      */
     <TT,SS extends Command.RwArray<TT,SS>> SS []
-            write(Transaction tid,long offset,TT data,int siz,int length,SS cmd) {
+            write(Transaction txn,long offset,TT data,int siz,int length,SS cmd) {
         long end = offset + length * siz;
         long blockEnd = (offset&~bm)+bs;
         // fixme:dry -- should be able to extract siz from cmd
@@ -339,8 +339,8 @@ public class Db4j extends ConnectionBase implements Serializable {
             SS dup = cmd.dup();
             dup.set( data );
             dup.range( k1, k2-k1 );
-            if (tid==null) put(     start, dup);
-            else           put(tid, start, dup);
+            if (txn==null) put(     start, dup);
+            else           put(txn, start, dup);
             cmds[ kc++ ] = dup;
         }
         return cmds;
@@ -402,10 +402,10 @@ public class Db4j extends ConnectionBase implements Serializable {
             long nblocks = runner.journalBase;
             long firstBlock = nblocks + runner.journalSize;
             for (int ii = 0; ii < nblocks; ii++)
-                put( tid, ii<<bb, new Command.Init() );
-            put( tid, loc.nblocks.write((int) firstBlock) );
-            put( tid, loc.ncomp.write(0) );
-            iocmd( tid, 0, raw, true );
+                put( txn, ii<<bb, new Command.Init() );
+            put( txn, loc.nblocks.write((int) firstBlock) );
+            put( txn, loc.ncomp.write(0) );
+            iocmd( txn, 0, raw, true );
             // fixme::performance -- use compLocals for loc.locals
             //   would save a spot in cache and increase the likelihood of loc.nblock being hot
             //   bit of a chicken and the egg problem though
@@ -413,32 +413,32 @@ public class Db4j extends ConnectionBase implements Serializable {
             int c2 = compLocals.create();
             compRaw.createCommit( pcomp );
             compLocals.createCommit( pcomp+c1 );
-            compRaw.init( compRaw.context().set(tid) );
+            compRaw.init( compRaw.context().set(txn) );
             long base = Rounder.rup(pcomp+c1+c2,align);
             Simple.softAssert(base < 1L*Db4j.this.bs*runner.journalBase );
             for (Hunkable ha : arrays)
-                create(tid,ha,null);
+                create(txn,ha,null);
         }
     }
-    public Hunkable lookup(Transaction tid,String name) throws Pausable {
-        Command.RwInt ncomp = put(tid, loc.ncomp.read());
-        tid.submitYield();
+    public Hunkable lookup(Transaction txn,String name) throws Pausable {
+        Command.RwInt ncomp = put(txn, loc.ncomp.read());
+        txn.submitYield();
         int num = arrays.size();
         for (int ii=num; ii < ncomp.val; ii++)
-            guts.lookup(tid,ii);
+            guts.lookup(txn,ii);
         return guts.lookup(name);
     }
-    public void create(Transaction tid,Hunkable ha,String name) throws Pausable {
+    public void create(Transaction txn,Hunkable ha,String name) throws Pausable {
         ha.set(this,name);
         byte [] araw = org.srlutils.Files.save(ha);
-        Command.RwInt ncomp = put(tid, loc.ncomp.read());
-        tid.submitYield();
-        compRaw.context().set(tid).set(ncomp.val,araw).insert(compRaw);
-        put(tid,loc.ncomp.write(ncomp.val+1));
+        Command.RwInt ncomp = put(txn, loc.ncomp.read());
+        txn.submitYield();
+        compRaw.context().set(txn).set(ncomp.val,araw).insert(compRaw);
+        put(txn,loc.ncomp.write(ncomp.val+1));
         int len = ha.create();
-        long offset = compLocals.alloc(ncomp.val,len,tid);
+        long offset = compLocals.alloc(ncomp.val,len,txn);
         ha.createCommit(offset);
-        ha.postInit(tid);
+        ha.postInit(txn);
         System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
     }
     /** 
@@ -539,8 +539,8 @@ public class Db4j extends ConnectionBase implements Serializable {
     }
 
     Transaction getTransaction() {
-        Transaction tid = new Transaction().set(this);
-        return tid;
+        Transaction txn = new Transaction().set(this);
+        return txn;
     }
 
     /** set the command to the offset */
@@ -549,14 +549,14 @@ public class Db4j extends ConnectionBase implements Serializable {
     }
 
     /** add and return the command to the transaction at the offset */
-    <TT extends Command> TT put(Transaction tid,long offset,TT cmd) {
+    <TT extends Command> TT put(Transaction txn,long offset,TT cmd) {
         cmd.offset = offset;
-        return put(tid,cmd);
+        return put(txn,cmd);
     }
 
     /** add and return the command to the transaction */
-    <TT extends Command> TT put(Transaction tid,TT cmd) {
-        tid.add( cmd);
+    <TT extends Command> TT put(Transaction txn,TT cmd) {
+        txn.add( cmd);
         return cmd;
     }
 
@@ -565,35 +565,35 @@ public class Db4j extends ConnectionBase implements Serializable {
         throw Simple.Exceptions.rte(
                 null, "request too large -- req: %d, avail: %d", nreq, avail );
     }
-    int [] request(int [] reqs,Transaction tid) throws Pausable {
-        Command.RwInt cmd = put( tid, loc.nblocks.read() );
-        if (tid.submit()) kilim.Task.yield();
+    int [] request(int [] reqs,Transaction txn) throws Pausable {
+        Command.RwInt cmd = put( txn, loc.nblocks.read() );
+        if (txn.submit()) kilim.Task.yield();
         int nblock = cmd.val;
         int [] blocks = new int[reqs.length];
         for (int ii = 0; ii < reqs.length; ii++) {
             blocks[ii] = nblock;
             nblock += reqs[ii];
         }
-        put( tid, loc.nblocks.write( nblock ) );
+        put( txn, loc.nblocks.write( nblock ) );
         return blocks;
     }
-    int nblocks(Transaction tid) {
-        Command.RwInt cmd = put( tid, loc.nblocks.read() );
-        int nb = (tid.submit()) ? -1:cmd.val;
+    int nblocks(Transaction txn) {
+        Command.RwInt cmd = put( txn, loc.nblocks.read() );
+        int nb = (txn.submit()) ? -1:cmd.val;
         return nb;
     }
 
     /** request a range of nreq hunks, guaranteed to be contiguous if true */
-    int [] request(int nreq,boolean contiguous,Transaction tid) throws Pausable {
-        Command.RwInt cmd = put( tid, loc.nblocks.read() );
-        if (tid.submit()) kilim.Task.yield();
+    int [] request(int nreq,boolean contiguous,Transaction txn) throws Pausable {
+        Command.RwInt cmd = put( txn, loc.nblocks.read() );
+        if (txn.submit()) kilim.Task.yield();
         int nblock = cmd.val;
         int bits = 8;
         int nmod = nblock >> bits, n2 = (nblock+nreq) >> bits;
         if (debug.alloc && n2 > nmod)
             System.out.format( "hunker.request -- mod:%d\n", nblock+nreq );
         if (nreq > size - nblock) throwRTL( nreq, size - nblock );
-        put( tid, loc.nblocks.write( nblock + nreq ) );
+        put( txn, loc.nblocks.write( nblock + nreq ) );
         int [] alloc = new int [ nreq ];
         for (int ii = 0; ii < nreq; ii++) alloc[ii] = nblock + ii;
         return alloc;
@@ -690,18 +690,18 @@ public class Db4j extends ConnectionBase implements Serializable {
                 if (ha.name().equals( name )) return ha;
             return null;
         }
-        // fixme - replace all usages with lookup(tid,index)
+        // fixme - replace all usages with lookup(txn,index)
         public Hunkable lookup(int index) { return arrays.get(index); }
 
         // fixme:untested
-        public Hunkable lookup(Transaction tid,int index) throws Pausable {
+        public Hunkable lookup(Transaction txn,int index) throws Pausable {
             Hunkable ha;
             if (index < arrays.size()) {
                 while ((ha = arrays.get(index))==null) kilim.Task.sleep(10);
                 return ha;
             }
-            Command.RwInt ncomp = put(tid, loc.ncomp.read());
-            tid.submitYield();
+            Command.RwInt ncomp = put(txn, loc.ncomp.read());
+            txn.submitYield();
             if (index >= ncomp.val) return null;
             boolean conflict = false;
             synchronized (arrays) {
@@ -710,11 +710,11 @@ public class Db4j extends ConnectionBase implements Serializable {
                 else
                     arrays.set(index,null);
             }
-            if (conflict) return guts.lookup(tid,index);
-            byte [] b2 = compRaw.context().set(tid).set(index,null).get(compRaw).val;
+            if (conflict) return guts.lookup(txn,index);
+            byte [] b2 = compRaw.context().set(txn).set(index,null).get(compRaw).val;
             ha = (Hunkable) org.srlutils.Files.load(b2);
-            Command.RwInt cmd = compLocals.get(tid,index);
-            tid.submitYield();
+            Command.RwInt cmd = compLocals.get(txn,index);
+            txn.submitYield();
             long kloc = cmd.val;
             ha.set(Db4j.this,null).createCommit(kloc);
             arrays.set(index,ha);
@@ -2895,7 +2895,7 @@ public class Db4j extends ConnectionBase implements Serializable {
     public abstract static class Task implements Queable {
         int id;
         Status status = Status.None;
-        public Transaction tid;
+        public Transaction txn;
         Kask kask;
         Task listForGen;
         private boolean done, alive = true;
@@ -2949,7 +2949,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             return ex instanceof WrapperException ? ((Exception) ex.getCause()) : ex;
         }
         public void yield() throws Pausable {
-            boolean yieldRequired = tid.submit();
+            boolean yieldRequired = txn.submit();
             if (yieldRequired)
                 kilim.Task.yield();
         }
@@ -2957,14 +2957,14 @@ public class Db4j extends ConnectionBase implements Serializable {
         public abstract void task() throws Pausable, Exception;
         void clear() {
             kask = null;
-            tid = null;
+            txn = null;
             status( Status.None );
         }
         void init2() { done = false; alive = true; kask = new Kask(); }
         void init(Db4j db4j) {
             init2();
-            tid = db4j.getTransaction();
-            tid.task = this;
+            txn = db4j.getTransaction();
+            txn.task = this;
             status = Status.Init;
             dogyears = 0;
             db4j.qrunner.state.addedTasks++;
@@ -2972,22 +2972,22 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
 
         void preRun(Db4j db4j) {
-            if (!tid.committed) {
+            if (!txn.committed) {
                 if (db4j.qrunner.clearout) {
                     rollback(db4j,true);
                     return;
                 }
-                if (!tid.readonly) tid.overWritten();
+                if (!txn.readonly) txn.overWritten();
                 
                 boolean found = false;
-                if (!tid.rollback) found = tid.entreeReads(db4j.qrunner );
-                if (tid.rollback) {
+                if (!txn.rollback) found = txn.entreeReads(db4j.qrunner );
+                if (txn.rollback) {
                     rollback(db4j, true );
                     return;
                 }
                 else if (!found) {
                     Simple.spinDebug( false, "hunker.preRun -- read not found:%s\n", this );
-                    found = tid.entreeReads(db4j.qrunner );
+                    found = txn.entreeReads(db4j.qrunner );
                 }
             }
             runTask(db4j);
@@ -3008,7 +3008,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             try {
                 while (found) {
                 if (Db4j.debug.reason) reason( "runTask" );
-                tid.uptodate = false;
+                txn.uptodate = false;
                 if (!done) {
                     if (useRestart) {
                         done = true;
@@ -3021,36 +3021,36 @@ public class Db4j extends ConnectionBase implements Serializable {
                         return;
                     }
                     if (done) kask = null;
-                    if (tid.restart) tid.task = null;
-                    if (!done && !tid.rollback && !tid.restart && bitsCache >= 16)
+                    if (txn.restart) txn.task = null;
+                    if (!done && !txn.rollback && !txn.restart && bitsCache >= 16)
                         if (printNotDone)
                             System.out.println( "NotDone: " + this );
                 }
-                alive = ! tid.committed;
+                alive = ! txn.committed;
                 if (Db4j.debug.reason)
                     reason( "runTask.resolve -- done:%b, alive:%b", done, alive );
                 if (alive) {
                     // fixme -- should have a programmatic way of distinguishing
                     //   between reads and commit
-                    if (tid.nreads==tid.ksub && tid.p1==null)
-                        tid.committed = true;
+                    if (txn.nreads==txn.ksub && txn.p1==null)
+                        txn.committed = true;
                     // fixme - if we're rolledback do we really want to entree first ???
-                    found = tid.entree(db4j.qrunner );
-                    if (tid==null) return;                                       // the task has been rolled back
-                    if (! found && ! tid.rollback) {
+                    found = txn.entree(db4j.qrunner );
+                    if (txn==null) return;                                       // the task has been rolled back
+                    if (! found && ! txn.rollback) {
                         if (Db4j.debug.reason) reason( "runTask.moveToBlock" );
                         status( Status.Blok );
                     }
                 }
-                if (tid.rollback || defer || tid.restart) {
+                if (txn.rollback || defer || txn.restart) {
                     rollback(db4j,true);
                     return;
                 }
-                if (tid.committed && !done)
+                if (txn.committed && !done)
                     System.out.println( "runTask.deferred ... " + this );
-                if (alive && tid.committed) tid.cleanup();
+                if (alive && txn.committed) txn.cleanup();
                 if (done && !alive) {
-                    if (tid.nwrits==0) postRun(true);
+                    if (txn.nwrits==0) postRun(true);
                     db4j.cleanupTask( this );
                     if (Db4j.debug.reason) reason( "runTask.finished" );
                     return;
@@ -3085,13 +3085,13 @@ public class Db4j extends ConnectionBase implements Serializable {
         public void rollback(Db4j db4j,boolean restart) {
             status( Status.Roll );
             // fixme -- cleanup txn ???
-            if (! tid.restart)
+            if (! txn.restart)
                 db4j.qrunner.nback++;
             if (Db4j.debug.reason) reason( "Transaction.handle.rollback" );
-            if (tid.rollbackers != null)
-                for (Rollbacker rb : tid.rollbackers) rb.runRollback(tid);
-            tid.cancelReads();
-            tid.cleanup();
+            if (txn.rollbackers != null)
+                for (Rollbacker rb : txn.rollbackers) rb.runRollback(txn);
+            txn.cancelReads();
+            txn.cleanup();
             clear();
             if (Db4j.debug.checkTasksList) {
                 Task old = db4j.qrunner.backlog.get( this );
@@ -3202,7 +3202,7 @@ public class Db4j extends ConnectionBase implements Serializable {
          * @param <TT> the type of the return value
          */
         public interface QueryFunction<TT> {
-            TT query(Db4j.Transaction tid) throws Pausable;
+            TT query(Db4j.Transaction txn) throws Pausable;
         }
         /**
          * a functional interface without a return value that can be called during query execution by the db4j execution engine,
@@ -3211,10 +3211,10 @@ public class Db4j extends ConnectionBase implements Serializable {
         public interface QueryCallable {
             /**
              * the query to execute
-             * @param tid the transaction tied to the query
+             * @param txn the transaction tied to the query
              * @throws Pausable 
              */
-            void query(Db4j.Transaction tid) throws Pausable;
+            void query(Db4j.Transaction txn) throws Pausable;
         }
         /**
          * a query that delegates to a functional interface with a return value, ie wrapping a lambda
@@ -3229,7 +3229,7 @@ public class Db4j extends ConnectionBase implements Serializable {
              * @param body the lambda to delegate to during query task execution
              */
             public LambdaQuery(QueryFunction body) { this.body = body; }
-            public void task() throws Pausable { val = body.query(tid); }
+            public void task() throws Pausable { val = body.query(txn); }
         }
         /**
          * a query that delegates to a functional interface with a return value, ie wrapping a lambda
@@ -3238,7 +3238,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         public static class LambdaCallQuery extends Db4j.Query<LambdaCallQuery> {
             QueryCallable body;
             public LambdaCallQuery(QueryCallable body) { this.body = body; }
-            public void task() throws Pausable { body.query(tid); }
+            public void task() throws Pausable { body.query(txn); }
         }
         public static class Stats {
             public int totalReads = 0;

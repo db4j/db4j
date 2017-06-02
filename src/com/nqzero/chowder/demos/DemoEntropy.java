@@ -55,7 +55,7 @@ public class DemoEntropy {
         init();
         final int bs = (int) r1.nextLong();
         build(bs);
-        conn.submitCall(tid -> { buildSeed.set(tid,bs); });
+        conn.submitCall(txn -> { buildSeed.set(txn,bs); });
         for (int ii = 0; ii < np; ii++) {
             final int kplayer = ii;
             final int [] vals = r1.rand(new int[nv],1-rmax,rmax);
@@ -67,7 +67,7 @@ public class DemoEntropy {
             Simple.softAssert(sum(vals)==0);
             new Db4j.Query() {
                 public void task() throws Pausable {
-                    map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
+                    map.setdata(txn,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
             }.offer(conn);
         }
@@ -123,7 +123,7 @@ public class DemoEntropy {
     int bseed;
     public void build() {
         new Db4j.Query() { public void task() throws Pausable {
-            bseed = buildSeed.get(tid);
+            bseed = buildSeed.get(txn);
         } }.offer(db4j).awaitb();
         build(bseed);
         System.out.println("build loaded: " + bseed);
@@ -156,17 +156,17 @@ public class DemoEntropy {
         new Db4j.Query() {
             public void task() throws Pausable {
                 int [] data = new int[nv], d2;
-                map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);
+                map.setdata(txn,kplayer*nv,data,new Command.RwInts(),nv);
                 yield();
                 for (int ii=0, victim=data[0]; ii < nt; ii++, victim=d2[0]) {
                     d2 = new int[nv];
                     if (victim==kplayer) victim = data[0];
-                    map.setdata(tid,victim*nv,d2,new Command.RwInts(),nv);
+                    map.setdata(txn,victim*nv,d2,new Command.RwInts(),nv);
                     yield();
                     swap1(data,d2,items[ii],items[ii+1]);
-                    map.setdata(tid,victim*nv,d2,new Command.RwInts().init(true),nv);
+                    map.setdata(txn,victim*nv,d2,new Command.RwInts().init(true),nv);
                 }
-                map.setdata(tid,kplayer*nv,data,new Command.RwInts().init(true),nv);
+                map.setdata(txn,kplayer*nv,data,new Command.RwInts().init(true),nv);
             }
         }.offer(conn);
     }
@@ -180,7 +180,7 @@ public class DemoEntropy {
             new Db4j.Query() {
                 public void task() throws Pausable {
                     int [] data = new int[nv];
-                    map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);
+                    map.setdata(txn,kplayer*nv,data,new Command.RwInts(),nv);
                     yield();
                     long sum = sums[kplayer] = sum(data);
                     asum += abs(data);

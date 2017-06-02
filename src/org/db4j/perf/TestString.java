@@ -295,7 +295,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
             // but querunner is (currently) single threaded
             // and none of the manipulations are Pausable, so they're effectively atomic
             public void task() throws Pausable {
-                CC c2 = map.context().set(tid);
+                CC c2 = map.context().set(txn);
                 key = key(magic);
                 index   = (type==0) ? 0
                         : (type==2) ? preadd(key)
@@ -311,12 +311,12 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
                 else if (type==1)
                     getPath(c2,index,get(index));
                 else if (type==2) {
-                    tid.addRollbacker(new Roller());
+                    txn.addRollbacker(new Roller());
                     c2.mode = Btree.modes.gt;
                     map.insert(ccset(c2,key,index));
                 }
                 else if (type==3) {
-                    tid.addRollbacker(new Roller());
+                    txn.addRollbacker(new Roller());
                     stored = get(index);
                     predel(index);
                     Btree.Path path = getPath(c2,index,stored);

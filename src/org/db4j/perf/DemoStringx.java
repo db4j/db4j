@@ -18,19 +18,19 @@ public class DemoStringx {
 
         public void route(Db4j.Connection conn) {
             String bio = RandomStringUtils.randomAlphanumeric(src.nextInt(8000));
-            db4j.submitCall(tid -> {
-                int num = count.get(tid);
-                users.insert(tid,num,bio);
-                count.plus(tid,1);
+            db4j.submitCall(txn -> {
+                int num = count.get(txn);
+                users.insert(txn,num,bio);
+                count.plus(txn,1);
             });
         }
         String saved = null;
         
         public String info() {
             String val =
-            db4j.submit(tid -> {
+            db4j.submit(txn -> {
                 String last = null;
-                String [] all = users.getall(tid).vals().toArray(new String[0]);
+                String [] all = users.getall(txn).vals().toArray(new String[0]);
                 for (String user : all) {
                     last = user;
                     if (all.length < 20) System.out.println(last);

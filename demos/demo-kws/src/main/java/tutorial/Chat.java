@@ -27,22 +27,22 @@ public class Chat extends Database {
     public String route(String query) throws Pausable {
         String cmds[]=query.split("/"), cmd=cmds.length > 1 ? cmds[1]:"none";
         Integer id = parse(cmds,2);
-        return db4j.submit(tid -> { switch (cmd) {
-            case "dir" : return print(users.getall(tid).vals(), User::format);
-            case "list": return print(messages.findPrefix(tid,id).vals(), x -> x);
-            case "get" : return users.find(tid,id).format();
-            case "msg" : return "sent: " + messages.insert(tid,id,cmds[3]).val;
-            case "user": return "" + namemap.find(tid,cmds[2]);
+        return db4j.submit(txn -> { switch (cmd) {
+            case "dir" : return print(users.getall(txn).vals(), User::format);
+            case "list": return print(messages.findPrefix(txn,id).vals(), x -> x);
+            case "get" : return users.find(txn,id).format();
+            case "msg" : return "sent: " + messages.insert(txn,id,cmds[3]).val;
+            case "user": return "" + namemap.find(txn,cmds[2]);
             case "new" : 
                     User user = new User(cmds[2],cmds[3]);
-                    int krow = count.plus(tid,1);
-                    users.insert(tid,krow,user);
-                    namemap.insert(tid,user.name,krow);
+                    int krow = count.plus(txn,1);
+                    users.insert(txn,krow,user);
+                    namemap.insert(txn,user.name,krow);
                     return "" + krow;
             case "random":
-                int num = count.get(tid), rid = Rand.source.nextInt(0,num);
+                int num = count.get(txn), rid = Rand.source.nextInt(0,num);
                 if (num > 0)
-                    messages.insert(tid,rid,RandomStringUtils.randomAscii(33));
+                    messages.insert(txn,rid,RandomStringUtils.randomAscii(33));
                 return "random insert";
             default: return "";
         }

@@ -23,23 +23,23 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
     }
 
     /** add delta to the stored value and return the old value */
-    public int plus(Transaction tid,int delta) throws Pausable {
+    public int plus(Transaction txn,int delta) throws Pausable {
         RwInt read = loc.count.read();
-        db4j.put( tid, read );
-        if (tid.submit()) kilim.Task.yield();
+        db4j.put( txn, read );
+        if (txn.submit()) kilim.Task.yield();
         RwInt writ = loc.count.write(read.val + delta);
-        db4j.put( tid, writ );
+        db4j.put( txn, writ );
         return read.val;
     }
-    public int get(Transaction tid) throws Pausable {
+    public int get(Transaction txn) throws Pausable {
         RwInt read = loc.count.read();
-        db4j.put( tid, read );
-        if (tid.submit()) kilim.Task.yield();
+        db4j.put( txn, read );
+        if (txn.submit()) kilim.Task.yield();
         return read.val;
     }
-    public void set(Transaction tid,int val) {
+    public void set(Transaction txn,int val) {
         RwInt writ = loc.count.write(val);
-        db4j.put( tid, writ );
+        db4j.put( txn, writ );
     }
     
     protected int create() {
@@ -54,10 +54,10 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         if (name != null) this.name = name;
         return this;
     }
-    protected void postInit(Transaction tid) throws Pausable {
-        db4j.put(tid, loc.count.write(0));
+    protected void postInit(Transaction txn) throws Pausable {
+        db4j.put(txn, loc.count.write(0));
     }
-    protected void postLoad(Transaction tid) throws Pausable {}
+    protected void postLoad(Transaction txn) throws Pausable {}
     
     static class Demo {
         HunkCount lt;
@@ -66,8 +66,8 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         
         public class Task extends Db4j.Query {
             public void task() throws Pausable {
-                int val = lt.get(tid);
-                lt.set(tid,val+1);
+                int val = lt.get(txn);
+                lt.set(txn,val+1);
                 System.out.format( "count: %d\n", val );
             }
         }

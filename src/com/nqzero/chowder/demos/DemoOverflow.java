@@ -68,7 +68,7 @@ public class DemoOverflow {
             Simple.softAssert(sum(vals)==0);
             new Db4j.Query() {
                 public void task() throws Pausable {
-                    map.setdata(tid,kplayer*nv,vals,new Command.RwInts().init(true),nv);
+                    map.setdata(txn,kplayer*nv,vals,new Command.RwInts().init(true),nv);
                 }
             }.offer(conn);
         }
@@ -111,11 +111,11 @@ public class DemoOverflow {
         new Db4j.Query() {
             public void task() throws Pausable {
                 int [] data = new int[nv];
-                map.setdata(tid,kplayer*nv,data,new Command.RwInts(),nv);
+                map.setdata(txn,kplayer*nv,data,new Command.RwInts(),nv);
                 yield();
                 check(data);
                 swap1(data,data,vals[0],vals[1]);
-                map.setdata(tid,kplayer*nv,data,new Command.RwInts().init(true),nv);
+                map.setdata(txn,kplayer*nv,data,new Command.RwInts().init(true),nv);
             }
         }.offer(conn);
     }

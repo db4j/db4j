@@ -259,10 +259,10 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         if (useCopy & false) context.txn.cleanse(kpage);
         db4j.put( context.txn, offset(kpage,0), cmd );
     }
-    protected void postInit(Transaction tid) throws Pausable {
-        init(context().set(tid));
+    protected void postInit(Transaction txn) throws Pausable {
+        init(context().set(txn));
     }
-    protected void postLoad(Transaction tid) throws Pausable {}
+    protected void postLoad(Transaction txn) throws Pausable {}
     protected Bhunk set(Db4j $db4j,String name) {
         db4j = $db4j;
         loc = new Vars();
@@ -350,23 +350,23 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     
     
     protected abstract class ValsVarx<TT,DD> extends Bstring.ValsVar<TT,DD> {
-        public void setx(Transaction tid,Sheet page,int index,TT val2,Object cmpr) throws Pausable {
+        public void setx(Transaction txn,Sheet page,int index,TT val2,Object cmpr) throws Pausable {
             byte [] val = convert(val2,cmpr);
             if (under(val))
                 set2(page,index,val);
             else {
                 int nb = db4j.util.nblocks(val.length);
-                int [] blocks = db4j.request(nb,true,tid);
+                int [] blocks = db4j.request(nb,true,txn);
                 int kblock = blocks[0], len = val.length;
                 int offset = setx(page,index);
                 page.puti(offset,val.length);
                 page.puti(offset+4,blocks[0]);
-                db4j.iocmd(tid,db4j.util.address(blocks[0]),val,true);
+                db4j.iocmd(txn,db4j.util.address(blocks[0]),val,true);
                 if (dbg)
                     System.out.format("setx @ %5d: %5d %5d\n",offset,len,kblock);
             }
         }
-        public void prepx(Transaction tid,Sheet page,int index) {
+        public void prepx(Transaction txn,Sheet page,int index) {
             int offset = getx(page,index);
             if (offset < 0)
                 return;
@@ -375,9 +375,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             int kblock = page.geti(offset+4,0);
             byte [] bytes = new byte[len];
             long address = db4j.util.address(kblock);
-            db4j.iocmd(tid,address,bytes,false);
+            db4j.iocmd(txn,address,bytes,false);
         }
-        public TT getx(Transaction tid,Sheet page,int index) throws Pausable {
+        public TT getx(Transaction txn,Sheet page,int index) throws Pausable {
             int offset = getx(page,index);
             if (offset < 0)
                 return get(page,index);
@@ -388,8 +388,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 System.out.format("getx @ %5d: %5d %5d\n",offset,len,kblock);
             byte [] bytes = new byte[len];
             long address = db4j.util.address(kblock);
-            db4j.iocmd(tid,address,bytes,false);
-            tid.submitYield();
+            db4j.iocmd(txn,address,bytes,false);
+            txn.submitYield();
             return convert(bytes);
         }
         protected abstract byte [] convert(TT val,Object cmpr);
@@ -530,7 +530,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 final double key = rand.nextDouble();
                 new Query() { public void task() throws Pausable {
                     CC cc = map.context().set(key,vo);
-                    cc.set(tid);
+                    cc.set(txn);
                     if      (stage==0) map.insert  (cc);
                     else if (stage==2) {
                         cc.mode = modes.eq;
@@ -572,7 +572,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             int i1;
             PutTask(int $i1,double $k1,float $v1) { i1=$i1; k1=$k1; v1=$v1; }
             public void task() throws Pausable {
-                lt.insert(lt.context().set(tid).set(k1,v1));
+                lt.insert(lt.context().set(txn).set(k1,v1));
             };
         }
         class GetTask extends Db4j.Query {
@@ -581,7 +581,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             float v1;
             GetTask(double $k1,float $v1) { k1=$k1; v1=$v1; }
             public void task() throws Pausable {
-                    cc.set(tid).set(k1,-1f);
+                    cc.set(txn).set(k1,-1f);
                     lt.findData(cc);
                     boolean bad = v1 != cc.val;
                     if ((k1-ko)%10==0 || bad)
@@ -591,7 +591,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         class CheckTask extends Db4j.Query {
             public void task() throws Pausable {
-                lt.check( lt.context().set(tid).set(-1d,-1f) );
+                lt.check( lt.context().set(txn).set(-1d,-1f) );
             };
         }
         

@@ -25,33 +25,33 @@ public class HunkLocals extends HunkArray.I {
      * reallocating for an existing index leaks the old allocation
      * @param index the index in the array
      * @param num the number of bytes to allocate
-     * @param tid the transaction
+     * @param txn the transaction
      * @return the starting offset in the auxiliary space
      */    
-    public int alloc(int index,int num,Transaction tid) throws Pausable {
-        Command.RwInt cmd = last.read().add(db4j,tid);
-        if (tid.submit()) kilim.Task.yield();
+    public int alloc(int index,int num,Transaction txn) throws Pausable {
+        Command.RwInt cmd = last.read().add(db4j,txn);
+        if (txn.submit()) kilim.Task.yield();
         int klast = cmd.val;
         int chunk = (klast-1) >> db4j.bb;
         int nhunks = (klast+num-1) >> db4j.bb;
         int n2 = nhunks - chunk;
         if (n2 > 0) {
             n2 = (num+db4j.bs-1) >> db4j.bb;
-            int khunk = db4j.request(n2,true,tid)[0];
+            int khunk = db4j.request(n2,true,txn)[0];
             klast = khunk << db4j.bb;
             for (int k1 = 0; k1 < n2; k1++)
-                db4j.put( tid, (khunk+k1) << db4j.bb, new Command.Init() );
+                db4j.put( txn, (khunk+k1) << db4j.bb, new Command.Init() );
         }
-        last.write(klast+num).add(db4j,tid);
-        set(tid,index,klast);
+        last.write(klast+num).add(db4j,txn);
+        set(txn,index,klast);
         return klast;
     }
 
-    protected void postInit(Transaction tid) throws Pausable {
-        super.postInit(tid);
-        last.write(0).add(db4j,tid);
+    protected void postInit(Transaction txn) throws Pausable {
+        super.postInit(txn);
+        last.write(0).add(db4j,txn);
     }
-    protected void postLoad(Transaction tid) throws Pausable {}
+    protected void postLoad(Transaction txn) throws Pausable {}
 
 
 }

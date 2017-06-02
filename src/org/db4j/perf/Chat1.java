@@ -25,22 +25,22 @@ public class Chat1 extends Database {
     public String route(String query) throws Pausable {
         String cmds[]=query.split("/"), cmd=cmds.length > 1 ? cmds[1]:"none";
         Integer id = parse(cmds,2);
-        return db4j.submit(tid -> { switch (cmd) {
-            case "dir" : return users.getall(tid).vals().stream().map(User::format).collect(Collectors.joining("\n"));
-            case "get" : return users.context().set(tid).set(id,null).get(users).val.format();
-            case "list": return messages.findPrefix(tid,id).vals().stream().collect(Collectors.joining("\n"));
-            case "msg" : return "sent: " + messages.insert(tid,id,cmds[3]).val;
-            case "user": return "" + namemap.find(tid,cmds[2]);
+        return db4j.submit(txn -> { switch (cmd) {
+            case "dir" : return users.getall(txn).vals().stream().map(User::format).collect(Collectors.joining("\n"));
+            case "get" : return users.context().set(txn).set(id,null).get(users).val.format();
+            case "list": return messages.findPrefix(txn,id).vals().stream().collect(Collectors.joining("\n"));
+            case "msg" : return "sent: " + messages.insert(txn,id,cmds[3]).val;
+            case "user": return "" + namemap.find(txn,cmds[2]);
             case "new" : 
                     User user = new User(cmds[2],cmds[3]);
-                    int krow = count.plus(tid,1);
-                    users.insert(tid,krow,user);
-                    namemap.insert(tid,user.name,krow);
+                    int krow = count.plus(txn,1);
+                    users.insert(txn,krow,user);
+                    namemap.insert(txn,user.name,krow);
                     return "" + krow;
             case "random":
-                int num = count.get(tid), rid = Rand.source.nextInt(0,num);
+                int num = count.get(txn), rid = Rand.source.nextInt(0,num);
                 if (num > 0)
-                    messages.insert(tid,rid,RandomStringUtils.randomAscii(33));
+                    messages.insert(txn,rid,RandomStringUtils.randomAscii(33));
                 return "random insert";
             default: return "";
         }
@@ -64,16 +64,16 @@ public class Chat1 extends Database {
                 }
             }.start().joinb();
             Btrees.IS k2 = new Btrees.IS();
-            db4j.submitCall(tid -> { db4j.create(tid,k2,PATH_K2); }).awaitb();
-            db4j.submitCall(tid -> { k2.insert(tid,key,"hello world"); }).awaitb();
+            db4j.submitCall(txn -> { db4j.create(txn,k2,PATH_K2); }).awaitb();
+            db4j.submitCall(txn -> { k2.insert(txn,key,"hello world"); }).awaitb();
             hello.shutdown(true);
         }
         
         {
             Chat1 hello = new Chat1();
             Db4j db4j = hello.start(filename,false);
-            String klass = db4j.submit(tid -> 
-                    ((Btrees.IS) db4j.lookup(tid,PATH_K2)).find(tid,key)
+            String klass = db4j.submit(txn -> 
+                    ((Btrees.IS) db4j.lookup(txn,PATH_K2)).find(txn,key)
             ).awaitb().val;
             System.out.println(klass);
         }

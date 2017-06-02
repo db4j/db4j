@@ -87,11 +87,11 @@ public class Btrees {
             return keys.compare( data.key, page, index, data.keydata );
         }
         /** return a Join for entries that match all terms */
-        public Join<Btrees.SI.Data> search(Db4j.Transaction tid,String ... terms) throws Pausable {
+        public Join<Btrees.SI.Data> search(Db4j.Transaction txn,String ... terms) throws Pausable {
             Btree.Range<Btrees.SI.Data> [] ranges = new Btree.Range[terms.length];
             for (int ii=0; ii < terms.length; ii++)
-                ranges[ii] = findPrefix(context().set(tid).set(terms[ii],null));
-            return join(tid,ranges);
+                ranges[ii] = findPrefix(context().set(txn).set(terms[ii],null));
+            return join(txn,ranges);
         }
     }
     
@@ -353,7 +353,7 @@ public class Btrees {
         public Btree.Range<? extends Bmeta.Context<?,Integer,?>> [] ranges;
         public CC cc;
 
-        Db4j.Transaction tid;
+        Db4j.Transaction txn;
         int num, max=-1, neq;
         int [] vals;
         boolean remain = true;
@@ -362,11 +362,11 @@ public class Btrees {
         /**
          * join several monotonic ranges (note: prefix searches will not be monotonic). 
          * must call init() before usage
-         * @param tid
+         * @param txn
          * @param ranges must be monotonic
          */
-        Join(Db4j.Transaction tid,Btree.Range<CC> ... ranges) {
-            this.tid = tid;
+        Join(Db4j.Transaction txn,Btree.Range<CC> ... ranges) {
+            this.txn = txn;
             this.ranges = ranges;
             num = ranges.length;
             vals = new int[num];
@@ -420,8 +420,8 @@ public class Btrees {
     
     /** return an initialized Join for the monotonic ranges */
     public static <CC extends Bmeta.Context<?,Integer,?>> Join<CC> join
-            (Db4j.Transaction tid,Btree.Range<CC>... ranges) throws Pausable {
-        Join joiner = new Join(tid,ranges).init();
+            (Db4j.Transaction txn,Btree.Range<CC>... ranges) throws Pausable {
+        Join joiner = new Join(txn,ranges).init();
         return joiner;
     }
     

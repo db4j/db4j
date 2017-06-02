@@ -932,8 +932,8 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         protected void createCommit(long locBase) {}
         protected String name() { return null; }
         protected Bhunk set(Db4j db4j,String name) { return null; }
-        protected void postInit(Transaction tid) throws Pausable {}
-        protected void postLoad(Transaction tid) throws Pausable {}
+        protected void postInit(Transaction txn) throws Pausable {}
+        protected void postLoad(Transaction txn) throws Pausable {}
     }
     /** return an array of depth and number of pages */
     public int [] getInfo() { return null; }
