@@ -8,7 +8,7 @@ import static org.srlutils.Simple.Reflect.getFields;
 
 /** a generic database that takes it's configuration from it's variables */
 public class Database {
-    public Db4j db4j;
+    protected Db4j db4j;
     Table [] tables;
     Self self = new Self();
     Thread shutdownThread;
