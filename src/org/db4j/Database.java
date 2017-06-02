@@ -21,11 +21,6 @@ public class Database {
         return field.getDeclaringClass().getSimpleName() + "/";
     }
 
-    public static <TT extends Database> TT start(TT database,String filename,boolean build) {
-        database.start(filename,build);
-        return database;
-    }
-    
     /** 
      * build all the tables in the database
      * @param db4j the already initialized instance
@@ -61,7 +56,7 @@ public class Database {
      * @param build if set, build the tables, overwriting any existing columns
      * @return this
      */
-    public Database start(String filename,boolean build) {
+    public Db4j start(String filename,boolean build) {
         Db4j local = build ? new Db4j() : Db4j.load(filename );
         local.userClassLoader = this.getClass().getClassLoader();
         if (build) {
@@ -76,7 +71,7 @@ public class Database {
             }
         });
         Runtime.getRuntime().addShutdownHook(shutdownThread);
-        return this;
+        return local;
     }
     /** 
      * load all the tables in the database

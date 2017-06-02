@@ -9,6 +9,7 @@ import org.db4j.Btrees;
 import org.db4j.Database;
 import org.db4j.HunkCount;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.db4j.Db4j;
 import org.srlutils.Rand;
 
 public class Chat1 extends Database {
@@ -52,7 +53,8 @@ public class Chat1 extends Database {
         int key = 707;
         
         if (args.length==0) {
-            Chat1 hello = Database.start(new Chat1(),filename,args.length==0);
+            Chat1 hello = new Chat1();
+            Db4j db4j = hello.start(filename,true);
             new kilim.Task() {
                 public void execute() throws Pausable {
                     hello.route("/new/hello/world");
@@ -62,15 +64,16 @@ public class Chat1 extends Database {
                 }
             }.start().joinb();
             Btrees.IS k2 = new Btrees.IS();
-            hello.db4j.submitCall(tid -> { hello.db4j.create(tid,k2,PATH_K2); }).awaitb();
-            hello.db4j.submitCall(tid -> { k2.insert(tid,key,"hello world"); }).awaitb();
+            db4j.submitCall(tid -> { db4j.create(tid,k2,PATH_K2); }).awaitb();
+            db4j.submitCall(tid -> { k2.insert(tid,key,"hello world"); }).awaitb();
             hello.shutdown(true);
         }
         
         {
-            Chat1 hello = Database.start(new Chat1(),filename,false);
-            String klass = hello.db4j.submit(tid -> 
-                    ((Btrees.IS) hello.db4j.lookup(tid,PATH_K2)).find(tid,key)
+            Chat1 hello = new Chat1();
+            Db4j db4j = hello.start(filename,false);
+            String klass = db4j.submit(tid -> 
+                    ((Btrees.IS) db4j.lookup(tid,PATH_K2)).find(tid,key)
             ).awaitb().val;
             System.out.println(klass);
         }

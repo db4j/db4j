@@ -49,8 +49,8 @@ public class DemoStringx {
         String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
 
         if (args.length==0) {
-            hello.start(filename,true);
-            Db4j.Connection conn = hello.db4j.connect();
+            Db4j db4j = hello.start(filename,true);
+            Db4j.Connection conn = db4j.connect();
             for (int ii = 0; ii < 3000; ii++)
                 hello.route(conn);
             conn.awaitb();

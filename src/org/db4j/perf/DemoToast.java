@@ -37,8 +37,8 @@ public class DemoToast extends Database {
 
         if (args.length==0) {
             int num = usize > 1000 ? 200 : 2000;
-            hello.start(filename,true);
-            Db4j.Connection conn = hello.db4j.connect();
+            Db4j db4j = hello.start(filename,true);
+            Db4j.Connection conn = db4j.connect();
             for (int ii=0; ii < num; ii++)
                 hello.addUser(conn);
             conn.awaitb();
@@ -46,8 +46,8 @@ public class DemoToast extends Database {
         }
 //        else 
         {
-            hello.start(filename,false);
-            Db4j.Connection conn = hello.db4j.connect();
+            Db4j db4j = hello.start(filename,false);
+            Db4j.Connection conn = db4j.connect();
             hello.getUser(conn);
             conn.awaitb();
         }
