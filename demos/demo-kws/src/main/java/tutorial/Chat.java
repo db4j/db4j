@@ -4,6 +4,8 @@ package tutorial;
 
 import kilim.Pausable;
 import java.io.Serializable;
+import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.db4j.Btrees;
 import org.db4j.Database;
@@ -26,9 +28,9 @@ public class Chat extends Database {
         String cmds[]=query.split("/"), cmd=cmds.length > 1 ? cmds[1]:"none";
         Integer id = parse(cmds,2);
         return db4j.submit(tid -> { switch (cmd) {
-            case "dir" : return users.getall(tid).vals().stream().map(User::format).collect(Collectors.joining("\n"));
-            case "get" : return users.context().set(tid).set(id,null).get(users).val.format();
-            case "list": return messages.findPrefix(tid,id).vals().stream().collect(Collectors.joining("\n"));
+            case "dir" : return print(users.getall(tid).vals(), User::format);
+            case "list": return print(messages.findPrefix(tid,id).vals(), x -> x);
+            case "get" : return users.find(tid,id).format();
             case "msg" : return "sent: " + messages.insert(tid,id,cmds[3]).val;
             case "user": return "" + namemap.find(tid,cmds[2]);
             case "new" : 
@@ -53,6 +55,8 @@ public class Chat extends Database {
         System.in.read();
         System.exit(0);
     }
+    static <TT> String print(List<TT> vals,Function<TT,String> mapping) {
+        return vals.stream().map(mapping).collect(Collectors.joining("\n")); }
     static Integer parse(String vals[],int index) {
         try { return Integer.parseInt(vals[index]); } catch(Exception ex) { return 0; }
     }
