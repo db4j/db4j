@@ -13,6 +13,11 @@ public class Database {
     Self self = new Self();
     Thread shutdownThread;
 
+    // fixme - component lookup/creation isn't thread safe
+    // probably want some form of locking to allow structs to be reused with a callback to rebuild
+    // if something changes
+    // until we get network (or classloadable) queries this isn't critical
+    
     static class Self extends Table {
         public Self() {}
     }
@@ -79,18 +84,20 @@ public class Database {
      */
     public void load(Db4j $db4j) {
         db4j = $db4j;
+        Db4j.Connection conn = db4j.connect();
         Field [] fields = getFields(this.getClass(),Database.class,Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;
         for (Field field : fields) {
             Table table = (Table) Simple.Reflect.alloc(field.getType(),false );
             table.init(base(field), db4j );
-            table.load(table);
+            table.load(conn,table);
             tables[ ktable++ ] = table;
             Simple.Reflect.set( this, field.getName(), table );
         }
         self.init(null,db4j);
-        self.load(this);
+        self.load(conn,this);
+        conn.awaitb();
     }
 
     
@@ -122,21 +129,23 @@ public class Database {
             }
         }
 
-        void load(Object source) {
+        void load(Db4j.Connection conn,Object source) {
             Field [] fields = getFields(source.getClass(),Object.class,Hunkable.class);
             columns = new Hunkable[ fields.length ];
-            int kcol = 0;
+            int jj = 0;
             for (Field field : fields) {
-                Hunkable composite = null;
                 String filename = filename(field);
-                composite = (Hunkable) db4j.guts.lookup( filename );
-                if (composite == null) {
-                    String err = String.format( "failed to find Hunkable: %s, as field: %s",
-                            filename, field.getName() );
-                    throw new RuntimeException( err );
-                }
-                columns[ kcol++ ] = composite;
-                Simple.Reflect.set(source, field.getName(), composite);
+                int kcol = jj++;
+                conn.submitCall(txn -> {
+                    Hunkable composite = db4j.lookup(txn,filename);
+                    if (composite == null) {
+                        String err = String.format( "failed to find Hunkable: %s, as field: %s",
+                                filename, field.getName() );
+                        throw new RuntimeException( err );
+                    }
+                    columns[kcol] = composite;
+                    Simple.Reflect.set(source, field.getName(), composite);
+                });
             }
         }
         String filename(Field field) {
