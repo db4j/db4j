@@ -33,6 +33,7 @@ public class Database {
      */
     public void build(Db4j $db4j,boolean overwrite) {
         db4j = $db4j;
+        Db4j.Connection conn = db4j.connect();
         Field [] fields = getFields(this.getClass(),Database.class,Table.class);
         tables = new Table[ fields.length ];
         int ktable = 0;
@@ -41,11 +42,12 @@ public class Database {
             table = (Table) Simple.Reflect.alloc(field.getType(),false );
             tables[ ktable++ ] = table;
             table.init(base(field), db4j );
-            table.build(table,overwrite);
+            table.build(conn,table,overwrite);
             Simple.Reflect.set( this, field.getName(), table );
         }
         self.init(null,db4j);
-        self.build(this,overwrite);
+        self.build(conn,this,overwrite);
+        conn.awaitb();
     }
     public synchronized void shutdown(boolean orig) {
         // fixme - synchronized but db4j.shutdown() doesn't appear to be safe to call twice
@@ -66,8 +68,8 @@ public class Database {
         local.userClassLoader = this.getClass().getClassLoader();
         if (build) {
             local.init(filename, -(2L<<30) );
-            build(local,true);
             local.create();
+            build(local,true);
         }
         else load(local);
         shutdownThread = new Thread(new Runnable() {
@@ -113,19 +115,22 @@ public class Database {
             root = _root;
             return this;
         }
-        void build(Object source,boolean overwrite) {
+        void build(Db4j.Connection conn,Object source,boolean overwrite) {
             Field [] fields = getFields(source.getClass(),Object.class,Hunkable.class);
             columns = new Hunkable[ fields.length ];
-            int ktable = 0;
+            int jj = 0;
             for (Field field : fields) {
                 String name = filename(field);
-                Hunkable composite = db4j.guts.lookup( name );
-                if (overwrite || composite == null) {
-                    composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false );
-                    db4j.register(composite,name);
-                }
-                columns[ ktable++ ] = composite;
-                Simple.Reflect.set(source, field.getName(), composite);
+                int ktable = jj++;
+                conn.submitCall(txn -> {
+                    Hunkable composite = db4j.lookup(txn,name);
+                    if (overwrite || composite == null) {
+                        composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false );
+                        db4j.create(txn,composite,name);
+                    }
+                    columns[ktable] = composite;
+                    Simple.Reflect.set(source, field.getName(), composite);
+                });
             }
         }
 

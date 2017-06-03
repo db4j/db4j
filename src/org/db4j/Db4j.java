@@ -707,8 +707,10 @@ public class Db4j extends ConnectionBase implements Serializable {
             synchronized (arrays) {
                 if (index < arrays.size())
                     conflict = true;
+                else if (index==arrays.size())
+                    arrays.add(null);
                 else
-                    arrays.set(index,null);
+                    throw new RuntimeException();
             }
             if (conflict) return guts.lookup(txn,index);
             byte [] b2 = compRaw.context().set(txn).set(index,null).get(compRaw).val;
