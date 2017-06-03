@@ -19,17 +19,22 @@ public class DemoEntropy {
     Db4j.Connection conn;
     HunkArray.I map;
     HunkCount buildSeed;
+    static final String PATH_MAP = "///db4j/demoentropy/map";
+    static final String PATH_COUNT = "///db4j/demoentropy/count";
+
     void load() {
         db4j = Db4j.load(filename);
         conn = db4j.connect();
-        map = (HunkArray.I) db4j.guts.lookup(0);
-        buildSeed = (HunkCount) db4j.guts.lookup(1);
+        db4j.submitCall(txn -> {
+            map = (HunkArray.I) db4j.lookup(txn,PATH_MAP);
+            buildSeed = (HunkCount) db4j.lookup(txn,PATH_COUNT);
+        }).awaitb();
     }
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
         conn = db4j.connect();
-        map = db4j.register(new HunkArray.I(),"Player Entropy");
-        buildSeed = db4j.register(new HunkCount(),"seed used for building player round robin");
+        map = db4j.register(new HunkArray.I(),PATH_MAP);
+        buildSeed = db4j.register(new HunkCount(),PATH_COUNT);
         db4j.create();
         db4j.guts.forceCommit(100);
     }
