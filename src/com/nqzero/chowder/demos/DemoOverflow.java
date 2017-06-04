@@ -31,13 +31,17 @@ public class DemoOverflow {
     void load() {
         db4j = Db4j.load(filename);
         conn = db4j.connect();
-        map = (HunkArray.I) db4j.guts.lookup(0);
+        db4j.submitCall(txn -> {
+            map = (HunkArray.I) db4j.lookup(txn,DemoEntropy.PATH_MAP);
+        }).awaitb();
     }
     public void init() {
         db4j = new Db4j().init( filename, null );
         conn = db4j.connect();
-        map = db4j.register(new HunkArray.I(),"Player Overflow");
         db4j.create();
+        db4j.submitCall(txn -> {
+            map = db4j.create(txn, new HunkArray.I(), DemoEntropy.PATH_MAP);
+        }).awaitb();
         db4j.guts.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source();

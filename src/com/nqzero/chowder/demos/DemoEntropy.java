@@ -33,9 +33,11 @@ public class DemoEntropy {
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
         conn = db4j.connect();
-        map = db4j.register(new HunkArray.I(),PATH_MAP);
-        buildSeed = db4j.register(new HunkCount(),PATH_COUNT);
         db4j.create();
+        db4j.submitCall(txn -> {
+            map = db4j.create(txn, new HunkArray.I(), PATH_MAP);
+            buildSeed = db4j.create(txn, new HunkCount(), PATH_COUNT);
+        }).awaitb();
         db4j.guts.forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source(), r2 = new org.srlutils.rand.Source();

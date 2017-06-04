@@ -428,7 +428,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             guts.lookup(txn,ii);
         return guts.lookup(name);
     }
-    public void create(Transaction txn,Hunkable ha,String name) throws Pausable {
+    public <HH extends Hunkable> HH create(Transaction txn,HH ha,String name) throws Pausable {
         ha.set(this,name);
         byte [] araw = org.srlutils.Files.save(ha);
         Command.RwInt ncomp = put(txn, loc.ncomp.read());
@@ -440,6 +440,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         ha.createCommit(offset);
         ha.postInit(txn);
         System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
+        return ha;
     }
     /** 
      * initialize all the transient fields
@@ -685,16 +686,12 @@ public class Db4j extends ConnectionBase implements Serializable {
             qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
             return task;
         }
-        public Hunkable lookup(String name) {
+        Hunkable lookup(String name) {
             for (Hunkable ha : arrays)
                 if (ha.name().equals( name )) return ha;
             return null;
         }
-        // fixme - replace all usages with lookup(txn,index)
-        public Hunkable lookup(int index) { return arrays.get(index); }
-
-        // fixme:untested
-        public Hunkable lookup(Transaction txn,int index) throws Pausable {
+        Hunkable lookup(Transaction txn,int index) throws Pausable {
             Hunkable ha;
             if (index < arrays.size()) {
                 while ((ha = arrays.get(index))==null) kilim.Task.sleep(10);
