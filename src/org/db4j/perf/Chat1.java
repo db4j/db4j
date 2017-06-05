@@ -10,6 +10,7 @@ import org.db4j.Database;
 import org.db4j.HunkCount;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.db4j.Db4j;
+import org.db4j.Db4j.Query;
 import org.srlutils.Rand;
 
 public class Chat1 extends Database {
@@ -75,6 +76,17 @@ public class Chat1 extends Database {
             String klass = db4j.submit(txn -> 
                     ((Btrees.IS) db4j.lookup(txn,PATH_K2)).find(txn,key)
             ).awaitb().val;
+            Db4j.Connection conn = db4j.connect();
+            Db4j.Utils.LambdaQuery query;
+            for (int ii = 0; ii < 4; ii++) {
+                query = conn.submit(txn -> ((Btrees.IS) db4j.lookup(txn,PATH_K2)).find(txn,key));
+                if (ii<2)          query.awaitb();
+                if (ii==0 | ii==2)  conn.awaitb();
+                if (ii==1 | ii==2) query.awaitb();
+                if (ii >= 2)        conn.awaitb();
+                System.out.println(ii + " -- " + query.val);
+            }
+            
             System.out.println(klass);
         }
         System.exit(0);

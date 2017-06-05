@@ -128,6 +128,16 @@ public class Db4j extends ConnectionBase implements Serializable {
 
     public Connection connect() { return new Connection(this); }
 
+    /*
+        need to clean up the query list automatically, either as they're added or completed
+        can't afford to wait till await() is called
+        can't force the user to call some intermediate cleanup
+        needs to be callable from multiple threads
+        need to be able to mix query.await() and conn.await() calls
+        
+    
+    
+    */
     public static class Connection extends ConnectionBase {
         protected ConcurrentLinkedDeque<Query> queries = new ConcurrentLinkedDeque();
         Connection(Db4j proxy) {
@@ -137,7 +147,11 @@ public class Db4j extends ConnectionBase implements Serializable {
         protected void connectionAddQuery(Query query) {
             queries.add(query);
         }
-        
+        /** 
+         * @deprecated
+         * this method is fragile and must not be mixed with other methods that utilize the mailbox,
+         * including itself
+         */
         public void await() throws Pausable {
             for (Query query; (query = queries.poll()) != null; )
                 query.await();
@@ -745,22 +759,31 @@ public class Db4j extends ConnectionBase implements Serializable {
     public static abstract class Query<TT extends Query> extends Task {
         kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
         boolean diskCommit, committed;
+        // fixme::threadsafe - none of the await, join or joinb methods are synchronized
+        //                     ie, they can be called at most once, and only if awaitb hasn't been called
+        //                     rather than expose all these kilim methods, should just let subclasses use mbx()
+        protected static kilim.Mailbox<Integer> mbx(Query query) { return query.mbx; }
         public boolean postRun(boolean pre) {
             if (!diskCommit || !pre) mbx.putnb(0);
             return diskCommit;
         }
         public TT offer(ConnectionBase db4j) { return db4j.submitQuery((TT) this); }
-        /** pausing wait for the task to complete, if the task threw an exception, rethrow it */
+        /** 
+         * pausing wait for the task to complete, if the task threw an exception, rethrow it.
+         * this is not thread safe with itself or awaitb()
+         */
         public TT await() throws Pausable {
-            Integer msg = mbx.get();
-            if (msg != null) committed = true;
+            mbx.get();
+            committed = true;
             if (ex != null) throw ex;
             return (TT) this;
         }
         /** blocking wait for the task to complete, if the task threw an exception, rethrow it */
         public TT awaitb() {
-            Integer msg = mbx.getb();
-            if (msg != null) committed = true;
+            if (! committed) synchronized(this) {
+                if (! committed) mbx.getb();
+                committed = true;
+            }
             if (ex != null) throw ex;
             return (TT) this;
         }
