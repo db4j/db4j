@@ -18,9 +18,12 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import kilim.EventSubscriber;
 import kilim.Pausable;
 import org.srlutils.data.TreeDisk.Entry;
@@ -139,18 +142,21 @@ public class Db4j extends ConnectionBase implements Serializable {
     
     */
     public static class Connection extends ConnectionBase {
+        static int thresh = 512;
+        AtomicInteger count = new AtomicInteger();
         protected ConcurrentLinkedDeque<Query> queries = new ConcurrentLinkedDeque();
         Connection(Db4j proxy) {
             super.connectionSetProxy(proxy,true);
         }
 
         protected void connectionAddQuery(Query query) {
+            int val = count.incrementAndGet();
+            if (val%thresh==0) clean();
             queries.add(query);
         }
         /** 
          * @deprecated
-         * this method is fragile and must not be mixed with other methods that utilize the mailbox,
-         * including itself
+         * this method is fragile and must not be mixed with other methods that utilize the mailbox
          */
         public void await() throws Pausable {
             for (Query query; (query = queries.poll()) != null; )
@@ -159,6 +165,13 @@ public class Db4j extends ConnectionBase implements Serializable {
         public void awaitb() {
             for (Query query; (query = queries.poll()) != null; )
                 query.awaitb();
+        }
+        void clean() {
+            Iterator<Query> iter = queries.iterator();
+            while (iter.hasNext()) {
+                Query query = iter.next();
+                if (query.isCommitted()) iter.remove();
+            }
         }
         
     }
@@ -758,6 +771,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      */
     public static abstract class Query<TT extends Query> extends Task {
         kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
+        ReentrantLock lock = new ReentrantLock();
         boolean diskCommit, committed;
         // fixme::threadsafe - none of the await, join or joinb methods are synchronized
         //                     ie, they can be called at most once, and only if awaitb hasn't been called
@@ -780,9 +794,11 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
         /** blocking wait for the task to complete, if the task threw an exception, rethrow it */
         public TT awaitb() {
-            if (! committed) synchronized(this) {
+            if (! committed) {
+                lock.lock();
                 if (! committed) mbx.getb();
                 committed = true;
+                lock.unlock();
             }
             if (ex != null) throw ex;
             return (TT) this;
@@ -804,6 +820,13 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
         /** return true if the task has been committed */
         public boolean isCommitted() {
+            if (! committed) {
+                if (lock.tryLock()) {
+                    if (! committed && mbx.getnb() != null)
+                        committed = true;
+                    lock.unlock();
+                }
+            }
             return committed;
         }
         /** the task has not yet been committed */
