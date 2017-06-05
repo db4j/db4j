@@ -208,7 +208,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         ld.load( (int) disk.size );
         return ld;
     }
-    public <HH extends Hunkable> HH register(HH ha,String name) {
+    <HH extends Hunkable> HH register(HH ha,String name) {
         arrays.add(ha);
         ha.set(this,name);
         return ha;

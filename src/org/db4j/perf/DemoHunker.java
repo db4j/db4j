@@ -321,9 +321,11 @@ public class DemoHunker {
                 long fileSize = (size*8 + size*8/128)*nstores + (1<<20) + (1<<30);
                 db4j.init( name, fileSize );
                 arrays = new HunkArray.L[ nstores ];
-                for (int ii = 0; ii < nstores; ii++)
-                    arrays[ii] = db4j.register(new HunkArray.L(),PATH_BASE + ii);
                 db4j.create();
+                db4j.submitCall(txn -> {
+                    for (int ii = 0; ii < nstores; ii++)
+                        arrays[ii] = db4j.create(txn, new HunkArray.L(),PATH_BASE + ii);
+                }).awaitb();
             }
             else {
                 db4j = Db4j.load( name );

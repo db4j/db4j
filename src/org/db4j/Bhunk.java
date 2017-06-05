@@ -489,6 +489,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     
     
     */
+    static final String PATH_MAP = Bhunk.class.getName() + "/map";
     
     
     /** base class for comparing hunk-based trees with kilim */
@@ -513,8 +514,8 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         public void init() {
             seed = rand.setSeed(null,false);
             db4j = new Db4j().init( filename, null ); // 1L << 32 );
-            db4j.register(map,"Bushy Tree");
             db4j.create();
+            db4j.submit(txn -> db4j.create(txn, map, PATH_MAP)).awaitb();
             db4j.guts.forceCommit(100);
             if (reopen) close();
         }
@@ -522,7 +523,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             rand.setSeed(seed,false);
             if (reopen) db4j = Db4j.load(filename);
             Db4j.Connection conn = db4j.connect();
-            map = (TT) db4j.arrays.get(0);
+            map = db4j.submit(txn -> (TT) db4j.lookup(txn,PATH_MAP)).awaitb().val;
             for (int ii = 0; ii < nn; ii++) {
                 final int jj = ii;
                 final float v1 = 0.01f*jj, goal = stage==3 ? -1f:v1;
@@ -597,9 +598,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         
         public void demo() {
             db4j = new Db4j().init( name, null ); // 1L << 32 );
-            lt = db4j.register(new DF(),"Bushy Tree");
             int nn = 1347-7;
             db4j.create();
+            lt = db4j.submit(txn -> db4j.create(txn, new DF(), PATH_MAP)).awaitb().val;
             Db4j.Connection conn = db4j.connect();
             // break out the final iter to allow tracing in the debugger
             for (int ii = 0; ii < nn; ii++)

@@ -12,14 +12,12 @@ import org.srlutils.btree.Bstring;
 import org.srlutils.btree.Btypes;
 import kilim.Pausable;
 import org.db4j.Bmeta;
-import org.db4j.Bmeta;
-import org.db4j.Btree;
 import org.db4j.Btree;
 import org.db4j.Db4j;
 import org.db4j.Db4j.Transaction;
-import org.srlutils.btree.Bpage;
 
 public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
+    static final String PATH = TestString.class.getName();
 
     public static class SI extends Bmeta<SI.Data,String,Integer,Bstring.ValsString> {
         { setup(new Bstring.ValsString(),new Btypes.ValsInt()); }
@@ -278,8 +276,8 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
     Db4j db4j;
     public void init() {
         db4j = new Db4j().init( filename, null ); // 1L << 32 );
-        db4j.register(map,"Bushy Tree");
         db4j.create();
+        db4j.submit(txn -> db4j.create(txn, map, PATH)).awaitb();
         db4j.guts.forceCommit(100);
     }
     public long process(final int jo) {
@@ -349,7 +347,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
             TestString test = new Val();
             int num = 19;
             test.randomWalk(1<<num,1<<num,128);
-        }
+         }
     }
 }
 

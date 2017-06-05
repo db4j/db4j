@@ -515,20 +515,21 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         public Data context() { return new Data(); }
     }
 
+    private static String PATH_MAP = Bmeta.class.getName() + "/BushyTree";
     static class Demo {
         Btrees.IA lt;
         String filename = DemoHunker.resolve("./db_files/b6.mmap");
         Db4j db4j;
         int [] keys;
-        public static void main2(String [] args) {
+        public static void main(String [] args) {
             Long seed = null;
             Rand.source.setSeed(seed,true);
             new Demo().demo();
         }
         public void demo() {
             db4j = new Db4j().init( filename, null );
-            lt = db4j.register(new Btrees.IA(),"Bushy Tree");
             db4j.create();
+            lt = db4j.submit(txn -> db4j.create(txn, new Btrees.IA(), PATH_MAP)).awaitb().val;
             Db4j.Connection conn = db4j.connect();
             db4j.guts.forceCommit(100);
             final int ipt=8, bpe=770, size=1<<25, len=Simple.Rounder.rup(size/bpe,ipt);
@@ -551,7 +552,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             conn.awaitb();
             db4j.shutdown();
             db4j = Db4j.load(filename);
-            lt = (Btrees.IA) db4j.arrays.get(0);
+            lt = db4j.submit(txn -> (Btrees.IA) db4j.lookup(txn,PATH_MAP)).awaitb().val;
             check(keys.length);
             db4j.shutdown();
             lt.clear();
@@ -584,14 +585,14 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         { sntext = "put get rem chk"; }
         public void init2() {
             db4j = new Db4j().init( filename, null ); // 1L << 32 );
-            lt = db4j.register(new DF2(),"Bushy Tree");
             db4j.create();
+            lt = db4j.submit(txn -> db4j.create(txn, new DF2(), PATH_MAP)).awaitb().val;
             db4j.guts.forceCommit(100);
         }
         public void run(int stage) throws Exception {
             if (reopen)
                 db4j = Db4j.load(filename);
-            lt = (DF2) db4j.arrays.get(0);
+            lt = db4j.submit(txn -> (DF2) db4j.lookup(txn,PATH_MAP)).awaitb().val;
             stage(stage);
             if (reopen) {
                 db4j.shutdown();

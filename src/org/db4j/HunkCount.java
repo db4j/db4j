@@ -63,6 +63,7 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         HunkCount lt;
         Db4j db4j;
         String name = DemoHunker.resolve("./db_files/hunk2.mmap");
+        String path = Demo.class.getName() + "/lt";
         
         public class Task extends Db4j.Query {
             public void task() throws Pausable {
@@ -75,8 +76,8 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         public void demo() {
             db4j = new Db4j().init( name, null );
             Db4j.Connection conn = db4j.connect();
-            lt = db4j.register(new HunkCount(),"Hunk Count");
             db4j.create();
+            lt = db4j.submit(txn -> db4j.create(txn, new HunkCount(), path)).awaitb().val;
             for (int ii = 0; ii < 10; ii++) conn.submitQuery( new Task() );
             conn.awaitb();
             lt.db4j.shutdown();
