@@ -272,56 +272,16 @@ public class Db4j extends ConnectionBase implements Serializable {
             long base = Rounder.rup(pcomp+c1+c2,align);
             guts.offerTask(this);
             while (done==false) Simple.sleep(10);
-            CompTask [] cts = new CompTask[ncomp];
-            if (true)
-                return;
-            for (int ii = 0; ii < ncomp; ii++) {
-                arrays.add( null );
-                guts.offerTask( cts[ii] = new CompTask(ii) );
-            }
-            for (int ii=0; ii < ncomp; ii++)
-                cts[ii].awaitb();
-
             System.out.format( "Hunker.load -- %d\n", ncomp );
         }
         public void task() throws Pausable {
-            { 
-                nbc = put( txn, loc.nblocks.read() );
-                ncc = put( txn, loc.ncomp.read() );
-                yield();
-                kryoMap = (Btrees.IS) lookup(txn,PATH_KRYOMAP);
-                logStore = (HunkLog) lookup(txn,PATH_LOGSTORE);
-            }
-            {
-                ncomp = ncc.val;
-            }
-            { done = true; }
-        }
-        class CompTask extends Query {
-            { saveReasons |= 0x01; }
-            Reason reasons;
-            byte [] rdata, ldata;
-            int ii;
-            CompTask(int $ii) { ii = $ii; }
-            public void addReason(String txt) {
-                reasons = Reason.append(reasons,new Reason(txt));
-            }
-            public void reason() {
-                for (Reason reason=reasons; reason != null; reason = reason.next(reasons))
-                    System.out.println( reason );
-            }
-            public void task() throws Pausable {
-                {
-                    byte [] b2 = compRaw.context().set(txn).set("",null).get(compRaw).val;
-                    Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
-                    ha.set(Db4j.this,null).createCommit(ha.kloc);
-                    ha.postLoad(txn);
-                    arrays.set( ii, ha );
-                    System.out.format("Hunker.load.comp -- %d done, %s local:%d\n",
-                            ii, ha.name(), ha.kloc);
-                    count++;
-                }
-            }
+            nbc = put( txn, loc.nblocks.read() );
+            ncc = put( txn, loc.ncomp.read() );
+            yield();
+            kryoMap = (Btrees.IS) lookup(txn,PATH_KRYOMAP);
+            logStore = (HunkLog) lookup(txn,PATH_LOGSTORE);
+            ncomp = ncc.val;
+            done = true;
         }
     }
     void load(long start) {
