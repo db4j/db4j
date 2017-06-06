@@ -533,8 +533,8 @@ public class Db4j extends ConnectionBase implements Serializable {
             arrays = new ArrayList();
             compRaw = new Btrees.IA();
             compLocals = new HunkLocals();
-            compRaw.set(this,PATH_COMP_LOCALS);
-            compLocals.set(this,PATH_COMP_RAW);
+            compRaw.set(this,PATH_COMP_RAW);
+            compLocals.set(this,PATH_COMP_LOCALS);
             kryo = new Example.MyKryo(new HunkResolver()).init();
             doRegistration(kryo);
             kryoFactory = new KryoFactory() {
