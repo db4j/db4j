@@ -117,13 +117,18 @@ public class Db4j extends ConnectionBase implements Serializable {
     static int sleeptime = 10;
     transient FileLock flock;
     transient ClassLoader userClassLoader;
+    
     /**
      * a proxy allowing access to deprecated, experimental and internal methods.
-     * the api and semantics of these methods is expected to change in future versions,
+     * the api and semantics of these methods are expected to change in future versions,
      * and as such should be avoided
+     * @param db4j the Db4j instance
+     * @return an inner class with access methods for the internals
      * @deprecated 
      */
-    public transient Guts guts;
+    public static Zygote zygote(Db4j db4j) { return db4j.guts; }
+
+    protected transient Zygote guts;
 
     public Db4j() {
         super.connectionSetProxy(null,false);
@@ -513,7 +518,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             chan = raf.getChannel();
             chan.force( false );
             flock = chan.tryLock();
-            guts = new Guts();
+            guts = new Zygote();
             if (flock==null) {
                 System.out.println( "Hunker.lock -- not acquired: " + name );
                 throw new RuntimeException( "could not acquire file lock on: " + name );
@@ -648,6 +653,8 @@ public class Db4j extends ConnectionBase implements Serializable {
 
     /** shut down the hunker - callable from outside the qrunner threads */
     public void shutdown() {
+        // fixme - do something similar to guts.fence(null,100) to ensure all in-flight tasks are done
+        // also need to stop accepting new tasks/queries
         ShutdownException sdx = new ShutdownException();
         LinkedList<Exception> causes = sdx.causes;
         guts.offerTask( new Shutdown() );
@@ -676,8 +683,17 @@ public class Db4j extends ConnectionBase implements Serializable {
     }
 
     
-    public class Guts {
-        protected Guts() {}
+    /**
+     * a proxy allowing access to deprecated, experimental and internal methods.
+     * the api and semantics of these methods are expected to change in future versions,
+     * and as such should be avoided.
+     * they're provided mostly to facilitate more accurate measurement of performance.
+     * the name was chosen to suggest that the methods are low-level and internal, and to place
+     * it at the end of auto-complete lists that are often alphabetic
+     * @deprecated 
+     */
+    public class Zygote {
+        protected Zygote() {}
         /** force the cache to be committed to disk ... on return the commit is complete */
         public void forceCommit(int delay) {
             Db4j.ForceCommit commit = new Db4j.ForceCommit();
@@ -721,7 +737,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
 
         /** offer a new task and return it */
-        public <TT extends Queable> TT offerTask(TT task) {
+        protected <TT extends Queable> TT offerTask(TT task) {
             qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
             return task;
         }

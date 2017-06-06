@@ -41,7 +41,7 @@ public class DemoOverflow {
         db4j.submitCall(txn -> {
             map = db4j.create(txn, new HunkArray.I(), DemoEntropy.PATH_MAP);
         }).awaitb();
-        db4j.guts.forceCommit(100);
+        Db4j.zygote(db4j).forceCommit(100);
     }
     org.srlutils.rand.Source r1 = new org.srlutils.rand.Source();
     { 

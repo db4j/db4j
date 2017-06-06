@@ -90,7 +90,8 @@ public class DemoHunker {
                 super.rollback(db4j,restart);
             }
             public String report() {
-                return String.format( ", nback: %5d, nwait: %5d\n", nback, db4j.guts.stats2() );
+                int nwait = Db4j.zygote(db4j).stats2();
+                return String.format(", nback: %5d, nwait: %5d\n", nback, nwait);
             }
 
             public boolean postRun(boolean pre) {
@@ -174,7 +175,7 @@ public class DemoHunker {
             boolean success();
         }
         public void report(double tc,String report) {
-            int ios = db4j.guts.stats();
+            int ios = Db4j.zygote(db4j).stats();
             System.out.format( "Demo::%-10s - %5.2fs --> %5.1f iops, %5.2f iopt%s\n",
                     taskKlass.getSimpleName(), tc, 1.0*ios/tc, 1.0*ios/nn, report );
         }
@@ -243,10 +244,10 @@ public class DemoHunker {
                 if (! async) t2.awaitb();
             }
             while (done < niter) Simple.sleep(100);
-            db4j.guts.sync();
+            Db4j.zygote(db4j).sync();
             double tc = timer.tock();
             report( tc, task.report() );
-            db4j.guts.dontneed();
+            Db4j.zygote(db4j).dontneed();
             if (taskKlass==WriteTask.class && false)
                 new Query() { public void task() throws Pausable {
                     arrays[0].printMetaHunkInfo(txn);
@@ -340,7 +341,7 @@ public class DemoHunker {
                 start();
                 if (drop) DioNative.dropCache();
                 test();
-                if (dbg) db4j.guts.info();
+                if (dbg) Db4j.zygote(db4j).info();
 //                Simple.sleep(1000);
 //                hunker.forceCommit(10);
                 db4j.shutdown();
