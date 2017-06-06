@@ -142,9 +142,6 @@ public class Db4j extends ConnectionBase implements Serializable {
         can't force the user to call some intermediate cleanup
         needs to be callable from multiple threads
         need to be able to mix query.await() and conn.await() calls
-        
-    
-    
     */
     public static class Connection extends ConnectionBase {
         static int thresh = 512;
@@ -222,6 +219,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         /** record timing info for the disk loop */
         public final boolean dtime = false;
         public final boolean checkTasksList = false;
+        int maxcmds = 0;
     }
 
     static class Loc {
@@ -1733,7 +1731,6 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
         public boolean dontRead() { return true; }
     }
-    public static int maxcmds = 0;
     static class BlockNode implements Predicable, Comparable<BlockNode> {
         long kblock;
         /** the entire block will be written */  boolean full = false;
@@ -1755,7 +1752,7 @@ public class Db4j extends ConnectionBase implements Serializable {
                 cmds.add(cmd);
             writ = true;
 //            if (cmds.max > maxcmds) maxcmds = cmds.max;
-            maxcmds++;
+            debug.maxcmds++;
         }
         void addRead(Command cmd) {
             cmds.add(cmd);
