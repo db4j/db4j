@@ -130,7 +130,11 @@ public class Db4j extends ConnectionBase implements Serializable {
 
     protected transient Zygote guts;
 
-    public Db4j() {
+    public Db4j(String name,Long fileSize) {
+        this();
+        Db4j.this.init(name,fileSize);
+    }
+    protected Db4j() {
         super.connectionSetProxy(null,false);
     }
 
@@ -478,7 +482,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      * @param fileSize the file size, negative values will only grow the file and null leaves it unchanged
      * @return the instance, ie this
      */
-    public Db4j init(String name,Long fileSize) {
+    protected Db4j init(String name,Long fileSize) {
         initFields(name,fileSize);
         create();
         return this;

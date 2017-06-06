@@ -64,7 +64,7 @@ public class Database {
      * @return this
      */
     public Db4j start(String filename,boolean build) {
-        Db4j local = build ? new Db4j().init(filename, -(2L<<30)) : Db4j.load(filename );
+        Db4j local = build ? new Db4j(filename, -(2L<<30)) : Db4j.load(filename );
         local.userClassLoader = this.getClass().getClassLoader();
         if (build)
             build(local,true);

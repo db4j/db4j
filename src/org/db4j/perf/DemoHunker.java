@@ -321,7 +321,7 @@ public class DemoHunker {
                 // don't auto delete the file ... it takes forever to recreate it (limit of linux/ext3)
                 //                file.delete();
                 long fileSize = (size*8 + size*8/128)*nstores + (1<<20) + (1<<30);
-                db4j = new Db4j().init(name, fileSize);
+                db4j = new Db4j(name, fileSize);
                 db4j.submitCall(txn -> {
                     for (int ii = 0; ii < nstores; ii++)
                         arrays[ii] = db4j.create(txn, new HunkArray.L(),PATH_BASE + ii);

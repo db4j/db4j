@@ -31,7 +31,7 @@ public class DemoEntropy {
         }).awaitb();
     }
     public void init() {
-        db4j = new Db4j().init(filename, null); // 1L << 32 );
+        db4j = new Db4j(filename, null); // 1L << 32 );
         conn = db4j.connect();
         db4j.submitCall(txn -> {
             map = db4j.create(txn, new HunkArray.I(), PATH_MAP);

@@ -74,7 +74,7 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         }
         
         public void demo() {
-            db4j = new Db4j().init(name, null);
+            db4j = new Db4j(name, null);
             Db4j.Connection conn = db4j.connect();
             lt = db4j.submit(txn -> db4j.create(txn, new HunkCount(), path)).awaitb().val;
             for (int ii = 0; ii < 10; ii++) conn.submitQuery( new Task() );

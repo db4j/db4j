@@ -513,7 +513,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         void close() { db4j.shutdown(); }
         public void init() {
             seed = rand.setSeed(null,false);
-            db4j = new Db4j().init(filename, null); // 1L << 32 );
+            db4j = new Db4j(filename, null); // 1L << 32 );
             db4j.submit(txn -> db4j.create(txn, map, PATH_MAP)).awaitb();
             db4j.guts.forceCommit(100);
             if (reopen) close();
@@ -596,7 +596,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         }
         
         public void demo() {
-            db4j = new Db4j().init(name, null); // 1L << 32 );
+            db4j = new Db4j(name, null); // 1L << 32 );
             int nn = 1347-7;
             lt = db4j.submit(txn -> db4j.create(txn, new DF(), PATH_MAP)).awaitb().val;
             Db4j.Connection conn = db4j.connect();

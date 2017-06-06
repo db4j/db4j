@@ -275,7 +275,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
     String filename = DemoHunker.resolve("./db_files/b6.mmap");
     Db4j db4j;
     public void init() {
-        db4j = new Db4j().init(filename, null); // 1L << 32 );
+        db4j = new Db4j(filename, null); // 1L << 32 );
         db4j.submit(txn -> db4j.create(txn, map, PATH)).awaitb();
         Db4j.zygote(db4j).forceCommit(100);
     }
