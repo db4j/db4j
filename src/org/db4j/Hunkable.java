@@ -1,9 +1,11 @@
 package org.db4j;
 
+import java.io.Serializable;
 import kilim.Pausable;
 import org.srlutils.Types;
 
-public abstract class Hunkable<TT extends Hunkable> {
+public abstract class Hunkable<TT extends Hunkable> implements Serializable {
+    long kloc;
     protected abstract String info();
     protected abstract int create();
     protected abstract void createCommit(long locBase);

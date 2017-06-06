@@ -99,7 +99,6 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient Loc loc;
     transient boolean live;
     transient Btrees.IA compRaw;
-    transient HunkLocals compLocals;
     transient Btrees.IS kryoMap;
     transient HunkLog logStore;
 
@@ -111,7 +110,6 @@ public class Db4j extends ConnectionBase implements Serializable {
     protected static final Debug debug = new Debug();
     static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
     static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
-    static final String PATH_COMP_LOCALS = "///db4j/hunker/compLocals";
     static final String PATH_COMP_RAW = "///db4j/hunker/compRaw";
 
     static int sleeptime = 10;
@@ -232,6 +230,8 @@ public class Db4j extends ConnectionBase implements Serializable {
         final Hunkable.LocalInt nblocks = new Hunkable.LocalInt( locals );
         /** number of allocated components */
         Hunkable.LocalInt ncomp = new Hunkable.LocalInt( locals );
+        /** location of the next free byte in the locals table */
+        Hunkable.LocalInt last = new Hunkable.LocalInt( locals );
     }
 
     /** load the Composite from the name'd file */
@@ -264,12 +264,11 @@ public class Db4j extends ConnectionBase implements Serializable {
         void load(long $start) {
             start = $start;
             c1 = compRaw.create();
-            c2 = compLocals.create();
+            c2 = 0;
             long rawlen = Rounder.rup(start,align);
             long pcomp = rawlen + loc.locals.size();
             loc.locals.set(Db4j.this, rawlen );
             compRaw.createCommit(pcomp);
-            compLocals.createCommit(pcomp+c1);
             long base = Rounder.rup(pcomp+c1+c2,align);
             guts.offerTask(this);
             while (done==false) Simple.sleep(10);
@@ -313,14 +312,11 @@ public class Db4j extends ConnectionBase implements Serializable {
                 {
                     byte [] b2 = compRaw.context().set(txn).set(ii,null).get(compRaw).val;
                     Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
-                    Command.RwInt cmd = compLocals.get(txn,ii);
-                    yield();
-                    long kloc = cmd.val;
-                    ha.set(Db4j.this,null).createCommit(kloc);
+                    ha.set(Db4j.this,null).createCommit(ha.kloc);
                     ha.postLoad(txn);
                     arrays.set( ii, ha );
-                    System.out.format( "Hunker.load.comp -- %d done, %s local:%d cmd:%d\n",
-                            ii, ha.name(), kloc, cmd.val );
+                    System.out.format("Hunker.load.comp -- %d done, %s local:%d\n",
+                            ii, ha.name(), ha.kloc);
                     count++;
                 }
             }
@@ -439,14 +435,14 @@ public class Db4j extends ConnectionBase implements Serializable {
                 put( txn, ii<<bb, new Command.Init() );
             put( txn, loc.nblocks.write((int) firstBlock) );
             put( txn, loc.ncomp.write(0) );
+            put( txn, loc.last.write(0) );
             iocmd( txn, 0, raw, true );
             // fixme::performance -- use compLocals for loc.locals
             //   would save a spot in cache and increase the likelihood of loc.nblock being hot
             //   bit of a chicken and the egg problem though
             int c1 = compRaw.create();
-            int c2 = compLocals.create();
+            int c2 = 0;
             compRaw.createCommit( pcomp );
-            compLocals.createCommit( pcomp+c1 );
             compRaw.init( compRaw.context().set(txn) );
             long base = Rounder.rup(pcomp+c1+c2,align);
             Simple.softAssert(base < 1L*Db4j.this.bs*runner.journalBase );
@@ -463,15 +459,15 @@ public class Db4j extends ConnectionBase implements Serializable {
         return guts.lookup(name);
     }
     public <HH extends Hunkable> HH create(Transaction txn,HH ha,String name) throws Pausable {
-        ha.set(this,name);
-        byte [] araw = org.srlutils.Files.save(ha);
         Command.RwInt ncomp = put(txn, loc.ncomp.read());
         txn.submitYield();
+        ha.set(this,name);
+        int len = ha.create();
+        ha.kloc = HunkLocals.alloc(this,loc.last,ncomp.val,len,txn);
+        byte [] araw = org.srlutils.Files.save(ha);
         compRaw.context().set(txn).set(ncomp.val,araw).insert(compRaw);
         put(txn,loc.ncomp.write(ncomp.val+1));
-        int len = ha.create();
-        long offset = compLocals.alloc(ncomp.val,len,txn);
-        ha.createCommit(offset);
+        ha.createCommit(ha.kloc);
         ha.postInit(txn);
         System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
         return ha;
@@ -532,9 +528,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             qrunner = new QueRunner(this);
             arrays = new ArrayList();
             compRaw = new Btrees.IA();
-            compLocals = new HunkLocals();
             compRaw.set(this,PATH_COMP_RAW);
-            compLocals.set(this,PATH_COMP_LOCALS);
             kryo = new Example.MyKryo(new HunkResolver()).init();
             doRegistration(kryo);
             kryoFactory = new KryoFactory() {
@@ -769,10 +763,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             if (conflict) return guts.lookup(txn,index);
             byte [] b2 = compRaw.context().set(txn).set(index,null).get(compRaw).val;
             ha = (Hunkable) org.srlutils.Files.load(b2);
-            Command.RwInt cmd = compLocals.get(txn,index);
-            txn.submitYield();
-            long kloc = cmd.val;
-            ha.set(Db4j.this,null).createCommit(kloc);
+            ha.set(Db4j.this,null).createCommit(ha.kloc);
             arrays.set(index,ha);
             return ha;
         }
