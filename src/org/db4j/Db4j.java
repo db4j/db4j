@@ -231,7 +231,7 @@ public class Db4j extends ConnectionBase implements Serializable {
     public static Db4j load(String name) {
         DiskObject disk = org.srlutils.Files.load(name);
         Db4j ld = (Db4j) disk.object;
-        ld.init( name, null );
+        ld.initFields( name, null );
         ld.load( (int) disk.size );
         return ld;
     }
@@ -399,7 +399,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      *   the page data for the components starts here ...
      *
      */
-    public void create() {
+    protected void create() {
         kryoMap = register(new Btrees.IS(),PATH_KRYOMAP);
         logStore = register(new HunkLog(),PATH_LOGSTORE);
         start();
@@ -469,11 +469,23 @@ public class Db4j extends ConnectionBase implements Serializable {
         System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
         return ha;
     }
+    /**
+     * initialize a new instance and create the database
+     * @param name the file name
+     * @param fileSize the file size, negative values will only grow the file and null leaves it unchanged
+     * @return the instance, ie this
+     */
+    public Db4j init(String name,Long fileSize) {
+        initFields(name,fileSize);
+        create();
+        return this;
+    }
     /** 
+     * common routines for initializing new instances and instances loaded from disk 
      * initialize all the transient fields
      * called for both initial creation and after loading from disk
      */
-    public Db4j init(String name,Long fileSize) {
+    protected Db4j initFields(String name,Long fileSize) {
         try {
             bs = 1<<bb;
             bm = bs-1;

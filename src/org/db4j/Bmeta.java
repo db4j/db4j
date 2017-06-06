@@ -527,8 +527,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             new Demo().demo();
         }
         public void demo() {
-            db4j = new Db4j().init( filename, null );
-            db4j.create();
+            db4j = new Db4j().init(filename, null);
             lt = db4j.submit(txn -> db4j.create(txn, new Btrees.IA(), PATH_MAP)).awaitb().val;
             Db4j.Connection conn = db4j.connect();
             db4j.guts.forceCommit(100);
@@ -584,8 +583,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         boolean reopen = false;
         { sntext = "put get rem chk"; }
         public void init2() {
-            db4j = new Db4j().init( filename, null ); // 1L << 32 );
-            db4j.create();
+            db4j = new Db4j().init(filename, null); // 1L << 32 );
             lt = db4j.submit(txn -> db4j.create(txn, new DF2(), PATH_MAP)).awaitb().val;
             db4j.guts.forceCommit(100);
         }

@@ -313,24 +313,21 @@ public class DemoHunker {
         public void start() {
             String name = mapFilename;
             //            name = "/dev/sdb2";
-            db4j = new Db4j();
-            File file = new File( name );
+            File file = new File(name);
+            arrays = new HunkArray.L[ nstores ];
+
             if ( ! file.exists() || force ) {
                 // don't auto delete the file ... it takes forever to recreate it (limit of linux/ext3)
                 //                file.delete();
                 long fileSize = (size*8 + size*8/128)*nstores + (1<<20) + (1<<30);
-                db4j.init( name, fileSize );
-                arrays = new HunkArray.L[ nstores ];
-                db4j.create();
+                db4j = new Db4j().init(name, fileSize);
                 db4j.submitCall(txn -> {
                     for (int ii = 0; ii < nstores; ii++)
                         arrays[ii] = db4j.create(txn, new HunkArray.L(),PATH_BASE + ii);
                 }).awaitb();
             }
             else {
-                db4j = Db4j.load( name );
-                arrays = new HunkArray.L[ nstores ];
-
+                db4j = Db4j.load(name);
                 db4j.submitCall(txn -> {
                     for (int ii=0; ii < nstores; ii++)
                         arrays[ii] = (HunkArray.L) db4j.lookup(txn,PATH_BASE + ii);
