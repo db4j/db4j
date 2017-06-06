@@ -98,7 +98,7 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient String name;
     transient Loc loc;
     transient boolean live;
-    transient Btrees.IA compRaw;
+    transient Btrees.SA compRaw;
     transient Btrees.IS kryoMap;
     transient HunkLog logStore;
 
@@ -273,14 +273,14 @@ public class Db4j extends ConnectionBase implements Serializable {
             guts.offerTask(this);
             while (done==false) Simple.sleep(10);
             CompTask [] cts = new CompTask[ncomp];
+            if (true)
+                return;
             for (int ii = 0; ii < ncomp; ii++) {
                 arrays.add( null );
                 guts.offerTask( cts[ii] = new CompTask(ii) );
             }
             for (int ii=0; ii < ncomp; ii++)
                 cts[ii].awaitb();
-            kryoMap = (Btrees.IS) guts.lookup(PATH_KRYOMAP);
-            logStore = (HunkLog) guts.lookup(PATH_LOGSTORE);
 
             System.out.format( "Hunker.load -- %d\n", ncomp );
         }
@@ -289,6 +289,8 @@ public class Db4j extends ConnectionBase implements Serializable {
                 nbc = put( txn, loc.nblocks.read() );
                 ncc = put( txn, loc.ncomp.read() );
                 yield();
+                kryoMap = (Btrees.IS) lookup(txn,PATH_KRYOMAP);
+                logStore = (HunkLog) lookup(txn,PATH_LOGSTORE);
             }
             {
                 ncomp = ncc.val;
@@ -310,7 +312,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             }
             public void task() throws Pausable {
                 {
-                    byte [] b2 = compRaw.context().set(txn).set(ii,null).get(compRaw).val;
+                    byte [] b2 = compRaw.context().set(txn).set("",null).get(compRaw).val;
                     Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
                     ha.set(Db4j.this,null).createCommit(ha.kloc);
                     ha.postLoad(txn);
@@ -451,12 +453,12 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
     }
     public Hunkable lookup(Transaction txn,String name) throws Pausable {
-        Command.RwInt ncomp = put(txn, loc.ncomp.read());
-        txn.submitYield();
-        int num = arrays.size();
-        for (int ii=num; ii < ncomp.val; ii++)
-            guts.lookup(txn,ii);
-        return guts.lookup(name);
+        byte [] b2 = compRaw.context().set(txn).set(name,null).get(compRaw).val;
+        if (b2==null) return null;
+        Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
+        ha.set(Db4j.this,null).createCommit(ha.kloc);
+        ha.postLoad(txn);
+        return ha;
     }
     public <HH extends Hunkable> HH create(Transaction txn,HH ha,String name) throws Pausable {
         Command.RwInt ncomp = put(txn, loc.ncomp.read());
@@ -465,7 +467,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         int len = ha.create();
         ha.kloc = HunkLocals.alloc(this,loc.last,ncomp.val,len,txn);
         byte [] araw = org.srlutils.Files.save(ha);
-        compRaw.context().set(txn).set(ncomp.val,araw).insert(compRaw);
+        compRaw.context().set(txn).set(ha.name(),araw).insert(compRaw);
         put(txn,loc.ncomp.write(ncomp.val+1));
         ha.createCommit(ha.kloc);
         ha.postInit(txn);
@@ -527,7 +529,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             runner = new Runner(this);
             qrunner = new QueRunner(this);
             arrays = new ArrayList();
-            compRaw = new Btrees.IA();
+            compRaw = new Btrees.SA();
             compRaw.set(this,PATH_COMP_RAW);
             kryo = new Example.MyKryo(new HunkResolver()).init();
             doRegistration(kryo);
@@ -736,36 +738,6 @@ public class Db4j extends ConnectionBase implements Serializable {
         protected <TT extends Queable> TT offerTask(TT task) {
             qrunner.quetastic.offer( qrunner.commandQ, task, Quetastic.Mode.Limit );
             return task;
-        }
-        Hunkable lookup(String name) {
-            for (Hunkable ha : arrays)
-                if (ha.name().equals( name )) return ha;
-            return null;
-        }
-        Hunkable lookup(Transaction txn,int index) throws Pausable {
-            Hunkable ha;
-            if (index < arrays.size()) {
-                while ((ha = arrays.get(index))==null) kilim.Task.sleep(10);
-                return ha;
-            }
-            Command.RwInt ncomp = put(txn, loc.ncomp.read());
-            txn.submitYield();
-            if (index >= ncomp.val) return null;
-            boolean conflict = false;
-            synchronized (arrays) {
-                if (index < arrays.size())
-                    conflict = true;
-                else if (index==arrays.size())
-                    arrays.add(null);
-                else
-                    throw new RuntimeException();
-            }
-            if (conflict) return guts.lookup(txn,index);
-            byte [] b2 = compRaw.context().set(txn).set(index,null).get(compRaw).val;
-            ha = (Hunkable) org.srlutils.Files.load(b2);
-            ha.set(Db4j.this,null).createCommit(ha.kloc);
-            arrays.set(index,ha);
-            return ha;
         }
     }
 

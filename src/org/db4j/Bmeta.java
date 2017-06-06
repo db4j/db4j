@@ -441,6 +441,18 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             return k1;
         }
     }
+    public static abstract class Stoast<TT> extends Toast<String,TT,Bstring.ValsString> {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Toast<String,TT,Bstring.ValsString>.Data context,boolean greater) {
+            for (; k1<num; k1+=step) {
+                int cmp = keys.compare(context.key,page,k1,context.keydata);
+                if (greater & cmp==0) cmp = 1;
+                if (cmp <= 0) break;
+            }
+            if (step > 1)
+                return findLoop(page,k1-step,num,1,context,greater);
+            return k1;
+        }
+    }
 
 
 

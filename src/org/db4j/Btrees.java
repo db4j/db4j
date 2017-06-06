@@ -38,6 +38,9 @@ public class Btrees {
     public static class IS extends Itoast<String> {
         { setup(new Btypes.ValsInt(),v2 = new Bhunk.ValsStringx()); }
     }
+    public static class SA extends Bmeta.Stoast<byte[]> {
+        { setup(new Bstring.ValsString(),v2 = new Bhunk.ValsBytex()); }
+    }
     public static class IO<TT extends Serializable> extends Itoast<TT> {
         { setup(new Btypes.ValsInt(),v2 = new Bhunk.ValsObject()); }
     }
