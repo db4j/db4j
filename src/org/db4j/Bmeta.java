@@ -58,7 +58,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         public CC set(KK $key,VV $val) { key = $key; val = $val; return (CC) this; }
         protected void init(Bmeta<?,KK,VV,?> map) {
             boolean prefix = Btree.modes.prefix(mode);
-            keydata = map.keys.compareData(key,prefix,keydata);
+            if (key != null) keydata = map.keys.compareData(key,prefix,keydata);
             if (val != null) valdata = map.vals.compareData(val,prefix,null);
         }
         public CC find(Bmeta map) throws Pausable {
