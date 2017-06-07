@@ -28,6 +28,7 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
     protected String name() { return name; }
     
     protected String info() {
+        if (true) return getClass().getName();
         // fixme -- this is all pre-kilim and isn't meaningful anymore
         //   should be stripped down to what can be found without pauses
         //   and another method introduce that is Pausable that captures everything else

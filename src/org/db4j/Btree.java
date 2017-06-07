@@ -936,7 +936,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         protected void postLoad(Transaction txn) throws Pausable {}
     }
     /** return an array of depth and number of pages */
-    public int [] getInfo() { return null; }
+    public int [] getInfo() { return new int[] {-1,-1}; }
     protected String info() {
         int [] info = getInfo();
         return String.format("Btree depth:%d, pages:%d\n", info[0], info[1]);
