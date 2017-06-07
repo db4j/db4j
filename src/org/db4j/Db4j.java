@@ -94,7 +94,6 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient volatile Generation pending;
     transient FileChannel chan;
     /** the unix file descriptor */  transient int ufd;
-    transient ArrayList<Hunkable> arrays;
     transient String name;
     transient Loc loc;
     transient boolean live;
@@ -242,11 +241,6 @@ public class Db4j extends ConnectionBase implements Serializable {
         ld.load( (int) disk.size );
         return ld;
     }
-    <HH extends Hunkable> HH register(HH ha,String name) {
-        arrays.add(ha);
-        ha.set(this,name);
-        return ha;
-    }
     /** read the range [k1, k2), values are live, ie must be fenced */
     byte [] readRange(Transaction txn,long k1,long k2) {
         int len = (int) (k2 - k1);
@@ -365,8 +359,6 @@ public class Db4j extends ConnectionBase implements Serializable {
      *
      */
     protected void create() {
-        kryoMap = register(new Btrees.IS(),PATH_KRYOMAP);
-        logStore = register(new HunkLog(),PATH_LOGSTORE);
         start();
 
         CreateTask ct = new CreateTask();
@@ -389,8 +381,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             int rawlen = Rounder.rup(raw.length,align);
             int pcomp = rawlen+loc.locals.size();
             loc.locals.set(Db4j.this, rawlen );
-            int ncomp = arrays.size();
-            System.out.format( "Hunker.create -- %d\n", ncomp );
+            System.out.format( "Hunker.create\n" );
             long nblocks = runner.journalBase;
             long firstBlock = nblocks + runner.journalSize;
             for (int ii = 0; ii < nblocks; ii++)
@@ -408,8 +399,8 @@ public class Db4j extends ConnectionBase implements Serializable {
             compRaw.init( compRaw.context().set(txn) );
             long base = Rounder.rup(pcomp+c1+c2,align);
             Simple.softAssert(base < 1L*Db4j.this.bs*runner.journalBase );
-            for (Hunkable ha : arrays)
-                create(txn,ha,null);
+            kryoMap = create(txn,new Btrees.IS(),PATH_KRYOMAP);
+            logStore = create(txn,new HunkLog(),PATH_LOGSTORE);
         }
     }
     public Hunkable lookup(Transaction txn,String name) throws Pausable {
@@ -488,7 +479,6 @@ public class Db4j extends ConnectionBase implements Serializable {
             pending = null;
             runner = new Runner(this);
             qrunner = new QueRunner(this);
-            arrays = new ArrayList();
             compRaw = new Btrees.SA();
             compRaw.set(this,PATH_COMP_RAW);
             kryo = new Example.MyKryo(new HunkResolver()).init();
@@ -690,8 +680,14 @@ public class Db4j extends ConnectionBase implements Serializable {
         public int stats() { return runner.stats.totalReads + runner.stats.totalWrites; }
         public int stats2() { return runner.stats.nwait; }
         public void info() {
-            for (Hunkable array : arrays)
-                System.out.format( "Hunker.info:%20s:: %s\n", array.name(), array.info() );
+            submitCall(txn -> {
+                Btrees.SA.Data context = compRaw.context().set(txn);
+                Bmeta.Range range = compRaw.getall(context);
+                while (range.next()) {
+                    Hunkable column = (Hunkable) org.srlutils.Files.load(context.val);
+                    System.out.format("Hunker.info:%-30s :: %s\n", context.key, column.getClass().getName());
+                }
+            }).awaitb();
         }
 
         /** offer a new task and return it */
