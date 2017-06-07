@@ -72,22 +72,27 @@ public class Db4j extends ConnectionBase implements Serializable {
     static ByteOrder byteOrder = ByteOrder.nativeOrder();
     private static final boolean checkStatus = false;
     static boolean dio = ! DioNative.skip;
-    
-
-
-
-
 
     // this seems to work with 10-13 ... not sure why 9 bits is breaking
     /** the hunker block size */
     static int blockSize = 12;
 
     static final long serialVersionUID = 3365051556209870876L;
+    protected static final Debug debug = new Debug();
+    static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
+    static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
+    static final String PATH_COMP_RAW = "///db4j/hunker/compRaw";
+
+    static int sleeptime = 10;
+
+
+
+
     transient RandomAccessFile raf;
     /** bits per block        */            int  bb = Db4j.blockSize;
     /** block size            */  transient int  bs;
     /** block offset bit mask */  transient long bm;
-    long size;
+    transient long size;
     transient Runner runner;
     transient QueRunner qrunner;
     transient Thread thread, qthread;
@@ -101,20 +106,17 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient Btrees.IS kryoMap;
     transient HunkLog logStore;
 
+    transient FileLock flock;
+    transient ClassLoader userClassLoader;
+    transient BlocksUtil util;
+
     transient Example.MyKryo kryo;
     transient KryoFactory kryoFactory;
     transient KryoPool kryoPool;
+
     Example.MyKryo kryo() { return ((Example.MyKryo) kryoPool.borrow()).pool(kryoPool); }
 
-    protected static final Debug debug = new Debug();
-    static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
-    static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
-    static final String PATH_COMP_RAW = "///db4j/hunker/compRaw";
 
-    static int sleeptime = 10;
-    transient FileLock flock;
-    transient ClassLoader userClassLoader;
-    
     /**
      * a proxy allowing access to deprecated, experimental and internal methods.
      * the api and semantics of these methods are expected to change in future versions,
@@ -199,7 +201,6 @@ public class Db4j extends ConnectionBase implements Serializable {
         System.gc();
     }
 
-    transient BlocksUtil util;
     class BlocksUtil {
         /** return the number of blocks needed for size bytes */
         int nblocks(int size) { return (size+bs-1) >> bb; }
@@ -236,17 +237,10 @@ public class Db4j extends ConnectionBase implements Serializable {
     /** load the Composite from the name'd file */
     public static Db4j load(String name) {
         DiskObject disk = org.srlutils.Files.load(name);
-        Db4j ld = (Db4j) disk.object;
-        ld.initFields( name, null );
-        ld.load( (int) disk.size );
-        return ld;
-    }
-    /** read the range [k1, k2), values are live, ie must be fenced */
-    byte [] readRange(Transaction txn,long k1,long k2) {
-        int len = (int) (k2 - k1);
-        byte [] araw = new byte[ len ];
-        iocmd( txn, k1, araw, false );
-        return araw;
+        Db4j db4j = (Db4j) disk.object;
+        db4j.initFields(name, null);
+        db4j.load((int) disk.size);
+        return db4j;
     }
     class LoadTask extends Task {
         volatile int count;
