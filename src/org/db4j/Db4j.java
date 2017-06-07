@@ -397,6 +397,12 @@ public class Db4j extends ConnectionBase implements Serializable {
             logStore = create(txn,new HunkLog(),PATH_LOGSTORE);
         }
     }
+    /**
+     * get a Hunkable from the database
+     * @param txn the transaction
+     * @param name the name of the structure
+     * @return the structure
+     */
     public Hunkable lookup(Transaction txn,String name) throws Pausable {
         byte [] b2 = compRaw.context().set(txn).set(name,null).get(compRaw).val;
         if (b2==null) return null;
@@ -405,6 +411,14 @@ public class Db4j extends ConnectionBase implements Serializable {
         ha.postLoad(txn);
         return ha;
     }
+    /**
+     * store a Hunkable in the database
+     * @param <HH> the type of the Hunkable
+     * @param txn the transaction
+     * @param ha the Hunkable to store
+     * @param name the name that it will be stored under
+     * @return the Hunkable
+     */
     public <HH extends Hunkable> HH create(Transaction txn,HH ha,String name) throws Pausable {
         Command.RwInt ncomp = put(txn, loc.ncomp.read());
         txn.submitYield();
