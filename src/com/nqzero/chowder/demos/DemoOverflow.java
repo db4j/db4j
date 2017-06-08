@@ -32,7 +32,7 @@ public class DemoOverflow {
         db4j = Db4j.load(filename);
         conn = db4j.connect();
         db4j.submitCall(txn -> {
-            map = (HunkArray.I) db4j.lookup(txn,DemoEntropy.PATH_MAP);
+            map = db4j.lookup(txn,DemoEntropy.PATH_MAP);
         }).awaitb();
     }
     public void init() {

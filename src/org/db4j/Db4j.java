@@ -266,8 +266,8 @@ public class Db4j extends ConnectionBase implements Serializable {
             nbc = put( txn, loc.nblocks.read() );
             ncc = put( txn, loc.ncomp.read() );
             yield();
-            kryoMap = (Btrees.IS) lookup(txn,PATH_KRYOMAP);
-            logStore = (HunkLog) lookup(txn,PATH_LOGSTORE);
+            kryoMap = lookup(txn,PATH_KRYOMAP);
+            logStore = lookup(txn,PATH_LOGSTORE);
             ncomp = ncc.val;
             done = true;
         }
@@ -399,17 +399,18 @@ public class Db4j extends ConnectionBase implements Serializable {
     }
     /**
      * get a Hunkable from the database
+     * @param <HH> the type of the Hunkable
      * @param txn the transaction
      * @param name the name of the structure
      * @return the structure
      */
-    public Hunkable lookup(Transaction txn,String name) throws Pausable {
+    public <HH extends Hunkable> HH lookup(Transaction txn,String name) throws Pausable {
         byte [] b2 = compRaw.context().set(txn).set(name,null).get(compRaw).val;
         if (b2==null) return null;
         Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
         ha.set(Db4j.this,null).createCommit(ha.kloc);
         ha.postLoad(txn);
-        return ha;
+        return (HH) ha;
     }
     /**
      * store a Hunkable in the database

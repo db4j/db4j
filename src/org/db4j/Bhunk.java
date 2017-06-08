@@ -522,7 +522,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             rand.setSeed(seed,false);
             if (reopen) db4j = Db4j.load(filename);
             Db4j.Connection conn = db4j.connect();
-            map = db4j.submit(txn -> (TT) db4j.lookup(txn,PATH_MAP)).awaitb().val;
+            db4j.submit(txn -> map = db4j.lookup(txn,PATH_MAP)).awaitb();
             for (int ii = 0; ii < nn; ii++) {
                 final int jj = ii;
                 final float v1 = 0.01f*jj, goal = stage==3 ? -1f:v1;

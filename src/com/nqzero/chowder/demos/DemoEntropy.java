@@ -26,8 +26,8 @@ public class DemoEntropy {
         db4j = Db4j.load(filename);
         conn = db4j.connect();
         db4j.submitCall(txn -> {
-            map = (HunkArray.I) db4j.lookup(txn,PATH_MAP);
-            buildSeed = (HunkCount) db4j.lookup(txn,PATH_COUNT);
+            map = db4j.lookup(txn,PATH_MAP);
+            buildSeed = db4j.lookup(txn,PATH_COUNT);
         }).awaitb();
     }
     public void init() {
