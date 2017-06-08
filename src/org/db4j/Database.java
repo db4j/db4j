@@ -121,7 +121,7 @@ public class Database {
                 String name = filename(field);
                 int ktable = jj++;
                 conn.submitCall(txn -> {
-                    Hunkable composite = db4j.lookup(txn,name);
+                    Hunkable composite = txn.lookup(name);
                     if (overwrite || composite == null) {
                         composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false );
                         db4j.create(txn,composite,name);
@@ -140,7 +140,7 @@ public class Database {
                 String filename = filename(field);
                 int kcol = jj++;
                 conn.submitCall(txn -> {
-                    Hunkable composite = db4j.lookup(txn,filename);
+                    Hunkable composite = txn.lookup(filename);
                     if (composite == null) {
                         String err = String.format( "failed to find Hunkable: %s, as field: %s",
                                 filename, field.getName() );

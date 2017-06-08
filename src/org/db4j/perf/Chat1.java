@@ -52,6 +52,7 @@ public class Chat1 extends Database {
         String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
         String PATH_K2 = "///chat1/k2";
         int key = 707;
+        Btrees.IS k2 = new Btrees.IS();
         
         if (args.length==0) {
             Chat1 hello = new Chat1();
@@ -64,7 +65,6 @@ public class Chat1 extends Database {
                     System.out.println(hello.route("/get/2"));
                 }
             }.start().joinb();
-            Btrees.IS k2 = new Btrees.IS();
             db4j.submitCall(txn -> { db4j.create(txn,k2,PATH_K2); }).awaitb();
             db4j.submitCall(txn -> { k2.insert(txn,key,"hello world"); }).awaitb();
             hello.shutdown(true);
@@ -73,13 +73,17 @@ public class Chat1 extends Database {
         {
             Chat1 hello = new Chat1();
             Db4j db4j = hello.start(filename,false);
-            String klass = db4j.submit(txn -> 
-                    ((Btrees.IS) db4j.lookup(txn,PATH_K2)).find(txn,key)
+            // can lookup by either class or value, it's just used for type inference
+            String klass = db4j.submit(txn ->
+                    txn.lookup(Btrees.IS.class,PATH_K2).find(txn,key)
+            ).awaitb().val;
+            String klass3 = db4j.submit(txn -> 
+                    txn.lookup(k2,PATH_K2).find(txn,key)
             ).awaitb().val;
             Db4j.Connection conn = db4j.connect();
             Db4j.Utils.LambdaQuery query;
             for (int ii = 0; ii < 4; ii++) {
-                query = conn.submit(txn -> ((Btrees.IS) db4j.lookup(txn,PATH_K2)).find(txn,key));
+                query = conn.submit(txn -> txn.lookup(Btrees.IS.class,PATH_K2).find(txn,key));
                 if (ii<2)          query.awaitb();
                 if (ii==0 | ii==2)  conn.awaitb();
                 if (ii==1 | ii==2) query.awaitb();
@@ -88,6 +92,7 @@ public class Chat1 extends Database {
             }
             
             System.out.println(klass);
+            System.out.println(klass3);
         }
         System.exit(0);
     }

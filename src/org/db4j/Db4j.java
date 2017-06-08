@@ -404,7 +404,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      * @param name the name of the structure
      * @return the structure
      */
-    public <HH extends Hunkable> HH lookup(Transaction txn,String name) throws Pausable {
+    protected <HH extends Hunkable> HH lookup(Transaction txn,String name) throws Pausable {
         byte [] b2 = compRaw.context().set(txn).set(name,null).get(compRaw).val;
         if (b2==null) return null;
         Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
@@ -2834,6 +2834,35 @@ public class Db4j extends ConnectionBase implements Serializable {
             for (Command cmd = writs; cmd != tail; cmd = cmd.next)
                 if (! cmd.write())
                     cmd.clean();
+        }
+        /**
+         * get a Hunkable from the database
+         * @param <HH> the type of the Hunkable
+         * @param klass a template for the type, used only to infer the generic type HH
+         * @param name the name of the structure
+         * @return the structure
+         */
+        public <HH extends Hunkable> HH lookup(Class<HH> klass,String name) throws Pausable {
+            return db4j.lookup(this,name);
+        }
+        /**
+         * get a Hunkable from the database
+         * @param <HH> the type of the Hunkable
+         * @param template a template for the type, used only to infer the generic type HH
+         * @param name the name of the structure
+         * @return the structure
+         */
+        public <HH extends Hunkable> HH lookup(HH template,String name) throws Pausable {
+            return db4j.lookup(this,name);
+        }
+        /**
+         * get a Hunkable from the database
+         * @param <HH> the type of the Hunkable, inferred automatically for assignment
+         * @param name the name of the structure
+         * @return the structure
+         */
+        public <HH extends Hunkable> HH lookup(String name) throws Pausable {
+            return db4j.lookup(this,name);
         }
     }
 

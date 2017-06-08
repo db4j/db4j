@@ -563,7 +563,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             conn.awaitb();
             db4j.shutdown();
             db4j = Db4j.load(filename);
-            db4j.submit(txn -> lt = db4j.lookup(txn,PATH_MAP)).awaitb();
+            db4j.submit(txn -> lt = txn.lookup(PATH_MAP)).awaitb();
             check(keys.length);
             db4j.shutdown();
             lt.clear();
@@ -602,7 +602,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         public void run(int stage) throws Exception {
             if (reopen)
                 db4j = Db4j.load(filename);
-            db4j.submit(txn -> lt = db4j.lookup(txn,PATH_MAP)).awaitb();
+            db4j.submit(txn -> lt = txn.lookup(PATH_MAP)).awaitb();
             stage(stage);
             if (reopen) {
                 db4j.shutdown();

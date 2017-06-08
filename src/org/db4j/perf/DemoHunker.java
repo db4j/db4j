@@ -331,7 +331,7 @@ public class DemoHunker {
                 db4j = Db4j.load(name);
                 db4j.submitCall(txn -> {
                     for (int ii=0; ii < nstores; ii++)
-                        arrays[ii] = db4j.lookup(txn,PATH_BASE + ii);
+                        arrays[ii] = txn.lookup(PATH_BASE + ii);
                 }).awaitb();
             }
         }
