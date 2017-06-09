@@ -65,8 +65,8 @@ public class Chat1 extends Database {
                     System.out.println(hello.route("/get/2"));
                 }
             }.start().joinb();
-            db4j.submitCall(txn -> { db4j.create(txn,k2,PATH_K2); }).awaitb();
-            db4j.submitCall(txn -> { k2.insert(txn,key,"hello world"); }).awaitb();
+            db4j.submit(txn -> txn.create(k2,PATH_K2)).awaitb();
+            db4j.submit(txn -> k2.insert(txn,key,"hello world")).awaitb();
             hello.shutdown(true);
         }
         

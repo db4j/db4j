@@ -540,7 +540,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
         public void demo() {
             db4j = new Db4j(filename, null);
-            lt = db4j.submit(txn -> db4j.create(txn, new Btrees.IA(), PATH_MAP)).awaitb().val;
+            lt = db4j.submit(txn -> txn.create(new Btrees.IA(), PATH_MAP)).awaitb().val;
             Db4j.Connection conn = db4j.connect();
             db4j.guts.forceCommit(100);
             final int ipt=8, bpe=770, size=1<<25, len=Simple.Rounder.rup(size/bpe,ipt);
@@ -596,7 +596,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         { sntext = "put get rem chk"; }
         public void init2() {
             db4j = new Db4j(filename, null); // 1L << 32 );
-            lt = db4j.submit(txn -> db4j.create(txn, new DF2(), PATH_MAP)).awaitb().val;
+            lt = db4j.submit(txn -> txn.create(new DF2(), PATH_MAP)).awaitb().val;
             db4j.guts.forceCommit(100);
         }
         public void run(int stage) throws Exception {

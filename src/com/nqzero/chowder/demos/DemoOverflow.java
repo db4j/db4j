@@ -39,7 +39,7 @@ public class DemoOverflow {
         db4j = new Db4j(filename, null);
         conn = db4j.connect();
         db4j.submitCall(txn -> {
-            map = db4j.create(txn, new HunkArray.I(), DemoEntropy.PATH_MAP);
+            map = txn.create(new HunkArray.I(), DemoEntropy.PATH_MAP);
         }).awaitb();
         Db4j.zygote(db4j).forceCommit(100);
     }

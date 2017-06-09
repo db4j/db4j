@@ -420,7 +420,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      * @param name the name that it will be stored under
      * @return the Hunkable
      */
-    public <HH extends Hunkable> HH create(Transaction txn,HH ha,String name) throws Pausable {
+    protected <HH extends Hunkable> HH create(Transaction txn,HH ha,String name) throws Pausable {
         Command.RwInt ncomp = put(txn, loc.ncomp.read());
         txn.submitYield();
         ha.set(this,name);
@@ -2834,6 +2834,17 @@ public class Db4j extends ConnectionBase implements Serializable {
             for (Command cmd = writs; cmd != tail; cmd = cmd.next)
                 if (! cmd.write())
                     cmd.clean();
+        }
+        /**
+         * store a Hunkable in the database
+         * @param <HH> the type of the Hunkable
+         * @param txn the transaction
+         * @param column the Hunkable to store
+         * @param name the name that it will be stored under
+         * @return the Hunkable
+         */
+        public <HH extends Hunkable> HH create(HH column,String name) throws Pausable {
+            return db4j.create(this,column,name);
         }
         /**
          * get a Hunkable from the database

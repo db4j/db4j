@@ -124,7 +124,7 @@ public class Database {
                     Hunkable composite = txn.lookup(name);
                     if (overwrite || composite == null) {
                         composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false );
-                        db4j.create(txn,composite,name);
+                        txn.create(composite,name);
                     }
                     columns[ktable] = composite;
                     Simple.Reflect.set(source, field.getName(), composite);

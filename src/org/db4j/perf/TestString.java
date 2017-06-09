@@ -276,7 +276,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
     Db4j db4j;
     public void init() {
         db4j = new Db4j(filename, null); // 1L << 32 );
-        db4j.submit(txn -> db4j.create(txn, map, PATH)).awaitb();
+        db4j.submit(txn -> txn.create(map, PATH)).awaitb();
         Db4j.zygote(db4j).forceCommit(100);
     }
     public long process(final int jo) {

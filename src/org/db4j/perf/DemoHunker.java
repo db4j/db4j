@@ -324,7 +324,7 @@ public class DemoHunker {
                 db4j = new Db4j(name, fileSize);
                 db4j.submitCall(txn -> {
                     for (int ii = 0; ii < nstores; ii++)
-                        arrays[ii] = db4j.create(txn, new HunkArray.L(),PATH_BASE + ii);
+                        arrays[ii] = txn.create(new HunkArray.L(),PATH_BASE + ii);
                 }).awaitb();
             }
             else {

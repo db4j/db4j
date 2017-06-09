@@ -34,8 +34,8 @@ public class DemoEntropy {
         db4j = new Db4j(filename, null); // 1L << 32 );
         conn = db4j.connect();
         db4j.submitCall(txn -> {
-            map = db4j.create(txn, new HunkArray.I(), PATH_MAP);
-            buildSeed = db4j.create(txn, new HunkCount(), PATH_COUNT);
+            map = txn.create(new HunkArray.I(), PATH_MAP);
+            buildSeed = txn.create(new HunkCount(), PATH_COUNT);
         }).awaitb();
         Db4j.zygote(db4j).forceCommit(100);
     }
