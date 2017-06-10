@@ -52,7 +52,7 @@ public class Chat1 extends Database {
         String filename = DemoHunker.resolve("./db_files/hunk2.mmap");
         String PATH_K2 = "///chat1/k2";
         int key = 707;
-        Btrees.IS k2 = new Btrees.IS();
+        Btrees.IS k2=new Btrees.IS(), k3=new Btrees.IS();
         
         if (args.length==0) {
             Chat1 hello = new Chat1();
@@ -77,9 +77,10 @@ public class Chat1 extends Database {
             String klass = db4j.submit(txn ->
                     txn.lookup(Btrees.IS.class,PATH_K2).find(txn,key)
             ).awaitb().val;
-            String klass3 = db4j.submit(txn -> 
-                    txn.lookup(k2,PATH_K2).find(txn,key)
-            ).awaitb().val;
+            String klass3 = db4j.submit(txn -> {
+                    txn.lookup(k3,PATH_K2);
+                    return k3.find(txn,key);
+            }).awaitb().val;
             Db4j.Connection conn = db4j.connect();
             Db4j.Utils.LambdaQuery query;
             for (int ii = 0; ii < 4; ii++) {

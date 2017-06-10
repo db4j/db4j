@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.nqzero.orator.Example;
 import com.nqzero.directio.DioNative;
+import com.nqzero.orator.KryoInjector;
 import java.util.HashMap;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -266,8 +267,8 @@ public class Db4j extends ConnectionBase implements Serializable {
             nbc = put( txn, loc.nblocks.read() );
             ncc = put( txn, loc.ncomp.read() );
             yield();
-            kryoMap = lookup(txn,PATH_KRYOMAP);
-            logStore = lookup(txn,PATH_LOGSTORE);
+            kryoMap = lookup(txn,null,PATH_KRYOMAP);
+            logStore = lookup(txn,null,PATH_LOGSTORE);
             ncomp = ncc.val;
             done = true;
         }
@@ -401,16 +402,19 @@ public class Db4j extends ConnectionBase implements Serializable {
      * get a Hunkable from the database
      * @param <HH> the type of the Hunkable
      * @param txn the transaction
+     * @param column the instance to use, or null to allocate a new instance
      * @param name the name of the structure
      * @return the structure
      */
-    protected <HH extends Hunkable> HH lookup(Transaction txn,String name) throws Pausable {
+    protected <HH extends Hunkable> HH lookup(Transaction txn,HH column,String name) throws Pausable {
         byte [] b2 = compRaw.context().set(txn).set(name,null).get(compRaw).val;
         if (b2==null) return null;
-        Hunkable ha = (Hunkable) org.srlutils.Files.load(b2);
+        HH ha = (HH) org.srlutils.Files.load(b2);
+        // mixing apples and oranges ... this kryo is only used for Btree.IK etc
+        if (column != null) ha = KryoInjector.copy(kryo(),ha,column,true);
         ha.set(Db4j.this,null).createCommit(ha.kloc);
         ha.postLoad(txn);
-        return (HH) ha;
+        return ha;
     }
     /**
      * store a Hunkable in the database
@@ -505,6 +509,8 @@ public class Db4j extends ConnectionBase implements Serializable {
 
     void doRegistration(Kryo kryo) {
         kryo.register(RegPair.class);
+        kryo.register(Btrees.IS.class);
+        KryoInjector.init(kryo);
     }
 
 
@@ -2854,17 +2860,17 @@ public class Db4j extends ConnectionBase implements Serializable {
          * @return the structure
          */
         public <HH extends Hunkable> HH lookup(Class<HH> klass,String name) throws Pausable {
-            return db4j.lookup(this,name);
+            return db4j.lookup(this,null,name);
         }
         /**
-         * get a Hunkable from the database
+         * get a Hunkable from the database, optionally copying it into an existing instance
          * @param <HH> the type of the Hunkable
-         * @param template a template for the type, used only to infer the generic type HH
+         * @param column if non-null, the instance to copy into and return
          * @param name the name of the structure
          * @return the structure
          */
-        public <HH extends Hunkable> HH lookup(HH template,String name) throws Pausable {
-            return db4j.lookup(this,name);
+        public <HH extends Hunkable> HH lookup(HH column,String name) throws Pausable {
+            return db4j.lookup(this,column,name);
         }
         /**
          * get a Hunkable from the database
@@ -2873,7 +2879,7 @@ public class Db4j extends ConnectionBase implements Serializable {
          * @return the structure
          */
         public <HH extends Hunkable> HH lookup(String name) throws Pausable {
-            return db4j.lookup(this,name);
+            return db4j.lookup(this,null,name);
         }
     }
 
