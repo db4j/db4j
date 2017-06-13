@@ -1756,9 +1756,9 @@ public class Db4j extends ConnectionBase implements Serializable {
                 for (Command cmd : cmds) {
                     Transaction txn = cmd.txn;
                     Task task = txn==null ? null : txn.task;
-                    String txt = String.format(
-                            "BlockNode.anomaly -- kblock:%d, num:%d, %s, %s, %s\n", 
-                            kblock, diskAnomaly.numRead, task, txn, cmd.msg );
+                    String tinfo = txn==null ? null : txn.info();
+                    String txt = String.format("BlockNode.anomaly -- kblock:%d, num:%d, %s, %s, %s\n", 
+                            kblock, diskAnomaly.numRead, task, tinfo, cmd.msg );
                     // fixme::correctiveAction -- what should happen on a disk error ???
                     if (task==null || true) throw rte( null, txt );
                     task.rollback(db4j, true );
@@ -2173,7 +2173,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             System.out.format( "Hunk:Cache -- %5d, %5d, %5d\n",
                     txns.size, covered.size, tree.size );
             for (Transaction txn : txns)
-                System.out.format( "cache.txn -- %s\n", txn );
+                System.out.format( "cache.txn -- %s\n", txn.info() );
         }
 
         void complete(long gen,long total) {
@@ -2832,7 +2832,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             return true;
         }
 
-        public String toString() {
+        String info() {
             return String.format( "Txn -- %5dr, %5dw, gen%5d", nreads, nwrits, gen0 );
         }
         void cleanOldReads() {
