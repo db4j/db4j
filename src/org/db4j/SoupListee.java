@@ -26,7 +26,8 @@ import static org.srlutils.Simple.Exceptions.rte;
  * TT is the node type
  * for the case where direct inheritance is impossible, Listee can be mixed in using an inner class
  */
-public class TaskUtils<TT extends TaskUtils<TT>> {
+@Deprecated
+public class SoupListee<TT extends SoupListee<TT>> {
     /** the next element, ie in the direction of head, null indicating the end of the list */
     TT next;
     /** the previous element, ie in the direction of tail, null indicating the end of the list */
@@ -51,7 +52,7 @@ public class TaskUtils<TT extends TaskUtils<TT>> {
      * @param node the node to insert
      * @return the new base, which is unchanged unless base is null
      */
-    public static <TT extends TaskUtils<TT>> TT append(TT base,TT node) {
+    public static <TT extends SoupListee<TT>> TT append(TT base,TT node) {
         if (base==null) { node.next = node.prev = node; return node; }
         TT prev = base.prev;
         node.next = base;
@@ -63,7 +64,7 @@ public class TaskUtils<TT extends TaskUtils<TT>> {
 
     
     /** the base of a doubly linked list */
-    public static class Lister<TT extends TaskUtils<TT>> implements Iterable<TT> {
+    public static class Lister<TT extends SoupListee<TT>> implements Iterable<TT> {
         // note: check is useful for debugging, but is made final for speed ... remove if needed
         /** perform checks prior to most operations */
         public final boolean check = false;

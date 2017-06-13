@@ -865,7 +865,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         /** tree of rollback tasks ... they've been rolled back, need to be run from scratch */
         TaskTree backlog = new TaskTree();
         /** list of all unfinished tasks */
-        TaskUtils.Lister<Task> tasks = new TaskUtils.Lister();
+        SoupListee.Lister<Task> tasks = new SoupListee.Lister();
         /** list of tasks that have returned from BlockNode, waiting to be run */
         TaskTree waiting = new TaskTree();
         /** number of rollbacks in this generation */
@@ -1828,7 +1828,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             return (int) (kblock - o.kblock);
         }
     }
-    protected static class CachedBlock extends TaskUtils<CachedBlock> implements Comparable<CachedBlock> {
+    protected static class CachedBlock extends SoupListee<CachedBlock> implements Comparable<CachedBlock> {
         long kblock;
         byte [] data;
         /** the generation of the latest write or zero for pure reads */
@@ -1849,7 +1849,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         /** outstanding and naked, ie a member of the byUpdate list, ie neither covered, covering nor current */
         boolean out;
 
-        static class ListEntry extends TaskUtils<ListEntry> {
+        static class ListEntry extends SoupListee<ListEntry> {
             CachedBlock cb;
             ListEntry(CachedBlock $val) { cb = $val; }
             CachedBlock read() { return cb.older; }
@@ -1987,14 +1987,14 @@ public class Db4j extends ConnectionBase implements Serializable {
          *    head is the oldest, tail is most recently updated */
         UpdateTree byUpdate = new UpdateTree();
         /** list of txns ... tail is freshest, head is oldest */
-        TaskUtils.Lister<Transaction> txns = new TaskUtils.Lister();
+        SoupListee.Lister<Transaction> txns = new SoupListee.Lister();
         /** 
          * list of outstanding covered writes, ie there is a txn older than the write
          *  the covering read must be preserved
          * this list is kept in sorted order, according to CachedBlock.gen
          * ie, the generation of the most recent write command
          */
-        TaskUtils.Lister<CachedBlock> covered = new TaskUtils.Lister();
+        SoupListee.Lister<CachedBlock> covered = new SoupListee.Lister();
         /** 
          * number of CachedBlock-s as new or newer than the oldest outstanding transaction
          * ie, txns.head
@@ -2007,7 +2007,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         boolean checkScrub = false;
         boolean checkComplete = true;
         /** list of reads and committed writes that are not outstanding */
-        TaskUtils.Lister<CachedBlock> current = new TaskUtils.Lister();
+        SoupListee.Lister<CachedBlock> current = new SoupListee.Lister();
         /** number of naked uncommitted writes                 */  int ndefoe;
         /** number of naked writes pending commit              */  int ncrusoe;
         /** number of naked covering committed writes          */  int ncovered;
@@ -2536,14 +2536,14 @@ public class Db4j extends ConnectionBase implements Serializable {
     }
 
 
-    public static abstract class Rollbacker extends TaskUtils<Rollbacker> {
+    public static abstract class Rollbacker extends SoupListee<Rollbacker> {
         public abstract void runRollback(Transaction txn);
     }
     static class ClosedException extends RuntimeException {}
     static class RestartException extends RuntimeException {}
     static class DropOutstandingException extends RuntimeException {}
 
-    public static class Transaction extends TaskUtils<Transaction> {
+    public static class Transaction extends SoupListee<Transaction> {
         /** 
          * commands to be executed when the transaction is entreed, 
          * ie writes only, since reads can be sent immediately
@@ -2571,7 +2571,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         // fixme::configable -- allow txn to relax consistency reqs
         boolean rollback;
         boolean restart;
-        TaskUtils.Lister<Rollbacker> rollbackers;
+        SoupListee.Lister<Rollbacker> rollbackers;
         DynArray.Objects<Cleanable> cleaners;
 
         Db4j db4j;
@@ -2584,7 +2584,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         int nr;
 
         public void addRollbacker(Rollbacker rb) {
-            if (rollbackers==null) rollbackers = new TaskUtils.Lister();
+            if (rollbackers==null) rollbackers = new SoupListee.Lister();
             rollbackers.append( rb );
         }
         void addCleaner(Cleanable cleaner) {
@@ -2973,7 +2973,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      *   then once to write (even if no writes occur)
      *   and then once after the commit
      */
-    public abstract static class Task extends TaskUtils<Task> implements Queable {
+    public abstract static class Task extends SoupListee<Task> implements Queable {
         int id;
         Status status = Status.None;
         public Transaction txn;
@@ -3255,7 +3255,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             public void handle(Db4j db4j);
         }
         /** a utility class for reasons with list-like behaviors that stores a string value */
-        public static class Reason extends TaskUtils<Reason> {
+        public static class Reason extends SoupListee<Reason> {
             String txt;
             public Reason(String $txt) { txt = $txt; }
             public String toString() { return txt; }
