@@ -2842,44 +2842,79 @@ public class Db4j extends ConnectionBase implements Serializable {
                     cmd.clean();
         }
         /**
-         * store a Hunkable in the database
+         * create a new schema object in the database,
+         * allocating the on-disk resources,
+         * associate it with the provided key, ie the schema name,
+         * and link a provided Hunkable instance to it
          * @param <HH> the type of the Hunkable
-         * @param txn the transaction
-         * @param column the Hunkable to store
-         * @param name the name that it will be stored under
-         * @return the Hunkable
+         * @param store the Hunkable to use as a template for and to link to the new schema object
+         * @param key the key with which the new schema object is to be associated with in the schema
+         *        ie the schema name
+         * @return the provided Hunkable instance
          */
-        public <HH extends Hunkable> HH create(HH column,String name) throws Pausable {
-            return db4j.create(this,column,name);
+        public <HH extends Hunkable> HH create(HH store,String key) throws Pausable {
+            return db4j.create(this,store,key);
         }
         /**
-         * get a Hunkable from the database
+         * lookup a schema object in the database using a key and link a new Hunkable instance to it
          * @param <HH> the type of the Hunkable
          * @param klass a template for the type, used only to infer the generic type HH
-         * @param name the name of the structure
-         * @return the structure
+         * @param key the key with which the schema object is associated, ie the schema name
+         * @return the new Hunkable instance bound to the schema object
          */
-        public <HH extends Hunkable> HH lookup(Class<HH> klass,String name) throws Pausable {
-            return db4j.lookup(this,null,name);
+        public <HH extends Hunkable> HH lookup(Class<HH> klass,String key) throws Pausable {
+            return db4j.lookup(this,null,key);
         }
         /**
-         * get a Hunkable from the database, optionally copying it into an existing instance
+         * lookup a schema object in the database using a key and link a new Hunkable instance to it
          * @param <HH> the type of the Hunkable
-         * @param column if non-null, the instance to copy into and return
-         * @param name the name of the structure
-         * @return the structure
+         * @param template a template for the type, used only to infer the generic type HH
+         * @param key the key with which the schema object is associated, ie the schema name
+         * @return the new Hunkable instance bound to the schema object
          */
-        public <HH extends Hunkable> HH lookup(HH column,String name) throws Pausable {
-            return db4j.lookup(this,column,name);
+        public <HH extends Hunkable> HH lookup(HH template,String key) throws Pausable {
+            return db4j.lookup(this,template,key);
         }
         /**
-         * get a Hunkable from the database
+         * lookup a schema object in the database using a key and link a new Hunkable instance to it
          * @param <HH> the type of the Hunkable, inferred automatically for assignment
-         * @param name the name of the structure
-         * @return the structure
+         * @param key the key with which the schema object is associated, ie the schema name
+         * @return the new Hunkable instance bound to the schema object
          */
-        public <HH extends Hunkable> HH lookup(String name) throws Pausable {
-            return db4j.lookup(this,null,name);
+        public <HH extends Hunkable> HH lookup(String key) throws Pausable {
+            return db4j.lookup(this,null,key);
+        }
+        /**
+         * lookup a schema object in the database and link a new Hunkable instance to it
+         * @param <HH> the type of the Hunkable
+         * @param key a template for the type, used to infer the generic type HH
+         *        and the name attribute is used as the key with which the schema object is associated,
+         *        ie the schema name
+         * @return the new Hunkable instance bound to the schema object
+         */
+        public <HH extends Hunkable> HH lookup(HH key) throws Pausable {
+            return db4j.lookup(this,null,key.name());
+        }
+        /**
+         * lookup a schema object in the database 
+         * using the name attribute of a provided Hunkable instance as the key, ie the schema name,
+         * and link that instance to it
+         * @param <HH> the type of the Hunkable
+         * @param store the provided instance
+         * @return the provided instance
+         */
+        public <HH extends Hunkable> HH link(HH store) throws Pausable {
+            return db4j.lookup(this,store,store.name());
+        }
+        /**
+         * lookup a schema object in the database using a key and link a provided Hunkable instance to it
+         * @param <HH> the type of the Hunkable
+         * @param store the instance to link
+         * @param key the key with which the schema object is associated, ie the schema name
+         * @return the provided instance
+         */
+        public <HH extends Hunkable> HH link(HH store,String key) throws Pausable {
+            return db4j.lookup(this,store,key);
         }
     }
 

@@ -77,8 +77,10 @@ public class Chat1 extends Database {
             String klass = db4j.submit(txn ->
                     txn.lookup(Btrees.IS.class,PATH_K2).find(txn,key)
             ).awaitb().val;
+            // can bind an existing hunkable to a schema object
+            // useful in lambdas where values must be effectively final
             String klass3 = db4j.submit(txn -> {
-                    txn.lookup(k3,PATH_K2);
+                    txn.link(k3,PATH_K2);
                     return k3.find(txn,key);
             }).awaitb().val;
             Db4j.Connection conn = db4j.connect();
