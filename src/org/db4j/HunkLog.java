@@ -2,9 +2,6 @@
 
 package org.db4j;
 
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.nqzero.orator.Example;
 import java.io.Serializable;
 import java.util.Random;
 import kilim.Pausable;
@@ -74,11 +71,7 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
     }
 
 
-    public void store(Loggable obj,Example.MyKryo kryo) {
-        Output buffer = new Output(2048,-1);
-        kryo.writeClassAndObject(buffer,obj);
-        byte [] data = buffer.toBytes();
-        
+    public void store(byte [] data) {
         synchronized (this) {
             set(position,data);
             position += data.length;
@@ -86,14 +79,7 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
     }
     public void restore(Transaction txn) throws Pausable {
         byte [] data = get(txn);
-        Input buffer = new Input(data);
-        Example.MyKryo kryo = db4j.kryo();
-        while (buffer.position() < data.length) {
-            Loggable obj = (Loggable) kryo.readClassAndObject(buffer);
-            if (obj==null) break;
-            obj.restore(db4j);
-            position = buffer.position();
-        }
+        position = db4j.cryoish.restore(data,position);
     }
     
     

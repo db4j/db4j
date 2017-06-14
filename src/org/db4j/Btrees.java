@@ -48,7 +48,7 @@ public class Btrees {
         { setup(new Btypes.ValsInt(),v2 = new Bhunk.ValsBytex()); }
     }
     public static class IK<TT> extends Itoast<TT> {
-        { setup(new Btypes.ValsInt(),v2 = new Bhunk.ValsKryo()); }
+        { setup(new Btypes.ValsInt(),v2 = new Bhunk.ValsCryo()); }
     }
     public static class IA extends Bmeta<IA.Data,Integer,byte[],Btypes.ValsInt> {
         { setup(new Btypes.ValsInt(),new Bstring.ValsBytes()); }

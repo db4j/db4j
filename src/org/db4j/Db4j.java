@@ -2,13 +2,7 @@
 
 package org.db4j;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
-import com.esotericsoftware.kryo.pool.KryoFactory;
-import com.esotericsoftware.kryo.pool.KryoPool;
-import com.nqzero.orator.Example;
 import com.nqzero.directio.DioNative;
-import com.nqzero.orator.KryoInjector;
 import java.util.HashMap;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -107,11 +101,17 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient ClassLoader userClassLoader;
     transient BlocksUtil util;
 
-    transient Example.MyKryo kryo;
-    transient KryoFactory kryoFactory;
-    transient KryoPool kryoPool;
+    transient Cryoish cryoish;
 
-    Example.MyKryo kryo() { return ((Example.MyKryo) kryoPool.borrow()).pool(kryoPool); }
+    /** abstract out the usage of serialization to soften the dependency */
+    interface Cryoish {
+        <TT> TT convert(byte[] bytes);
+        <TT> void copy(TT src,TT dst,boolean copyTrans);
+        void register(Class type,int id);
+        int restore(byte[] data,int position);
+        <TT> byte[] save(TT val);
+        Cryoish init(Db4j db4j);
+    }
 
 
     /**
@@ -405,7 +405,10 @@ public class Db4j extends ConnectionBase implements Serializable {
         if (b2==null) return null;
         HH ha = (HH) org.srlutils.Files.load(b2);
         // mixing apples and oranges ... this kryo is only used for Btree.IK etc
-        if (column != null) ha = KryoInjector.copy(kryo(),ha,column,true);
+        if (column != null) {
+            cryoish.copy(ha,column,true);
+            ha = column;
+        }
         ha.set(Db4j.this,null).createCommit(ha.kloc);
         ha.postLoad(txn);
         return ha;
@@ -488,57 +491,14 @@ public class Db4j extends ConnectionBase implements Serializable {
             qrunner = new QueRunner(this);
             compRaw = new Btrees.SA();
             compRaw.set(this,PATH_COMP_RAW);
-            kryo = new Example.MyKryo(new HunkResolver()).init();
-            doRegistration(kryo);
-            kryoFactory = new KryoFactory() {
-                public Kryo create() { return kryo.dup(); }
-            };
-            kryoPool = new KryoPool.Builder(kryoFactory).build();
+            cryoish = new SoupKryo();
+            cryoish.init(this);
         } catch (IOException ex) {
             throw new RuntimeException( ex );
         }
         return this;
     }
 
-
-    void doRegistration(Kryo kryo) {
-        kryo.register(RegPair.class);
-        kryo.register(Btrees.IS.class);
-        KryoInjector.init(kryo);
-    }
-
-
-    class HunkResolver extends Example.Resolver {
-        public synchronized Registration registerImplicit(Class type) {
-            Registration reg = getRegistration(type);
-            if (reg != null)
-                return reg;
-            int id = kryo.getNextRegistrationId();
-            reg = new Registration(type, kryo.getDefaultSerializer(type), id);
-            RegPair pair = new RegPair();
-            pair.id = id;
-            pair.name = type.getName();
-            logStore.store(pair,(Example.MyKryo) kryo);
-            System.out.format("RegPair.store: %4d %s\n",id,pair.name);
-            return register(reg);
-        }
-
-    }
-
-    static class RegPair implements HunkLog.Loggable {
-        int id;
-        String name;
-        public void restore(Db4j db4j) {
-            try {
-                System.out.format("RegPair.restore: %4d %s\n",id,name);
-                Class type = Class.forName(name);
-                db4j.kryo().register(type,id);
-            }
-            catch (ClassNotFoundException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-    }
 
     Transaction getTransaction() {
         Transaction txn = new Transaction().set(this);

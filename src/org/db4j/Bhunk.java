@@ -2,8 +2,6 @@
 
 package org.db4j;
 
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import java.io.Serializable;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage.Sheet;
@@ -425,20 +423,17 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         protected byte[] convert(byte[] val,Object cmpr) { return val; }
         protected byte[] convert(byte[] val) { return val; }
     }
-    protected class ValsKryo<TT> extends ValsVarx<TT,Bstring.Cmpr> {
+    protected class ValsCryo<TT> extends ValsVarx<TT,Bstring.Cmpr> {
         protected byte[] convert(TT val,Object cmpr) {
             return cmpr==null
                     ? save(val) 
                     : ((Bstring.Cmpr) cmpr).bytes;
         }
         protected TT convert(byte[] bytes) {
-            Input input = new Input(bytes);
-            return (TT) db4j.kryo().get(input);
+            return db4j.cryoish.convert(bytes);
         }
         byte [] save(TT val) {
-            Output buffer = new Output(2048,-1);
-            db4j.kryo().put(buffer,val,false);
-            return buffer.toBytes();
+            return db4j.cryoish.save(val);
         }
     }
     protected class ValsObject<TT> extends ValsVarx<TT,Bstring.Cmpr> {
