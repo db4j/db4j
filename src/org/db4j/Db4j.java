@@ -2535,10 +2535,18 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
     }
 
-
-    public static abstract class Rollbacker extends SoupListee<Rollbacker> {
-        public abstract void runRollback(Transaction txn);
+    /** 
+     * a functional interface that can be attached to a transaction and is invoked in the event that the
+     * transaction is rolled back
+     */
+    public interface Rollbackable {
+        /**
+         * called by the query engine in the event that the containing transaction is rolled back
+         * @param txn the transaction that is being rolled back
+         */
+        public void runRollback(Transaction txn);
     }
+
     static class ClosedException extends RuntimeException {}
     static class RestartException extends RuntimeException {}
     static class DropOutstandingException extends RuntimeException {}
@@ -2571,7 +2579,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         // fixme::configable -- allow txn to relax consistency reqs
         boolean rollback;
         boolean restart;
-        SoupListee.Lister<Rollbacker> rollbackers;
+        DynArray.Objects<Rollbackable> rollbackers;
         DynArray.Objects<Cleanable> cleaners;
 
         Db4j db4j;
@@ -2583,9 +2591,13 @@ public class Db4j extends ConnectionBase implements Serializable {
         boolean readonly;
         int nr;
 
-        public void addRollbacker(Rollbacker rb) {
-            if (rollbackers==null) rollbackers = new SoupListee.Lister();
-            rollbackers.append( rb );
+        /**
+         * register a callback that is called if and when the transaction is rolled back
+         * @param rb the callback
+         */
+        public void addRollbacker(Rollbackable rb) {
+            if (rollbackers==null) rollbackers = new DynArray.Objects().init(Rollbackable.class);
+            rollbackers.add(rb);
         }
         void addCleaner(Cleanable cleaner) {
             if (cleaners==null) cleaners = new DynArray.Objects().init( Cleanable.class );
@@ -3168,7 +3180,7 @@ public class Db4j extends ConnectionBase implements Serializable {
                 db4j.qrunner.nback++;
             if (Db4j.debug.reason) reason( "Transaction.handle.rollback" );
             if (txn.rollbackers != null)
-                for (Rollbacker rb : txn.rollbackers) rb.runRollback(txn);
+                for (Rollbackable rb : txn.rollbackers) rb.runRollback(txn);
             txn.cancelReads();
             txn.cleanup();
             clear();

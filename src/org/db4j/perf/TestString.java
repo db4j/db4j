@@ -130,7 +130,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
     }
     boolean force = false;
     public void predel(int index) { keys.set(index,-2); }
-    public void undel(int index,long stored) { keys.set(index,stored); }
+    public void undel(int index,long stored) { nback++; keys.set(index,stored); }
     public void del(int index) {
         long key = get(index);
         if (useTotal) totalBytes -= sprout(key).getBytes().length;
@@ -154,6 +154,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
         return index;
     }
     public void unadd(int index) {
+        nback++;
         kdels.add(index);
         keys.set(index,0L);
         num--;
@@ -191,9 +192,11 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
 
     org.srlutils.Timer timer = new org.srlutils.Timer();
     int [] counts = new int[4];
+    int nback;
     public int timedLoop(int size,int jj,int jo,int nn) {
         target = size;
         Arrays.fill(counts,0);
+        nback = 0;
         timer.start();
         long magic = 0;
         int zeros = 0;
@@ -212,7 +215,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
         if (info==null) info = new int[3];
         System.out.format(
                 "%5d -- %s delta: %6d time:%8.3f -- %5.1f%%, %3d %5d %3d -- %5.1f%%, %s -- %d\n",
-                jj, sizestr, delta(), time, 100.0*counts[2]/nn, info[0], info[1], info[2], ratio, total, zeros);
+                jj, sizestr, delta(), time, 100.0*counts[2]/nn, nback, info[1], info[2], ratio, total, zeros);
         return jo;
     }
     public void randomWalk(int operationsPerPass,int maxSize,int numPasses) {
@@ -313,7 +316,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
                     map.insert(ccset(c2,key,index));
                 }
                 else if (type==3) {
-                    txn.addRollbacker(new Roller());
+                    txn.addRollbacker(txn -> undel(index,stored));
                     stored = get(index);
                     predel(index);
                     Btree.Path path = getPath(c2,index,stored);
@@ -327,7 +330,7 @@ public abstract class TestString<CC extends Bmeta.Context<?,?,CC>> {
                 if (type==3) del(index);
                 return false;
             }
-            class Roller extends Db4j.Rollbacker {
+            class Roller implements Db4j.Rollbackable {
                 public void runRollback(Transaction txn) {
                     if (type==2) unadd(index);
                     if (type==3) undel(index,stored);
