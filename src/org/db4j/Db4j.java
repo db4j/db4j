@@ -2976,7 +2976,7 @@ public class Db4j extends ConnectionBase implements Serializable {
     public abstract static class Task extends SoupListee<Task> implements Queable {
         int id;
         Status status = Status.None;
-        public Transaction txn;
+        protected Transaction txn;
         Kask kask;
         Task listForGen;
         private boolean done, alive = true;
