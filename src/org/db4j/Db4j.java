@@ -78,7 +78,6 @@ public class Db4j extends ConnectionBase implements Serializable {
 
     static final long serialVersionUID = 3365051556209870876L;
     protected static final Debug debug = new Debug();
-    static final String PATH_KRYOMAP = "///db4j/hunker/kryoMap";
     static final String PATH_LOGSTORE = "///db4j/hunker/logStore";
     static final String PATH_COMP_RAW = "///db4j/hunker/compRaw";
 
@@ -102,7 +101,6 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient Loc loc;
     transient boolean live;
     transient Btrees.SA compRaw;
-    transient Btrees.IS kryoMap;
     transient HunkLog logStore;
 
     transient FileLock flock;
@@ -265,7 +263,6 @@ public class Db4j extends ConnectionBase implements Serializable {
             nbc = put( txn, loc.nblocks.read() );
             ncc = put( txn, loc.ncomp.read() );
             yield();
-            kryoMap = lookup(txn,null,PATH_KRYOMAP);
             logStore = lookup(txn,null,PATH_LOGSTORE);
             ncomp = ncc.val;
             done = true;
@@ -392,7 +389,6 @@ public class Db4j extends ConnectionBase implements Serializable {
             compRaw.init( compRaw.context().set(txn) );
             long base = Rounder.rup(pcomp+c1+c2,align);
             Simple.softAssert(base < 1L*Db4j.this.bs*runner.journalBase );
-            kryoMap = create(txn,new Btrees.IS(),PATH_KRYOMAP);
             logStore = create(txn,new HunkLog(),PATH_LOGSTORE);
         }
     }
