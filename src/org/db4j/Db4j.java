@@ -405,7 +405,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      * @return the structure
      */
     protected <HH extends Hunkable> HH lookup(Transaction txn,HH column,String name) throws Pausable {
-        byte [] b2 = compRaw.context().set(txn).set(name,null).get(compRaw).val;
+        byte [] b2 = compRaw.find(txn,name);
         if (b2==null) return null;
         HH ha = (HH) org.srlutils.Files.load(b2);
         // mixing apples and oranges ... this kryo is only used for Btree.IK etc
