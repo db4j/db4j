@@ -80,3 +80,21 @@ public abstract class Hunkable<TT extends Hunkable> implements Serializable {
 
 
 }
+/*
+trying to find a name for tables, columns, and indexes
+oracle seems to call them schema objects
+https://www.reddit.com/r/Database/comments/6gpf6c/what_is_the_name_for_the_structures_stored_in_a/
+https://en.wikipedia.org/wiki/Database_schema#Oracle_database_specificity
+
+xodus has something called a store which may be similar
+https://github.com/JetBrains/xodus/blob/master/openAPI/src/main/java/jetbrains/exodus/env/Store.java
+
+H2 database has MVStore which appears to be a store that's exposed to the user
+http://www.h2database.com/html/mvstore.html
+
+https://www.google.com/search?safe=off&q=java+embedded+database+mapdb+h2&oq=java+embedded+database+mapdb+h2
+
+
+
+
+*/
