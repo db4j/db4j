@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.pool.KryoFactory;
 import com.esotericsoftware.kryo.pool.KryoPool;
 import com.nqzero.orator.Example;
 import com.nqzero.orator.KryoInjector;
+import org.db4j.HunkLog.Loggable;
 
 public class SoupKryo implements Db4j.Cryoish {
     Example.MyKryo kryo;
@@ -48,21 +49,20 @@ public class SoupKryo implements Db4j.Cryoish {
             System.out.format("RegPair.store: %4d %s\n",id,pair.name);
             return register(reg);
         }
-        public byte [] store(Object obj,Example.MyKryo kryo) {
+        public byte [] store(Object obj,Example.MyKryo local) {
             Output buffer = new Output(2048,-1);
-            kryo.writeClassAndObject(buffer,obj);
+            local.writeClassAndObject(buffer,obj);
             byte [] data = buffer.toBytes();
             return data;
         }
 
     }
 
-    static class RegPair implements HunkLog.Loggable {
+
+    static class RegPair implements Loggable<Example.MyKryo> {
         int id;
         String name;
-        public void restore(Db4j db4j) {
-            // fixme - should use the already pooled-by-this-thread instance
-            Example.MyKryo local = ((SoupKryo) db4j.cryoish).kryo();
+        public void restore(Db4j db4j,Example.MyKryo local) {
             try {
                 System.out.format("RegPair.restore: %4d %s\n",id,name);
                 Class type = Class.forName(name);
@@ -71,9 +71,10 @@ public class SoupKryo implements Db4j.Cryoish {
             catch (ClassNotFoundException ex) {
                 throw new RuntimeException(ex);
             }
-            finally { local.unpool(); }
         }
     }
+    // https://stackoverflow.com/questions/4394978/copy-fields-between-similar-classes-in-java
+    
     public <TT> void copy(TT src,TT dst,boolean copyTrans) {
         Example.MyKryo local = kryo();
         KryoInjector.copy(local,src,dst,copyTrans);
@@ -89,9 +90,9 @@ public class SoupKryo implements Db4j.Cryoish {
         Input buffer = new Input(data);
         Example.MyKryo local = kryo();
         while (buffer.position() < data.length) {
-            HunkLog.Loggable obj = (HunkLog.Loggable) local.readClassAndObject(buffer);
+            Loggable obj = (Loggable) local.readClassAndObject(buffer);
             if (obj==null) break;
-            obj.restore(db4j);
+            obj.restore(db4j,local);
             position = buffer.position();
         }
         local.unpool();
