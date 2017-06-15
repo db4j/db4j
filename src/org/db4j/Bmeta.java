@@ -350,7 +350,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         return keys.compare( data.key, page, index, data.keydata );
     }
     public VV find(Transaction txn,KK key) throws Pausable {
-        CC context = (CC) context().set(txn).set(key,null);
+        CC context = (CC) context().set(txn).set(key,null).mode(Btree.modes.eq);
         findData(context);
         return context.match ? context.val : null;
     }
