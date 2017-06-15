@@ -423,17 +423,17 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         protected byte[] convert(byte[] val,Object cmpr) { return val; }
         protected byte[] convert(byte[] val) { return val; }
     }
-    protected class ValsCryo<TT> extends ValsVarx<TT,Bstring.Cmpr> {
+    protected class ValsKryo<TT> extends ValsVarx<TT,Bstring.Cmpr> {
         protected byte[] convert(TT val,Object cmpr) {
             return cmpr==null
                     ? save(val) 
                     : ((Bstring.Cmpr) cmpr).bytes;
         }
         protected TT convert(byte[] bytes) {
-            return db4j.cryoish.convert(bytes);
+            return db4j.kryoish.convert(bytes);
         }
         byte [] save(TT val) {
-            return db4j.cryoish.save(val);
+            return db4j.kryoish.save(val);
         }
     }
     protected class ValsObject<TT> extends ValsVarx<TT,Bstring.Cmpr> {

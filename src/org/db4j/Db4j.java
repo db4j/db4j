@@ -101,16 +101,20 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient ClassLoader userClassLoader;
     transient BlocksUtil util;
 
-    transient Cryoish cryoish;
+    /** the dependence on Kryo is intended to be weak, ie could use an alternative serialization */
+    // fixme - add an alternative serialization strategy and a means to switch between them
+    boolean skipKryo = false;
+    /** an abstraction of Kryo to allow alternative providers */
+    transient Kryoish kryoish;
 
     /** abstract out the usage of serialization to soften the dependency */
-    interface Cryoish {
+    interface Kryoish {
         <TT> TT convert(byte[] bytes);
         <TT> void copy(TT src,TT dst,boolean copyTrans);
         void register(Class type,int id);
         int restore(byte[] data,int position);
         <TT> byte[] save(TT val);
-        Cryoish init(Db4j db4j);
+        Kryoish init(Db4j db4j);
     }
 
 
@@ -406,7 +410,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         HH ha = (HH) org.srlutils.Files.load(b2);
         // mixing apples and oranges ... this kryo is only used for Btree.IK etc
         if (column != null) {
-            cryoish.copy(ha,column,true);
+            kryoish.copy(ha,column,true);
             ha = column;
         }
         ha.set(Db4j.this,null).createCommit(ha.kloc);
@@ -491,8 +495,10 @@ public class Db4j extends ConnectionBase implements Serializable {
             qrunner = new QueRunner(this);
             compRaw = new Btrees.SA();
             compRaw.set(this,PATH_COMP_RAW);
-            cryoish = new SoupKryo();
-            cryoish.init(this);
+            if (!skipKryo) {
+                kryoish = new SoupKryo();
+                kryoish.init(this);
+            }
         } catch (IOException ex) {
             throw new RuntimeException( ex );
         }

@@ -36,13 +36,13 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
 
     /**
      * a type that can be added to the log
-     * @param <XX> an arg that the cryoish serializer can pass, effectively private to the cryoish
+     * @param <XX> an arg that the kryoish serializer can pass, effectively private to the kryoish
      */
     public interface Loggable<XX> {
         /** 
          * user callback to restore the object on startup
          * @param db4j the Db4j instance
-         * @param local an arg that the cryoish serializer can pass, effectively private to the cryoish
+         * @param local an arg that the kryoish serializer can pass, effectively private to the kryoish
          */
         public void restore(Db4j db4j,XX local);
     }
@@ -85,7 +85,7 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
      * @param obj the object
      */
     public void store(Loggable obj) {
-        byte [] data = db4j.cryoish.save(obj);
+        byte [] data = db4j.kryoish.save(obj);
         store(data);
     }
     void store(byte [] data) {
@@ -96,7 +96,7 @@ public class HunkLog extends Hunkable<HunkLog> implements Serializable {
     }
     void restore(Transaction txn) throws Pausable {
         byte [] data = get(txn);
-        position = db4j.cryoish.restore(data,position);
+        position = db4j.kryoish.restore(data,position);
     }
     
     

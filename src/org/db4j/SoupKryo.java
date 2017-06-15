@@ -10,7 +10,7 @@ import com.nqzero.orator.Example;
 import com.nqzero.orator.KryoInjector;
 import org.db4j.HunkLog.Loggable;
 
-public class SoupKryo implements Db4j.Cryoish {
+public class SoupKryo implements Db4j.Kryoish {
     Example.MyKryo kryo;
     KryoFactory kryoFactory;
     KryoPool kryoPool;
