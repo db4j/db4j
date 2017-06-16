@@ -439,11 +439,11 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     protected class ValsObject<TT> extends ValsVarx<TT,Bstring.Cmpr> {
         protected byte[] convert(TT val,Object cmpr) {
             return cmpr==null
-                    ? org.srlutils.Files.save(val)
+                    ? db4j.save(val)
                     : ((Bstring.Cmpr) cmpr).bytes;
         }
         protected TT convert(byte[] bytes) {
-            return (TT) org.srlutils.Files.load(bytes,0,-1,Bhunk.this.db4j.userClassLoader);
+            return (TT) db4j.load(bytes);
         }
     }
     protected class ValsStringx extends ValsVarx<String,Bstring.Cmpr> {

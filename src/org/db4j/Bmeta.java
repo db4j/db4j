@@ -38,8 +38,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     static final long serialVersionUID = -7295474170097215526L;
     static boolean checkDel = false;
 
-    protected EE keys;
-    protected Element<VV,?> vals;
+    transient protected EE keys;
+    transient protected Element<VV,?> vals;
 
     protected void setup(EE $keys,Element<VV,?> $vals) {
         keys = $keys;
@@ -396,7 +396,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     
     public static abstract class Toast
     <KK,VV,EE extends Btypes.Element<KK,?>> extends Bmeta<Toast<KK,VV,EE>.Data,KK,VV,EE> {
-        ValsVarx<VV,Data> v2;
+        transient ValsVarx<VV,Data> v2;
         public class Data extends Bmeta.Context<KK,VV,Data> {}
         public Data context() { return new Data(); }
         protected int compare(Bpage.Sheet page,int index,Data data) {

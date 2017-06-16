@@ -77,6 +77,11 @@ public class Db4j extends ConnectionBase implements Serializable {
 
     static int sleeptime = 10;
 
+    /**
+     * kryo results in a saving of 80-90% for the size of the compressed Hunkables
+     * which dramatically increases the likelihood that the compraw tree will be in cache
+     */
+    static boolean useJavaSer = false;
 
 
 
@@ -415,7 +420,7 @@ public class Db4j extends ConnectionBase implements Serializable {
     protected <HH extends Hunkable> HH lookup(Transaction txn,HH column,String name) throws Pausable {
         byte [] b2 = compRaw.find(txn,name);
         if (b2==null) return null;
-        HH ha = (HH) org.srlutils.Files.load(b2);
+        HH ha = (HH) load(b2);
         // mixing apples and oranges ... this kryo is only used for Btree.IK etc
         if (column != null) {
             kryoish.copy(ha,column,true);
@@ -439,13 +444,21 @@ public class Db4j extends ConnectionBase implements Serializable {
         ha.set(this,name);
         int len = ha.create();
         ha.kloc = HunkLocals.alloc(this,loc.last,ncomp.val,len,txn);
-        byte [] araw = org.srlutils.Files.save(ha);
+        byte [] araw = save(ha);
         compRaw.context().set(txn).set(ha.name(),araw).insert(compRaw);
         put(txn,loc.ncomp.write(ncomp.val+1));
         ha.createCommit(ha.kloc);
         ha.postInit(txn);
         System.out.format( "hunker.create -- %5d len:%5d component:%s\n", ncomp.val, araw.length, ha );
         return ha;
+    }
+    Object load(byte [] data) {
+        if (useJavaSer) return org.srlutils.Files.load(data);
+        else return kryoish.convert(data);
+    }
+    byte [] save(Object ha) {
+        if (useJavaSer) return org.srlutils.Files.save(ha);
+        else return kryoish.save(ha);
     }
     /**
      * initialize a new instance and create the database
@@ -667,7 +680,7 @@ public class Db4j extends ConnectionBase implements Serializable {
                 Btrees.SA.Data context = compRaw.context().set(txn);
                 Bmeta.Range range = compRaw.getall(context);
                 while (range.next()) {
-                    Hunkable column = (Hunkable) org.srlutils.Files.load(context.val);
+                    Hunkable column = (Hunkable) load(context.val);
                     System.out.format("Hunker.info:%-30s :: %s\n", context.key, column.getClass().getName());
                 }
             }).awaitb();

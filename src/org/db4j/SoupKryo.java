@@ -32,6 +32,7 @@ public class SoupKryo implements Db4j.Kryoish {
     void doRegistration(Kryo kryo) {
         kryo.register(RegPair.class);
         kryo.register(Btrees.IS.class);
+        kryo.register(HunkLog.class);
         KryoInjector.init(kryo);
     }
     class HunkResolver extends Example.Resolver {
