@@ -98,6 +98,14 @@ public class Db4j extends ConnectionBase implements Serializable {
     transient HunkLog logStore;
 
     transient FileLock flock;
+    /**
+     * this was added and used to deserialize ValsObject
+     * but there's no obvious use case for it
+     * and disabling it doesn't break anything obvious (eg DemoTrampoline)
+     * though obviously when it was added there was either a current need or an anticipated need
+     * disabling it now, but leaving it in in the hopes of rediscovering why it's needed
+     */
+    @Deprecated
     transient ClassLoader userClassLoader;
     transient BlocksUtil util;
 
