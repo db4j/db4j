@@ -13,6 +13,14 @@ public class Database {
     Self self = new Self();
     Thread shutdownThread;
 
+    // fixme - during production/maintanance, it may be better to throw an exception
+    //   for development, this auto-magic is nice
+    /**
+     *  if a component is missing during table loading, should the component be initialized.
+     *  if not, an exception is thrown
+     */
+    boolean buildIfMissing = true;
+
     // fixme - component lookup/creation isn't thread safe
     // probably want some form of locking to allow structs to be reused with a callback to rebuild
     // if something changes
@@ -93,12 +101,12 @@ public class Database {
         for (Field field : fields) {
             Table table = (Table) Simple.Reflect.alloc(field.getType(),false );
             table.init(base(field), db4j );
-            table.load(conn,table);
+            table.load(conn,table,buildIfMissing);
             tables[ ktable++ ] = table;
             Simple.Reflect.set( this, field.getName(), table );
         }
         self.init(null,db4j);
-        self.load(conn,this);
+        self.load(conn,this,buildIfMissing);
         conn.awaitb();
     }
 
@@ -125,7 +133,7 @@ public class Database {
                 conn.submitCall(txn -> {
                     Hunkable composite = txn.lookup(name);
                     if (overwrite || composite == null) {
-                        composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false );
+                        composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false);
                         txn.create(composite,name);
                     }
                     columns[ktable] = composite;
@@ -134,7 +142,7 @@ public class Database {
             }
         }
 
-        void load(Db4j.Connection conn,Object source) {
+        void load(Db4j.Connection conn,Object source,boolean build) {
             Field [] fields = getFields(source.getClass(),Object.class,Hunkable.class);
             columns = new Hunkable[ fields.length ];
             int jj = 0;
@@ -146,7 +154,12 @@ public class Database {
                     if (composite == null) {
                         String err = String.format( "failed to find Hunkable: %s, as field: %s",
                                 filename, field.getName() );
-                        throw new RuntimeException( err );
+                        if (build) {
+                            composite = (Hunkable) Simple.Reflect.alloc(field.getType(),false);
+                            txn.create(composite,filename);
+                        }
+                        else
+                            throw new RuntimeException( err );
                     }
                     columns[kcol] = composite;
                     Simple.Reflect.set(source, field.getName(), composite);
