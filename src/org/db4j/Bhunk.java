@@ -3,6 +3,10 @@
 package org.db4j;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
@@ -286,6 +290,24 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         public CC get(Bhunk map) throws Pausable { map.findData(this); return (CC) this; }
     }
 
+    public static class Pair<KK,VV> {
+        public KK key;
+        public VV val;
+        public Pair() {}
+        public Pair(KK $key,VV $val) { key=$key; val=$val; }
+        public Pair<KK,VV> set(KK $key,VV $val) { key=$key; val=$val; return this; }
+    }
+
+    public ArrayList getpairs(BiFunction<CC,Pair,Pair> mapping) {
+        Function<CC,Pair> map0 = cc -> mapping.apply(cc,new Pair(null,null));
+        return db4j.submit(txn -> getall(txn).getall(map0)).awaitb().val;
+    }
+    
+    public <KK,VV> ArrayList<Pair<KK,VV>> getall(Function<CC,Pair<KK,VV>> mapping) {
+        return db4j.submit(txn -> getall(txn).getall(mapping)).awaitb().val;
+    }
+    public Range getall(Transaction txn) throws Pausable { return (Range) super.getall(context().set(txn)); }
+    
     /** a Double-Float map for testing */
     private static class DF extends Bhunk<DF.Data> {
         public DF() { init(Types.Enum._double.size,Types.Enum._float.size); }

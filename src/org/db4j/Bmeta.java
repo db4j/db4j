@@ -4,6 +4,7 @@ package org.db4j;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import org.srlutils.btree.BtTests2;
 import org.srlutils.btree.Btypes.Element;
 import org.srlutils.btree.Bpage.Sheet;
@@ -379,6 +380,10 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     }
     public Range findPrefix(Transaction txn,KK key) throws Pausable {
         return (Range) findPrefix(context().set( txn ).set(key, null));
+    }
+
+    public ArrayList<Pair<KK,VV>> getall() {
+        return getall(cc -> new Pair<>(cc.key,cc.val));
     }
 
     public Range getall(CC context) throws Pausable { return (Range) super.getall(context); }

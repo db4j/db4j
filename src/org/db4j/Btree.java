@@ -3,6 +3,9 @@
 package org.db4j;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import kilim.Fiber;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
@@ -572,6 +575,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     
     protected boolean isToast(CC context) { return false; }
     void toastPage(Path<PP> path,CC context) throws Pausable {}
+    public void slurp(Path<PP> p1,Path<PP> p2,CC context) throws Pausable {}
     
     public static class Range<CC extends Btree.Context> {
         // from c1 to c2 (exclussive)
@@ -582,7 +586,18 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public Range(Btree $btree) { btree = $btree; }
         public Range set(Path $c1,Path $c2,CC $cc) { p1=$c1; p2=$c2; cc=$cc; return this; }
         
+        public <TT> ArrayList<TT> getall(Function<CC,TT> map) throws Pausable {
+            ArrayList vals = new ArrayList();
+            btree.slurp(p1,p2,cc);
+            while (next()) vals.add(map.apply(cc));
+            return vals;
+        }
+        public void visit(Consumer<CC> consumer) throws Pausable {
+            btree.slurp(p1,p2,cc);
+            while (next()) consumer.accept(cc);
+        }
         public int count() throws Pausable {
+            btree.slurp(p1,p2,cc);
             if (p2 != null && p1.page.kpage==p2.page.kpage) return p2.ko - p1.ko;
             int cnt = p1.page.num - p1.ko;
             Path po = p1.dup();
