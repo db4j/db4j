@@ -1446,15 +1446,15 @@ public class Db4j extends ConnectionBase implements Serializable {
                 for (int ii = 0; ii < generation.blocks.length; ii++) {
                     BlockNode block = generation.blocks[ii];
                     if (debug.tree >= 3) System.out.format( "." );
-                    long offset = block.kblock << bb;
+                    long kb=block.kblock, offset = kb << bb;
 
                     byte [] data = null;
 
                     if (! block.dontRead() ) {
                         ByteBuffer b2 = ByteBuffer.wrap( data = new byte[bs] );
-                        if (offset < 0 | offset > db4j.size)
+                        if (kb < 0 | kb >= db4j.size)
                             rte(null,"Disk.read -- out of range block:%d task:%s",
-                                    block.kblock, block.cmds.get(0).txn.task );
+                                    block.kblock, block.cmds.size > 0 ? block.cmds.get(0).txn.task:null );
                         final int nread = chan.read( b2, offset );
                         if (nread < bs) {
                             // handle anomalies in the qrunner
