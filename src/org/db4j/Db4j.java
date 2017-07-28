@@ -912,7 +912,7 @@ public class Db4j extends ConnectionBase implements Serializable {
 
         long journalSpace() { return db4j.runner.journalSize - kjournal; }
         Generation makeCT() {
-            Generation ct = new Generation().genc( genc );
+            Generation ct = new Generation().genc( ++genc );
             ct.kjournal = kjournal;
             return ct;
         }
