@@ -123,6 +123,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     protected void merge(Sheet page0,Sheet page1) {
         Simple.softAssert(page1.isset(copy));
         page0.merge(page1);
+        db4j.release(null,page1.kpage);
     }
     /** create a new page */
     protected Sheet createPage(boolean leaf,CC cc) throws Pausable {
@@ -385,6 +386,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 if (dbg)
                     System.out.format("setx @ %5d: %5d %5d\n",offset,len,kblock);
             }
+        }
+        void delx(Transaction txn,Sheet page) throws Pausable {
+            db4j.release(txn,page.kpage);
         }
         public void prepx(Transaction txn,Sheet page,int index) {
             int offset = getx(page,index);

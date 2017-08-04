@@ -393,6 +393,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         if (page.num==0 || s2 < so && size >= so)
             combine( path, context );
     }
+    public void update(Path<PP> path,CC context) throws Pausable {
+        // simple case ... val sizes are fixed, so just update the value
+        int cmp = compare(path.page,path.ko,context);
+        Simple.softAssert(cmp==0,"updating a value requires the key is unchanged");
+        setccx(path.page,context,path.ko);
+    }
     /** 
      * if we've removed the last element in the page and it's a duplicate
      * need to propagate the deletion up the path
@@ -413,6 +419,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         }
     }
     void combine(Path<PP> path,CC context) throws Pausable {
+        Path<PP> po = path;
         boolean yes = true;
         int level = context.depth;
         for (; yes && path.prev != null; path = path.prev, level--)
@@ -585,6 +592,9 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         Btree btree;
         public Range(Btree $btree) { btree = $btree; }
         public Range set(Path $c1,Path $c2,CC $cc) { p1=$c1; p2=$c2; cc=$cc; return this; }
+
+        public void update() throws Pausable { btree.update(p1,cc); }
+        public void remove() throws Pausable { btree.remove(p1,cc); }
         
         public <TT> ArrayList<TT> getall(Function<CC,TT> map) throws Pausable {
             ArrayList vals = new ArrayList();

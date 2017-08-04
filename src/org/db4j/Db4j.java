@@ -572,6 +572,12 @@ public class Db4j extends ConnectionBase implements Serializable {
         return nb;
     }
 
+    void release(Transaction txn,int ... requests)
+            // throws Pausable 
+    {
+        // fixme::implement and make pausable
+    }
+    
     /** request a range of nreq hunks, guaranteed to be contiguous if true */
     int [] request(int nreq,boolean contiguous,Transaction txn) throws Pausable {
         Command.RwInt cmd = put( txn, loc.nblocks.read() );
