@@ -253,6 +253,7 @@ public class Db4j extends ConnectionBase implements Serializable {
         DiskObject disk = org.srlutils.Files.load(name);
         Db4j db4j = (Db4j) disk.object;
         db4j.initFields(name, null);
+        db4j.runner.readJournal(true,false);
         db4j.load((int) disk.size);
         return db4j;
     }
@@ -468,6 +469,7 @@ public class Db4j extends ConnectionBase implements Serializable {
      */
     protected Db4j init(String name,Long fileSize) {
         initFields(name,fileSize);
+        runner.initJournal();
         create();
         return this;
     }
@@ -846,7 +848,7 @@ public class Db4j extends ConnectionBase implements Serializable {
          */
         long genc = gencUsageMarker(1);
         Cache dc;
-        Generation map = null;
+        Generation map = new Generation().genc(0);
         Quetastic    quetastic;
         ConcurrentLinkedQueue<Queable> commandQ;
         ConcurrentLinkedQueue<Predicable> blockQ;
@@ -1328,6 +1330,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             buf.order(byteOrder);
         }
 
+        long magic = 115249; // could use any non-zero, but the largest cuban prime is cool
 
         public void run() {
             Thread current = Thread.currentThread();
@@ -1390,6 +1393,89 @@ public class Db4j extends ConnectionBase implements Serializable {
                 throw new RuntimeException( "partial write: " + nwrite );
             if (dio) DioNative.fadvise(db4j.ufd, offset, db4j.bs, DioNative.Enum.dontneed );
         }
+        void initJournal() {
+            java.util.Arrays.fill( buf.array(), (byte) 0 );
+            try { journal(0); }
+            catch (Exception ex) { throw new RuntimeException(ex); }
+        }
+        void readJournal(boolean save,boolean first) {
+            try { doReadJournal(save,first); }
+            catch (Exception ex) { ex.printStackTrace(); }
+//            catch (RuntimeException ex) { throw ex; }
+//            catch (IOException ex) { throw new RuntimeException(ex); }
+        }
+        void doReadJournal(boolean save,boolean first) throws IOException {
+            DioNative.fadvise(db4j.ufd, journalBase, journalSize*db4j.bs, DioNative.Enum.seq);
+            int mode = 0;
+            long nwrite = 0;
+            long [] kblocks = null;
+            int ko = 0, kj = 0, kr = 0;
+            byte [] data;
+            int ngen = 0;
+            int ncache = 0;
+            while (kj < journalSize) {
+                ByteBuffer b2 = ByteBuffer.wrap( data = new byte[db4j.bs] );
+                b2.order(byteOrder);
+                int nread = db4j.chan.read(b2,(journalBase+kj++)*db4j.bs);
+                if (nread < db4j.bs)
+                    throw new IOException("readJournal.partial read: "+nread);
+                b2.clear();
+                if (mode==0) {
+                    ko = kr = 0;
+                    long mv = b2.getLong();
+                    nwrite = b2.getLong();
+                    if (mv==0)
+                        break;
+                    if (mv != magic)
+                        throw new RuntimeException("journal::bad magic");
+                    kblocks = new long[(int) nwrite];
+                    mode = 1;
+                }
+                if (mode==1) {
+                    // nwrite is known non-zero since no header/footer is written in that case
+                    while (ko < nwrite && b2.hasRemaining())
+                        kblocks[ko++] = b2.getLong();
+                    if (ko==nwrite) {
+                        b2.clear();
+                        nread = db4j.chan.read(b2,(journalBase+kj+nwrite)*db4j.bs);
+                        if (nread < db4j.bs)
+                            throw new IOException("readJournal.partial read: "+nread);
+                        b2.clear();
+                        byte val = b2.get();
+                        if (save)
+                            System.out.format("db4j.journal.restoregen: %d %b\n",nwrite,val==0);
+                        if (val==0)
+                            break;
+                        mode = 2;
+                    }
+                    continue;
+                }
+                if (mode==2) {
+                    long offset = kblocks[kr++]*db4j.bs;
+                    ncache++;
+                    if (save) {
+                        CachedBlock cb = db4j.qrunner.dc.checkCache(offset,0);
+                        if (cb==null) {
+                            cb = db4j.qrunner.dc.putCache(offset,0,0,true);
+                            db4j.qrunner.dc.d2++;
+                        }
+                        cb.setData(data,true);
+                    }
+                    if (kr==nwrite) {
+                        // skip the footer - it has already been read
+                        kj++;
+                        mode = 0;
+                        ngen++;
+                        if (first) break;
+                    }
+                }
+            }
+            if (save) {
+                kk = kj;
+                DioNative.fadvise(db4j.ufd, journalBase, journalSize*db4j.bs, DioNative.Enum.dontneed);
+            }
+            System.out.format("db4j.journal.restore -- ngen:%d ncache:%d\n",ngen,ncache);
+        }
         /**
          * the header is all longs ... a magic number, the number of blocks, the kblocks for each block
          *   always a whole number of pages (ie, there may be empty space after the kblocks section)
@@ -1406,7 +1492,6 @@ public class Db4j extends ConnectionBase implements Serializable {
                 journal(footer+1); // zero the header for next generation
 
             buf.clear();
-            long magic = 115249; // could use any non-zero, but the largest cuban prime is cool
             buf.putLong(magic);
             buf.putLong(gen.nwrite);
             if (Db4j.debug.disk)
@@ -1419,6 +1504,7 @@ public class Db4j extends ConnectionBase implements Serializable {
                     }
                     buf.putLong( block.kblock );
                 }
+            java.util.Arrays.fill(buf.array(), buf.position(), buf.capacity(), (byte) 0);
             journal(kk++); // ultimate header page
             return footer;
         }
@@ -1440,11 +1526,14 @@ public class Db4j extends ConnectionBase implements Serializable {
                 QueRunner qrunner = db4j.qrunner;
                 
                 generation.sort();
+                boolean dbg = false;
+                if (dbg) readJournal(false,false);
                 
                 Simple.softAssert( kk==generation.kjournal || generation.kjournal==0 );
                 kk = generation.kjournal;
                 Simple.softAssert( kk < journalSize );
                 footer = header(generation);
+                if (dbg) readJournal(false,false);
                 if (dio) for (BlockNode block : generation.blocks) {
                     if (!block.dontRead())
                         DioNative.fadvise( ufd, block.kblock << bb, bs, DioNative.Enum.willneed );
@@ -1472,6 +1561,7 @@ public class Db4j extends ConnectionBase implements Serializable {
                         stats.totalReads++;
                     }
                     boolean done = block.runBlock(db4j,data);
+                    if (dbg) readJournal(false,false);
 
                     // future-proof: for small caches, where the pending writes are a significant
                     //   size of the cache, could use double-blind (writes overlayed on 0s, 1s)
@@ -1485,12 +1575,16 @@ public class Db4j extends ConnectionBase implements Serializable {
                 chan.force(false);
                 if (finished && generation.nwrite > 0)
                     System.out.format( "XXXXXXX.finalWrite %d\n", generation.nwrite );
+                if (dbg)
+                    readJournal(false,false);
                 for (BlockNode block : generation.blocks) {
                     if (block != null) {
                         block.postRun(db4j);
                         qrunner.blockQ.offer( block );
                     }
                 }
+                if (generation.commit)
+                    initJournal();
 
             } catch (IOException ex) {
                 throw new RuntimeException( ex );
@@ -1731,6 +1825,8 @@ public class Db4j extends ConnectionBase implements Serializable {
             db4j.runner.stats.totalWrites++;
         }
         void postRun(Db4j db4j) throws IOException {
+            // fixme:analysis - should all doWrites be done here ?
+            // ie, what's the benefit of committing non-writs in runBlock
             if (writ && commit) {
                 doWrite(db4j, writeCache.data );
             }
@@ -1832,7 +1928,6 @@ public class Db4j extends ConnectionBase implements Serializable {
          */
         boolean ready = false;
         boolean writ, submit;
-        boolean counted;
         /** linked list of cache for this kblock */
         CachedBlock older, newer;
         /** outstanding and naked, ie a member of the byUpdate list, ie neither covered, covering nor current */
@@ -2210,6 +2305,10 @@ public class Db4j extends ConnectionBase implements Serializable {
         void dump() {
             for (CachedBlock cb : tree.iter())
                 System.out.format( "%20s\n", cb );
+        }
+        CachedBlock checkCache(long offset,long gen) {
+            long kblock = offset >> db4j.bb;
+            return tree.get(kblock,gen);
         }
 
         /** 

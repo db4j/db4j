@@ -21,6 +21,7 @@ public class Chat1 extends Database {
     public static class User implements Serializable {
         public String name, bio;
         public User(String name,String bio) { this.name=name; this.bio=bio; }
+        User() {}
         String format() { return "user: " + name + " <" + bio + ">"; }
     }    
     public String route(String query) throws Pausable {
@@ -70,7 +71,7 @@ public class Chat1 extends Database {
             hello.shutdown(true);
         }
         
-        {
+        else {
             Chat1 hello = new Chat1();
             Db4j db4j = hello.start(filename,false);
             // can lookup by either class or value, it's just used for type inference
@@ -96,6 +97,7 @@ public class Chat1 extends Database {
             
             System.out.println(klass);
             System.out.println(klass3);
+            hello.shutdown(true);
         }
         System.exit(0);
     }
