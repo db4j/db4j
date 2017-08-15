@@ -250,6 +250,9 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
         /** total size in blocks of this level         */  public int size;
         /** khunk of the level's first hunk            */  public int first;
         /** index of superblock that contains the hunk */  public int kmeta;
+        
+        int nhunks;
+        int nlive;
 
         /** initialize the metahunk using the given level, ie for the first hunk contained by level */
         public MetaHunk setLevel(int _level) {
@@ -288,8 +291,16 @@ public abstract class HunkArray<TT,CC extends Command.RwPrimitive<TT,CC>,ZZ exte
             long offset = hunksBase + sbi*bph;
             Command.RwInt cmd = new Command.RwInt();
             db4j.put( txn, offset, cmd );
+            // fixme::optimal - don't really need to verify these values don't change
+            //                  just that they don't shrink smaller than khunk
+            //                  currently Command replay (ie overwritten) doesn't support this
+            //                  but it could (and should)
+            Command.RwInt cmdNum = db4j.put(txn, loc.nhunks.read());
+            Command.RwInt cmdLive = db4j.put(txn, loc.nlive.read());
             if (txn.submit()) kilim.Task.yield();
             int block = cmd.val;
+            nhunks = cmdNum.val;
+            nlive = cmdLive.val;
             return block + khunk % sbsize;
         }
         /** advance to the next superblock and return This */
