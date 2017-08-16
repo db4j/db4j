@@ -450,6 +450,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         protected byte[] convert(byte[] val) { return val; }
     }
     protected class ValsKryo<TT> extends ValsVarx<TT,Bstring.Cmpr> {
+        public ValsKryo() {}
         protected byte[] convert(TT val,Object cmpr) {
             return cmpr==null
                     ? save(val) 

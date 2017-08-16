@@ -413,7 +413,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     
     public static abstract class Toast
     <KK,VV,EE extends Btypes.Element<KK,?>> extends Bmeta<Toast<KK,VV,EE>.Data,KK,VV,EE> {
-        transient ValsVarx<VV,Data> v2;
+        public transient ValsVarx<VV,Data> v2;
         public class Data extends Bmeta.Context<KK,VV,Data> {}
         public Data context() { return new Data(); }
         protected int compare(Bpage.Sheet page,int index,Data data) {
@@ -437,7 +437,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         protected boolean isToast(Data data) { return v2.isToast(data.val,data.valdata); }
         protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Data context,boolean greater) {
             for (; k1<num; k1+=step) {
-                int cmp = keys.compare(context.key,page,k1,null);
+                int cmp = keys.compare(context.key,page,k1,context.keydata);
                 if (greater & cmp==0) cmp = 1;
                 if (cmp <= 0) break;
             }
@@ -447,7 +447,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
     }
     public static abstract class Itoast<TT> extends Toast<Integer,TT,Btypes.ValsInt> {
-        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Toast<Integer,TT,Btypes.ValsInt>.Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Itoast<TT>.Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,null);
                 if (greater & cmp==0) cmp = 1;
@@ -459,7 +459,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
     }
     public static abstract class Stoast<TT> extends Toast<String,TT,Bstring.ValsString> {
-        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Toast<String,TT,Bstring.ValsString>.Data context,boolean greater) {
+        protected int findLoop(Bpage.Sheet page,int k1,int num,int step,Stoast<TT>.Data context,boolean greater) {
             for (; k1<num; k1+=step) {
                 int cmp = keys.compare(context.key,page,k1,context.keydata);
                 if (greater & cmp==0) cmp = 1;
