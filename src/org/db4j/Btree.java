@@ -506,6 +506,10 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         // fixme:encapsulation - btree subclasses could need access to private members
         //                       use static protected methods
         Path() {}
+        // fixme - prev is the link to the parent level, ie they move vertically
+        // but this creates confusion as the path also has operations prev() and next() that
+        // move horizontally, and these are part of the public api
+        // should probably rename prev, perhaps to "link"
         Path<PP> prev;
         PP page;
         int ko;
@@ -567,6 +571,11 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         if (path.ko >= path.page.num) return nextPage(path, context);
         return path;
     }
+    public Path<PP> prev(Path<PP> path,CC context) throws Pausable {
+        path.ko--;
+        if (path.ko < 0) return prevPage(path, context);
+        return path;
+    }
 
     public void getPath(Path<PP> path,CC context) throws Pausable {
         context.match = true;
@@ -586,9 +595,9 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     
     public static class Range<CC extends Btree.Context> {
         // from c1 to c2 (exclussive)
-        Path p1, p2;
+        Path p1, p2, px;
         public CC cc;
-        boolean first = true, preinit = true;
+        boolean first = true, preinit = true, init = true;
         Btree btree;
         public Range(Btree $btree) { btree = $btree; }
         public Range set(Path $c1,Path $c2,CC $cc) { p1=$c1; p2=$c2; cc=$cc; return this; }
@@ -627,9 +636,20 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             return valid;
         }
         public boolean hasnext() throws Pausable {
-            if (!first) p1 = btree.next(p1,cc);
+            if (init)        px = p1.dup();
+            else if (!first) px = btree.next(px,cc);
             first = true;
-            boolean valid = p1 != null && (p2==null || !p1.same(p2));
+            init = false;
+            boolean valid = px != null && (p2==null || !px.same(p2));
+            return valid;
+        }
+        public boolean hasprev() throws Pausable {
+            if (init)          px = p2.dup();
+            boolean valid = px != null && (p1==null || !px.same(p1));
+            if (init | !first) px = btree.prev(px,cc);
+            first = true;
+            init = false;
+            if (px==null) valid = false;
             return valid;
         }
         /**
@@ -639,7 +659,13 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public boolean next() throws Pausable {
             boolean valid = hasnext();
             first = false;
-            if (valid) btree.getccx(p1.page,cc,p1.ko);
+            if (valid) btree.getccx(px.page,cc,px.ko);
+            return valid;
+        }
+        public boolean prev() throws Pausable {
+            boolean valid = hasprev();
+            first = false;
+            if (valid) btree.getccx(px.page,cc,px.ko);
             return valid;
         }
         /**
@@ -648,11 +674,11 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
          * @return true if the element is valid
          */
         public boolean nextGreedy() throws Pausable {
-            Page po = p1.page;
+            Page page = px.page;
             boolean valid = hasnext();
-            if (valid && (preinit | po != p1.page)) btree.toastPage(p1,cc);
+            if (valid && (preinit | page != px.page)) btree.toastPage(px,cc);
             first = preinit = false;
-            if (valid) btree.getccx(p1.page,cc,p1.ko);
+            if (valid) btree.getccx(px.page,cc,px.ko);
             return valid;
         }
     }
@@ -709,6 +735,33 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             Path tmp = path;
             path = new Path();
             path.set(tmp,page,0);
+        }
+        return path;
+    }
+    Path<PP> prevPage(Path<PP> path,CC context) throws Pausable {
+        Path<PP> prev = path.prev;
+        if (prev==null) return null;
+        if (prev.ko > 0) {
+            prev.ko--;
+            PP page = dexs(prev.page,prev.ko,true,context);
+            path.page = page;
+            path.ko = page.num-1;
+            return path;
+        }
+        int level = context.depth;
+        while (true) {
+            path = path.prev;
+            level--;
+            if (path==null) return null;
+            path.ko--;
+            if (path.ko >= 0) break;
+        }
+        while (level < context.depth) {
+            PP page = dexs(path.page,path.ko,level+1==context.depth,context);
+            level++;
+            Path tmp = path;
+            path = new Path();
+            path.set(tmp,page,page.num-1);
         }
         return path;
     }
