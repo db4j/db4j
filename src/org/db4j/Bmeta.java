@@ -313,7 +313,10 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         else                           super.insert (context);
     }
     public void update(Path<Sheet> path,CC context) throws Pausable {
-        if (keys.dynlen | vals.dynlen)       super.update(path,context);
+        if (!keys.dynlen & !vals.dynlen) {
+            super.update(path,context);
+            return;
+        }
         int cmp = compare(path.page,path.ko,context);
         Simple.softAssert(cmp==0,"updating a value requires the key is unchanged");
 
