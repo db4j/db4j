@@ -628,6 +628,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
                 Simple.softAssert(false);
             return cnt;
         }
+        // fixme::broken - px never gets set, replace with next() ???
         public CC refresh() throws Pausable { btree.getccx(p1.page,cc,p1.ko); return cc; }
         public boolean valid() { return p1 != null && (p2==null || !p1.same(p2)); }
         public boolean init() throws Pausable {
