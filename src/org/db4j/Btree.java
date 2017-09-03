@@ -362,11 +362,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         checkDel(page,false);
     }
     /** delete the first element equal to context.key */
-    public void remove(CC context) throws Pausable {
+    public CC remove(CC context) throws Pausable {
         context.mode = modes.eq;
         Path<PP> path = findPath(context,true);
         if (context.match) 
             remove(path,context,path.right);
+        return context;
     }
     int delete(PP page,int index) {
         prep(page);
