@@ -307,7 +307,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
     public <KK,VV> ArrayList<Pair<KK,VV>> getall(Function<CC,Pair<KK,VV>> mapping) {
         return db4j.submit(txn -> getall(txn).getall(mapping)).awaitb().val;
     }
-    public Range getall(Transaction txn) throws Pausable { return (Range) super.getall(context().set(txn)); }
+    public Range<CC> getall(Transaction txn) throws Pausable { return (Range) super.getall(context().set(txn)); }
     
     /** a Double-Float map for testing */
     private static class DF extends Bhunk<DF.Data> {

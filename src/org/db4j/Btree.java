@@ -603,8 +603,8 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public Range(Btree $btree) { btree = $btree; }
         public Range set(Path $c1,Path $c2,CC $cc) { p1=$c1; p2=$c2; cc=$cc; return this; }
 
-        public void update() throws Pausable { btree.update(p1,cc); }
-        public void remove() throws Pausable { btree.remove(p1,cc); }
+        public void update() throws Pausable { btree.update(px,cc); }
+        public void remove() throws Pausable { btree.remove(px,cc); }
         
         public <TT> ArrayList<TT> getall(Function<CC,TT> map) throws Pausable {
             ArrayList vals = new ArrayList();
