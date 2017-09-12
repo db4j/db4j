@@ -20,6 +20,7 @@ import org.srlutils.btree.Butil;
 // can run either kilimized or kilim-free (comment out the following import)
 import kilim.Pausable;
 import org.db4j.Db4j.Transaction;
+import org.srlutils.btree.Bpage;
 
 /*
  * 
@@ -377,12 +378,12 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
      * @param path the location of the element to remove
      * @param context the context
      */
-    public void remove(Path<PP> path,CC context) throws Pausable { remove(path,context,false); }
+    public CC remove(Path<PP> path,CC context) throws Pausable { return remove(path,context,false); }
     /** 
      *  remove the element described by path and rebalance the tree
      *  right means that the element is the last element in the tree, ie furthest-right
      */
-    protected void remove(Path<PP> path,CC context,boolean right) throws Pausable {
+    protected CC remove(Path<PP> path,CC context,boolean right) throws Pausable {
         PP page = path.page;
         int size = size(page,null,null,true,null,0);
         if (!right) cleanDups(path,context);
@@ -393,12 +394,14 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
 //        System.out.format( "Btree.remove -- page:%5d num:%5d, %5d %5d %5d\n", page.kpage, page.num, size, s2, so );
         if (page.num==0 || s2 < so && size >= so)
             combine( path, context );
+        return context;
     }
-    public void update(Path<PP> path,CC context) throws Pausable {
+    public CC update(Path<PP> path,CC context) throws Pausable {
         // simple case ... val sizes are fixed, so just update the value
         int cmp = compare(path.page,path.ko,context);
         Simple.softAssert(cmp==0,"updating a value requires the key is unchanged");
         setccx(path.page,context,path.ko);
+        return context;
     }
     /** 
      * if we've removed the last element in the page and it's a duplicate
@@ -600,11 +603,11 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public CC cc;
         boolean first = true, preinit = true, init = true;
         Btree btree;
-        public Range(Btree $btree) { btree = $btree; }
+        public Range(Btree<CC,?> $btree) { btree = $btree; }
         public Range set(Path $c1,Path $c2,CC $cc) { p1=$c1; p2=$c2; cc=$cc; return this; }
 
-        public void update() throws Pausable { btree.update(px,cc); }
-        public void remove() throws Pausable { btree.remove(px,cc); }
+        public CC update() throws Pausable { return (CC) btree.update(px,cc); }
+        public CC remove() throws Pausable { return (CC) btree.remove(px,cc); }
         
         public <TT> ArrayList<TT> getall(Function<CC,TT> map) throws Pausable {
             ArrayList vals = new ArrayList();

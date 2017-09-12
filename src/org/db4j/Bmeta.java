@@ -312,11 +312,9 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         if (keys.dynlen | vals.dynlen)       insert2(context);
         else                           super.insert (context);
     }
-    public void update(Path<Sheet> path,CC context) throws Pausable {
-        if (!keys.dynlen & !vals.dynlen) {
-            super.update(path,context);
-            return;
-        }
+    public CC update(Path<Sheet> path,CC context) throws Pausable {
+        if (!keys.dynlen & !vals.dynlen)
+            return super.update(path,context);
         int cmp = compare(path.page,path.ko,context);
         Simple.softAssert(cmp==0,"updating a value requires the key is unchanged");
 
@@ -325,6 +323,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
 
         remove(path,context,path.right);
         insert(context);
+        return context;
     }
     protected void free(Sheet page) { db4j.release(null,page.kpage); }
     int delete(Sheet page,int index) {
