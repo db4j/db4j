@@ -370,6 +370,10 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             remove(path,context,path.right);
         return context;
     }
+    public CC update(CC context) throws Pausable {
+        Path<PP> path = findPath(context,false);
+        return context.match ? update(path,context):context;
+    }
     int delete(PP page,int index) {
         prep(page);
         return page.delete(index);

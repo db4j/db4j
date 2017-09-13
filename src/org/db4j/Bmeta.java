@@ -308,6 +308,15 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         insert(context);
         return context;
     }
+    public CC remove(Transaction txn,KK key) throws Pausable {
+        CC context = context().set(txn).set(key,null);
+        remove(context);
+        return context;
+    }
+    public CC update(Transaction txn,KK key,VV val) throws Pausable {
+        CC context = context().set(txn).set(key,val);
+        return remove(context);
+    }
     public final void insert(CC context) throws Pausable {
         if (keys.dynlen | vals.dynlen)       insert2(context);
         else                           super.insert (context);
@@ -320,6 +329,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
 
         // fixme:speed - apply the delta instead of traversing the path
         // fixme:api - update the path (and range paths) during structural modification
+        // fixme:speed - compare the old and new sizes vs the space in the page and add directly
 
         remove(path,context,path.right);
         insert(context);
