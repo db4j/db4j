@@ -315,7 +315,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     }
     public CC update(Transaction txn,KK key,VV val) throws Pausable {
         CC context = context().set(txn).set(key,val);
-        return remove(context);
+        return update(context);
     }
     public final void insert(CC context) throws Pausable {
         if (keys.dynlen | vals.dynlen)       insert2(context);
