@@ -5,6 +5,7 @@ package org.db4j;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
 import org.srlutils.btree.BtTests2;
 import org.srlutils.btree.Btypes.Element;
 import org.srlutils.btree.Bpage.Sheet;
@@ -317,6 +318,10 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         CC context = context().set(txn).set(key,val);
         return update(context);
     }
+    public CC update(Transaction txn,KK key,VV val,Function<CC,Boolean> filter) throws Pausable {
+        return findPrefix(txn,key).first(filter).set(cc -> cc.val=val).update();
+    }
+    // fixme - add upsert and preserve paths during splits and merges
     public final void insert(CC context) throws Pausable {
         if (keys.dynlen | vals.dynlen)       insert2(context);
         else                           super.insert (context);

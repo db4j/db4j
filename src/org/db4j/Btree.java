@@ -610,8 +610,15 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public Range(Btree<CC,?> $btree) { btree = $btree; }
         public Range set(Path $c1,Path $c2,CC $cc) { p1=$c1; p2=$c2; cc=$cc; return this; }
 
-        public CC update() throws Pausable { return (CC) btree.update(px,cc); }
-        public CC remove() throws Pausable { return (CC) btree.remove(px,cc); }
+        public CC update() throws Pausable { if (cc.match) btree.update(px,cc); return cc; }
+        public CC remove() throws Pausable { if (cc.match) btree.remove(px,cc); return cc; }
+        public CC upsert() throws Pausable {
+            if (cc.match)
+                btree.update(px,cc);
+            else
+                btree.insertPath(px,cc);
+            return cc;
+        }
         
         public <TT> ArrayList<TT> getall(Function<CC,TT> map) throws Pausable {
             ArrayList vals = new ArrayList();
@@ -622,6 +629,15 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public void visit(Consumer<CC> consumer) throws Pausable {
             btree.slurp(p1,p2,cc);
             while (next()) consumer.accept(cc);
+        }
+        public Range<CC> first(Function<CC,Boolean> filter) throws Pausable {
+            while (next())
+                if (filter.apply(cc)) break;
+            return this;
+        }
+        public Range<CC> set(Consumer<CC> setter) throws Pausable {
+            setter.accept(cc);
+            return this;
         }
         public int count() throws Pausable {
             btree.slurp(p1,p2,cc);
