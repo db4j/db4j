@@ -658,7 +658,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public boolean init() throws Pausable {
             boolean valid = valid();
             if (valid) refresh();
-            return valid;
+            return cc.match = valid;
         }
         public boolean hasnext() throws Pausable {
             if (init)        px = p1.dup();
@@ -666,7 +666,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             first = true;
             init = false;
             boolean valid = px != null && (p2==null || !px.same(p2));
-            return valid;
+            return cc.match = valid;
         }
         public boolean hasprev() throws Pausable {
             if (init)          px = p2.dup();
@@ -675,8 +675,9 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             first = true;
             init = false;
             if (px==null) valid = false;
-            return valid;
+            return cc.match = valid;
         }
+        // fixme - add gonext(), goprev() that move px but don't retrieve values; fix refresh()
         /**
          * make the next element in the range current and store the key/value pair in context
          * @return true if the element is valid
