@@ -37,6 +37,11 @@ public class HunkCount extends Hunkable<HunkCount> implements Serializable {
         if (txn.submit()) kilim.Task.yield();
         return read.val;
     }
+    public RwInt read(Transaction txn) throws Pausable {
+        RwInt read = loc.count.read();
+        db4j.put(txn,read);
+        return read;
+    }
     public void set(Transaction txn,int val) {
         RwInt writ = loc.count.write(val);
         db4j.put( txn, writ );
