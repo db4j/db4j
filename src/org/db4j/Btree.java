@@ -694,6 +694,16 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             if (valid) btree.getccx(px.page,cc,px.ko);
             return valid;
         }
+        public boolean gonext() throws Pausable {
+            boolean valid = hasnext();
+            first = false;
+            return valid;
+        }
+        public boolean goprev() throws Pausable {
+            boolean valid = hasprev();
+            first = false;
+            return valid;
+        }
         /**
          * make the next element in the range current and store the key/value pair in context.
          * additionally, when a new page is accessed for the first time, toast all elements
