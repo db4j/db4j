@@ -610,8 +610,13 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         public Range(Btree<CC,?> $btree) { btree = $btree; }
         public Range set(Path $c1,Path $c2,CC $cc) { p1=$c1; p2=$c2; cc=$cc; return this; }
 
+        // fixme - should really verify that the path matches the key before modifying the leaf
         public CC update() throws Pausable { if (cc.match) btree.update(px,cc); return cc; }
         public CC remove() throws Pausable { if (cc.match) btree.remove(px,cc); return cc; }
+        public CC insert() throws Pausable {
+            btree.insertPath(px,cc);
+            return cc;
+        }
         public CC upsert() throws Pausable {
             if (cc.match)
                 btree.update(px,cc);
@@ -660,21 +665,26 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
             if (valid) refresh();
             return cc.match = valid;
         }
+        Path wrap(Path orig,Path path) {
+            return path==null ? orig:path;
+        }
+        boolean invalid(Path path) {
+            return path==null || path.ko < 0 | path.ko >= path.page.num;
+        }
         public boolean hasnext() throws Pausable {
             if (init)        px = p1.dup();
-            else if (!first) px = btree.next(px,cc);
+            else if (!first) px = wrap(px,btree.next(px,cc));
             first = true;
             init = false;
-            boolean valid = px != null && (p2==null || !px.same(p2));
+            boolean valid = !invalid(px) && (p2==null || !px.same(p2));
             return cc.match = valid;
         }
         public boolean hasprev() throws Pausable {
             if (init)          px = p2.dup();
-            boolean valid = px != null && (p1==null || !px.same(p1));
-            if (init | !first) px = btree.prev(px,cc);
+            if (init | !first) px = wrap(px,btree.prev(px,cc));
             first = true;
             init = false;
-            if (px==null) valid = false;
+            boolean valid = !invalid(px) && (p1==null || !px.same(p1));
             return cc.match = valid;
         }
         // fixme - add gonext(), goprev() that move px but don't retrieve values; fix refresh()
