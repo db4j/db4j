@@ -1,0 +1,51 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.db4j</groupId>
+    <artifactId>Db4jText</artifactId>
+    <version>0.9.0</version>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.db4j</groupId>
+                <artifactId>kilim</artifactId>
+                <version>2.0.0-13</version>
+                <executions>
+                    <execution>
+                        <goals><goal>weave</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <excludes>
+                        <exclude>example/*</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers-common</artifactId>
+            <version>7.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.db4j</groupId>
+            <artifactId>db4j</artifactId>
+            <version>0.9.5</version>
+        </dependency>
+    </dependencies>
+
+</project>
