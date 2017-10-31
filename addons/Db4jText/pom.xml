@@ -3,31 +3,22 @@
 
     <groupId>org.db4j</groupId>
     <artifactId>Db4jText</artifactId>
-    <version>0.9.0</version>
+    <version>0.9.6</version>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.db4j</groupId>
-                <artifactId>kilim</artifactId>
-                <version>2.0.0-13</version>
-                <executions>
-                    <execution>
-                        <goals><goal>weave</goal></goals>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>2.4</version>
                 <configuration>
                     <excludes>
-                        <exclude>example/*</exclude>
+                        <exclude>*</exclude>
                     </excludes>
                 </configuration>
             </plugin>
         </plugins>
+        <sourceDirectory>src</sourceDirectory>
     </build>
 
     <properties>
@@ -44,7 +35,7 @@
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>db4j</artifactId>
-            <version>0.9.5</version>
+            <version>0.9.6</version>
         </dependency>
     </dependencies>
 

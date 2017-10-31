@@ -1,6 +1,6 @@
 // copyright 2017 nqzero - licensed under the terms of the MIT license
 
-package example;
+package org.db4j.perf;
 
 import org.db4j.TextSearchTable;
 import org.db4j.TextSearchTable.Ibox;
@@ -47,13 +47,17 @@ public class TextSearchExample {
     
     public static void main(String[] args) throws Exception {
         TextSearchExample example = new TextSearchExample();
-        example.read();
-        example.run();
+        String postsName = args.length==0 ? "./addons/Db4jText/doc/Posts.txt":args[0];
+        String posts = DemoHunker.resolve(postsName);
+        String dbname = args.length >= 2 ? args[1]:"./db_files/hunk2.mmap";
+        String dbfile = DemoHunker.resolve(dbname);
+        example.read(posts);
+        example.run(dbfile);
         Scheduler.getDefaultScheduler().idledown();
     }
-    public TextSearchExample read() {
+    public TextSearchExample read(String filename) {
         try {
-            BufferedReader br = new BufferedReader(new FileReader("doc/Posts.txt"));
+            BufferedReader br = new BufferedReader(new FileReader(filename));
             for (String line; (line = br.readLine()) != null; )
                 docs.add(line);
         }
@@ -63,10 +67,10 @@ public class TextSearchExample {
 
     // verified that the total matches the result from cruden's BaseInverted
     AtomicInteger total = new AtomicInteger();
-    void run() {
+    void run(String filename) {
         Store store = new Store();
         boolean build = false;
-        Db4j db4j = store.start("./db_files/hunk2.mmap",build);
+        Db4j db4j = store.start(filename,build);
         Db4j.Connection conn = db4j.connect();
         Ibox kdoc = new Ibox();
         if (build) {

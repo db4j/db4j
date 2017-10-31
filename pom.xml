@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.db4j</groupId>
     <artifactId>db4j</artifactId>
-    <version>0.9.5</version>
+    <version>0.9.6</version>
     <parent>
         <groupId>com.nqzero</groupId>
         <artifactId>soup-project</artifactId>
@@ -35,6 +35,12 @@
             <groupId>com.nqzero</groupId>
             <artifactId>orator</artifactId>
             <version>0.9.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers-common</artifactId>
+            <version>7.0.1</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>

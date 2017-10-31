@@ -1,4 +1,4 @@
-// copyright 2017 nqzero - this is a component of db4j, see db4j/License.txt for terms
+// copyright 2017 nqzero - see License.txt for terms
 
 package org.db4j;
 
@@ -15,6 +15,11 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.db4j.Db4j.Transaction;
 
+/**
+ * a db4j database table comprising an inverted index for free text search
+ * note: this class depends on the lucene analyzers which is scoped::provided in this artifact, so
+ * it must be included in dependent projects, eg by using org.db4j:Db4jText:LATEST
+ */
 public class TextSearchTable extends Database.Table {
     public HunkCount num;
     public Btrees.SI wordmap;
