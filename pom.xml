@@ -40,7 +40,6 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-analyzers-common</artifactId>
             <version>7.0.1</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>

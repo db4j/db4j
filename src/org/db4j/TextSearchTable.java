@@ -15,6 +15,11 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.db4j.Db4j.Transaction;
 
+// fixme:dependency - org.db4j:db4j-core should be a minimal pom
+// neither lucene-analyzers nor kryo are essential to the operation of db4j, so make them optional
+// for now, just including both as it's easier and the deployment to maven central for db4j-core isn't set up yet
+
+
 /**
  * a db4j database table comprising an inverted index for free text search
  * note: this class depends on the lucene analyzers which is scoped::provided in this artifact, so

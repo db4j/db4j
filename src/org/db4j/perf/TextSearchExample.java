@@ -47,7 +47,7 @@ public class TextSearchExample {
     
     public static void main(String[] args) throws Exception {
         TextSearchExample example = new TextSearchExample();
-        String postsName = args.length==0 ? "./addons/Db4jText/doc/Posts.txt":args[0];
+        String postsName = args.length==0 ? "./demos/demo-text/doc/Posts.txt":args[0];
         String posts = DemoHunker.resolve(postsName);
         String dbname = args.length >= 2 ? args[1]:"./db_files/hunk2.mmap";
         String dbfile = DemoHunker.resolve(dbname);
