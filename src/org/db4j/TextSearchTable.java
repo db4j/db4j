@@ -4,6 +4,7 @@ package org.db4j;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,11 +58,11 @@ public class TextSearchTable extends Database.Table {
     public class Prep {
         ArrayList<String> words;
         public void add(Transaction txn,Integer id) throws Pausable {
-            TextSearchTable.this.add(txn,words,id);
+            TextSearchTable.this.addExact(txn,words,id);
         }
     }    
 
-    public void addSlow(Transaction txn,String doc,Integer id) throws Pausable {
+    public void parseAndAdd(Transaction txn,String doc,Integer id) throws Pausable {
         ArrayList<String> words = parse(doc);
         for (String word : words)
             put(txn,word,id);
@@ -69,7 +70,7 @@ public class TextSearchTable extends Database.Table {
     public void addExact(Transaction txn,String doc,Integer id) throws Pausable {
         put(txn,doc,id);
     }
-    public void add(Transaction txn,ArrayList<String> doc,Integer id) throws Pausable {
+    public void addExact(Transaction txn,ArrayList<String> doc,Integer id) throws Pausable {
         for (String word : doc)
             put(txn,word,id);
     }
@@ -94,7 +95,9 @@ public class TextSearchTable extends Database.Table {
             return new ArrayList();
 
         List<String> terms = tokenize(text);
-
+        return unique(terms);
+    }
+    public ArrayList<String> unique(Iterable<String> terms) {
         ArrayList<String> unique = new ArrayList();
         HashSet<String> unseen = new HashSet();
         for (String stem : terms)
@@ -103,18 +106,20 @@ public class TextSearchTable extends Database.Table {
         return unique;
     }
     public ArrayList<String> tokenize(String doc) {
-        ArrayList<String> words = new ArrayList();
+        return tokenize(doc,new ArrayList());
+    }
+    public <TT extends Collection<String>> TT tokenize(String doc,TT result) {
         try (TokenStream raw = analyzer.tokenStream(null,doc)) {
             KStemFilter ts = new KStemFilter(raw);
             CharTermAttribute term = ts.getAttribute(CharTermAttribute.class);
             ts.reset();
             while (ts.incrementToken())
                 // fixme - strip and split at non-word chars
-                words.add(term.toString());
+                result.add(term.toString());
             ts.end();
         }
         catch (IOException ex) {}
-        return words;
+        return result;
     }
 
     boolean stop(String word) { return false; }
