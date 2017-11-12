@@ -5,6 +5,7 @@ package org.db4j;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.srlutils.btree.BtTests2;
 import org.srlutils.btree.Btypes.Element;
@@ -318,7 +319,13 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         CC context = context().set(txn).set(key,val);
         return update(context);
     }
-    public CC update(Transaction txn,KK key,VV val,Function<CC,Boolean> filter) throws Pausable {
+    public CC update(Transaction txn,KK key,Consumer<VV> editor) throws Pausable {
+        return findPrefix(txn,key).first(cc -> true).set(cc -> editor.accept(cc.val)).update();
+    }
+    public CC update(Transaction txn,KK key,Function<CC,Boolean> filter,Consumer<VV> editor) throws Pausable {
+        return findPrefix(txn,key).first(filter).set(cc -> editor.accept(cc.val)).update();
+    }
+    public CC update(Transaction txn,KK key,Function<CC,Boolean> filter,VV val) throws Pausable {
         return findPrefix(txn,key).first(filter).set(cc -> cc.val=val).update();
     }
     // fixme - add upsert and preserve paths during splits and merges
