@@ -24,7 +24,7 @@ public class TextSearchExample {
         void query(String query,int max) {
             ArrayList<String> docs = new ArrayList();
             Integer num = db4j.submit(txn -> {
-                ArrayList<Integer> kdocs = inverted.search(txn,query);
+                ArrayList<Integer> kdocs = inverted.search(txn,true,query);
                 for (int ii=0; ii < Math.min(max,kdocs.size()); ii++)
                     docs.add(posts.find(txn,kdocs.get(ii)));
                 return kdocs.size();
@@ -86,7 +86,7 @@ public class TextSearchExample {
         store.query("dark warm light",1);
         for (String doc : docs)
             for (String word : doc.split(" "))
-                conn.submit(txn -> total.addAndGet(store.inverted.search(txn,word,true).size()));
+                conn.submit(txn -> total.addAndGet(store.inverted.searchExact(txn,word).size()));
         conn.awaitb();
         System.out.println(total);
         store.shutdown(true);

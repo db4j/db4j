@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import kilim.Pausable;
 import org.apache.lucene.analysis.Analyzer;
@@ -74,20 +75,21 @@ public class TextSearchTable extends Database.Table {
         for (String word : doc)
             put(txn,word,id);
     }
-    public ArrayList<Integer> search(Transaction txn,String term,boolean exact) throws Pausable {
-        return exact ? searchExact(txn,term):search(txn,term);
-    }
     public ArrayList<Integer> searchExact(Transaction txn,String term) throws Pausable {
         ArrayList<Integer> result = get(txn,term);
         return result==null ? new ArrayList():result;
     }
-    public ArrayList<Integer> search(Transaction txn,String terms) throws Pausable {
-        ArrayList<String> search = parse(terms);
+    public ArrayList<Integer> [] parseAndGet(Transaction txn,String phrase) throws Pausable {
+        ArrayList<String> search = parse(phrase);
         ArrayList<Integer> [] data = new ArrayList[search.size()];
 
         for (int ii=0; ii < search.size(); ii++)
             data[ii] = get(txn,search.get(ii));
-        ArrayList<Integer> result = join(data);
+        return data;
+    }
+    public ArrayList<Integer> search(Transaction txn,boolean requireAll,String phrase) throws Pausable {
+        ArrayList<Integer> [] data = parseAndGet(txn,phrase);
+        ArrayList<Integer> result = requireAll ? join(data):new ArrayList<>(union(data));
         return result==null ? new ArrayList():result;
     }
     public ArrayList<String> parse(String text) {
@@ -150,6 +152,14 @@ public class TextSearchTable extends Database.Table {
                 result.add(index);
         }
         return result;
+    }
+
+    public static <TT extends Integer> LinkedHashSet<TT> union(Collection<TT> ... lists) {
+        LinkedHashSet<TT> set = new LinkedHashSet();
+        for (Collection<TT> list : lists)
+            if (list != null)
+                set.addAll(list);
+        return set;
     }
 
     public static class Ibox {
