@@ -681,10 +681,11 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         }
         public boolean hasprev() throws Pausable {
             if (init)          px = p2.dup();
+            boolean same = p1.same(px);
             if (init | !first) px = wrap(px,btree.prev(px,cc));
             first = true;
             init = false;
-            boolean valid = !invalid(px) && (p1==null || !px.same(p1));
+            boolean valid = !invalid(px) && (p1==null || !same);
             return cc.match = valid;
         }
         // fixme - add gonext(), goprev() that move px but don't retrieve values; fix refresh()
