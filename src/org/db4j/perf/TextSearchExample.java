@@ -8,7 +8,6 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import kilim.Scheduler;
 import org.db4j.Btrees;
 import org.db4j.Database;
 import org.db4j.Db4j;
@@ -53,7 +52,7 @@ public class TextSearchExample {
         String dbfile = DemoHunker.resolve(dbname);
         example.read(posts);
         example.run(dbfile);
-        Scheduler.getDefaultScheduler().idledown();
+        kilim.Task.idledown();
     }
     public TextSearchExample read(String filename) {
         try {
