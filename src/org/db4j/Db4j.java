@@ -529,11 +529,6 @@ public class Db4j extends ConnectionBase implements Serializable {
     }
 
 
-    Transaction getTransaction() {
-        Transaction txn = new Transaction().set(this);
-        return txn;
-    }
-
     /** set the command to the offset */
     void put(long offset,Command cmd) {
         cmd.offset = offset;
@@ -2692,7 +2687,7 @@ public class Db4j extends ConnectionBase implements Serializable {
             cleaners.add(cleaner);
         }
 
-        Transaction set(Db4j $db4j) { db4j = $db4j; return this; }
+        protected Transaction set(Db4j $db4j) { db4j = $db4j; return this; }
 
         /** add a latch for kpage, ie if that page isn't held become the owner, otherwise defer */
         void addLatch(int kpage) {
@@ -3140,9 +3135,10 @@ public class Db4j extends ConnectionBase implements Serializable {
             status( Status.None );
         }
         void init2() { done = false; alive = true; kask = new Kask(); }
+        protected Transaction makeTxn(Db4j db4j) { return new Transaction().set(db4j); }
         void init(Db4j db4j) {
             init2();
-            txn = db4j.getTransaction();
+            txn = makeTxn(db4j);
             txn.task = this;
             status = Status.Init;
             dogyears = 0;
