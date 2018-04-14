@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.db4j</groupId>
     <artifactId>db4j</artifactId>
-    <version>0.9.7</version>
+    <version>0.9.8</version>
     <parent>
         <groupId>com.nqzero</groupId>
         <artifactId>soup-project</artifactId>
