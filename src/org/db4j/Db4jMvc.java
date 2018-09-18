@@ -3,7 +3,6 @@ package org.db4j;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import java.io.IOException;
-import java.util.function.Consumer;
 import kilim.Pausable;
 import kilim.http.HttpRequest;
 import kilim.http.HttpResponse;
@@ -22,7 +21,7 @@ public class Db4jMvc extends KilimMvc {
     public kilim.http.HttpServer start(int port) throws IOException {
         return new kilim.http.HttpServer(port,() -> new Session(this::handle));
     }
-    protected <PP extends Router> PP supply(Scannable<PP> source,Consumer<Route> router) {
+    protected <PP extends Router> PP supply(Scannable<PP> source,Clerk router) {
         // fixme - make KilimMvc generic
         PP pp = super.supply(source,router);
         ((Db4jRouter) pp).gson = gson;
@@ -34,7 +33,7 @@ public class Db4jMvc extends KilimMvc {
         public Gson gson;
         protected boolean logExtra = false;
 
-        protected Db4jRouter(Consumer<Route> mk) { super(mk); }
+        protected Db4jRouter(Clerk mk) { super(mk); }
 
         public PP setup(Db4j $db4j) {
             db4j = $db4j;

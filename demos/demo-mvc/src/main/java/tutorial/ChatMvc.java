@@ -1,6 +1,5 @@
 package tutorial;
 
-import java.util.function.Consumer;
 import kilim.Pausable;
 import kilim.http.KilimMvc;
 import kilim.tools.Kilim;
@@ -31,7 +30,7 @@ public class ChatMvc extends Database {
     }
 
     public class Router extends Db4jRouter<Router> {
-        Router(Consumer<KilimMvc.Route> mk) { super(mk); }
+        Router(KilimMvc.Clerk mk) { super(mk); }
 
         {
             add("/dir",() -> select(txn ->
