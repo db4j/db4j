@@ -15,14 +15,15 @@ import static org.db4j.perf.DemoHunker.resolve;
 import org.srlutils.Rand;
 
 public class Chat extends Database {
-    HunkCount count;
-    Btrees.IO<User> users;
-    Btrees.SI namemap;
-    Btrees.IS messages;
+    public HunkCount count;
+    public Btrees.IO<User> users;
+    public Btrees.SI namemap;
+    public Btrees.IS messages;
     public static class User implements Serializable {
         public String name, bio;
+        public User() {}
         public User(String name,String bio) { this.name=name; this.bio=bio; }
-        String format() { return "user: " + name + " <" + bio + ">"; }
+        public String format() { return "user: " + name + " <" + bio + ">"; }
     }    
     public String route(String query) throws Pausable {
         String cmds[]=query.split("/"), cmd=cmds.length > 1 ? cmds[1]:"none";
