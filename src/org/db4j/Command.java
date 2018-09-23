@@ -5,12 +5,12 @@ package org.db4j;
 import java.util.Iterator;
 import kilim.Pausable;
 import org.srlutils.Simple;
+import static org.srlutils.Unsafe.uu;
 import org.srlutils.Util;
 
 public abstract class Command implements Cloneable {
     
     protected static class Page {
-        private static final sun.misc.Unsafe uu = Simple.Reflect.getUnsafe();
         static final long bao = uu.arrayBaseOffset(byte[].class);
         public byte [] data;
         public boolean dup;
