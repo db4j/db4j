@@ -8,7 +8,7 @@ db4j is a transactional database engine
 
 ## a quick example
 
-a simple persistent RESTful "mailbox" app
+a simple persistent async RESTful "mailbox" app
 
 ```
 public class Chat extends Database {
@@ -50,10 +50,10 @@ public class Chat extends Database {
 
 this implements a simple persistent RESTful "mailbox" app
 - uses the webserver built-in to kilim, but jetty or another server can be used instead
-- data is stored persistently in the file `chat.db`
-- `trampoline` causes kilim to convert to green threads
+- data is stored persistently in the database file `chat.db`
 - `localhost:8080/new/john doe/software professional with an interest in java and linux`
 - this demo is included in the repository in `demos/diary-kws`
+- fully async server and queries (`Kilim.trampoline`)
 
 
 ## installation
@@ -62,7 +62,7 @@ this implements a simple persistent RESTful "mailbox" app
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>db4j</artifactId>
-            <version>0.9.4</version>
+            <version>0.9.9</version>
         </dependency>
 ```
 
@@ -93,5 +93,6 @@ post an issue if you're interested in testing this
 
 ## contact / mailing list
 
-you can use the [db4j mailing list](https://groups.google.com/forum/#!forum/db4j) for questions, discussion and support
+* the [db4j mailing list](https://groups.google.com/forum/#!forum/db4j)
+* https://github.com/db4j/db4j
 
