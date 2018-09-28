@@ -91,28 +91,6 @@ post an issue if you're interested in testing this
 
 
 
-## Licensing
-
-
-this program and accompanying materials are offered under the terms of the
-PUPL (http://db4j.org/pupl) with a strike price of $100;
-covering db4j and the supporting libraries, ie srlutils, orator, and directio, as an aggragate.
-
-this is liberal but non-free - production use on more than 8 cores requires purchase of a use-license
-(though this requirement is currently waived).
-the license does includes a number of provisions to protect the user
-- full price is capped at $100
-- renewal and purchase of additional units at the purchase price
-- source is available and derivatives are allowed (and not discriminated against in licensing)
-- purchase price is credited towards purchase of future versions
-
-details:
-- current full price: $10
-- all use-license requirements are waived until 2019.01.01.
-- if you'd like to purchase a use-license, file an issue
-
-
-
 ## contact / mailing list
 
 you can use the [db4j mailing list](https://groups.google.com/forum/#!forum/db4j) for questions, discussion and support
