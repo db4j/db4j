@@ -719,14 +719,16 @@ public class Db4j extends ConnectionBase implements Serializable {
      */
     public static abstract class Query<TT extends Query> extends Task {
         kilim.Mailbox<Integer> mbx = new kilim.Mailbox(1);
-        ReentrantLock lock = new ReentrantLock();
-        boolean diskCommit, committed;
+        boolean diskCommit;
+        volatile boolean committed;
         // fixme::threadsafe - none of the await, join or joinb methods are synchronized
         //                     ie, they can be called at most once, and only if awaitb hasn't been called
         //                     rather than expose all these kilim methods, should just let subclasses use mbx()
         protected static kilim.Mailbox<Integer> mbx(Query query) { return query.mbx; }
         public boolean postRun(boolean pre) {
-            if (!diskCommit || !pre) mbx.putnb(0);
+            if (diskCommit && pre) return diskCommit;
+            committed = true;
+            mbx.putnb(0);
             return diskCommit;
         }
         public TT offer(ConnectionBase db4j) { return db4j.submitQuery((TT) this); }
@@ -734,47 +736,29 @@ public class Db4j extends ConnectionBase implements Serializable {
          * pausing wait for the task to complete, if the task threw an exception, rethrow it.
          * this is not thread safe with itself or awaitb()
          */
-        public TT await() throws Pausable {
-            mbx.get();
-            committed = true;
+        public TT await() throws Pausable, RuntimeException {
+            if (!committed)
+                mbx.get();
             if (ex != null) throw ex;
             return (TT) this;
         }
         /** blocking wait for the task to complete, if the task threw an exception, rethrow it */
-        public TT awaitb() {
-            if (! committed) {
-                lock.lock();
-                if (! committed) mbx.getb();
-                committed = true;
-                lock.unlock();
-            }
+        public TT awaitb() throws RuntimeException {
+            if (! committed)
+                mbx.getb();
             if (ex != null) throw ex;
             return (TT) this;
         }
         /** don't consider the task completed until the commit to disk has occurred, return this */
         public TT setCommitMode() { diskCommit = true; return (TT) this; }
 
-        /**
-         * get the exception
-         * @return if the task threw an exception, return it (wrapped if needed), otherwise null
-         */
-        public RuntimeException getEx() {
-            return ex;
-        }
-        /** if the task threw an exception, rethrow it, otherwise return this */
+        /** if the task threw an exception, rethrow it, otherwise return this - valid only after completion */
         public TT checkEx() {
             if (ex != null) throw ex;
             return (TT) this;
         }
         /** return true if the task has been committed */
         public boolean isCommitted() {
-            if (! committed) {
-                if (lock.tryLock()) {
-                    if (! committed && mbx.getnb() != null)
-                        committed = true;
-                    lock.unlock();
-                }
-            }
             return committed;
         }
         /** the task has not yet been committed */
@@ -786,38 +770,26 @@ public class Db4j extends ConnectionBase implements Serializable {
         }
         /** pausing wait for the task to complete, suppressing any task exception */
         public TT join() throws Pausable {
-            mbx.get();
-            committed = true;
-            return (TT) this;
-        }
-        /**
-         * Non-blocking, non-pausing join, registering the observer if the task has not already completed.
-         * 
-         * @param eo. If non-null, registers this observer and calls it with a MessageAvailable event when
-         *  the task completes.
-         * @return this
-         */
-        public TT join(EventSubscriber eo) throws Pausable {
-            Integer msg = mbx.get(eo);
-            if (msg != null) committed = true;
+            if (! committed)
+                mbx.get();
             return (TT) this;
         }
         /** pausing wait for the task to complete or timeoutMillis */
         public TT join(long timeoutMillis) throws Pausable {
-            Integer msg = mbx.get(timeoutMillis);
-            if (msg != null) committed = true;
+            if (! committed)
+                mbx.get(timeoutMillis);
             return (TT) this;
         }
         /** blocking wait for the task to complete */
         public TT joinb() {
-            mbx.getb();
-            committed = true;
+            if (! committed)
+                mbx.getb();
             return (TT) this;
         }
         /** blocking wait for the task to complete or timeoutMillis */
         public TT joinb(long timeoutMillis) {
-            Integer msg = mbx.getb(timeoutMillis);
-            if (msg != null) committed = true;
+            if (! committed)
+                mbx.getb(timeoutMillis);
             return (TT) this;
         }
     }
