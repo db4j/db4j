@@ -316,7 +316,24 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     }
     /** split and update path and insert left and right (if non-null) else context, returning the new page */
     PP splitPage(Path<PP> path,CC context,PP left,PP right) throws Pausable {
-        return null; // must be overrided
+        PP    page0       = path.page;
+        PP          page1 = createPage(right==null,context);
+        int ksplit = bisectFixed(path,page1);
+        
+        // fixme - greenfield, known bad, unused:
+        //   need to adjust parent offset, but doing that would mess up setchilds
+        //   why does setchilds write both indexes ???
+        if (false & path.page==page1) {
+            if (path.prev != null)
+                path.prev.ko++;
+        }
+        
+        split(page0,page1,ksplit);
+        if (right==null)
+            insert(path.page,context,path.ko);
+        else
+            setchilds(path.page,path.ko,left,right,context);
+        return page1;
     }
     /** traverse path, splitting each page if needed and insert the key/value pair in context */
     protected void insertPath(Path<PP> path,CC context) throws Pausable {
@@ -326,9 +343,15 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
                 left=page0, right=page1, path=path.prev) {
             page1 = splitPage(path,context,left,right);
         }
+        if (left != null) updateRight(path);
         if      (path  == null) setroot  (                  left,right,context);
         else if (right != null) setchilds(path.page,path.ko,left,right,context);
         insert(orig.page,context,orig.ko);
+    }
+    static void updateRight(Path path) {
+        // could minimally update, but it's safe and easy to brute force disable
+        for (Path po = path; po != null; po = po.prev)
+            po.right = false;
     }
     /** create a new root node and set left and right as children */
     private void setroot(PP left,PP right,CC context) throws Pausable {
@@ -521,6 +544,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         Path<PP> prev;
         PP page;
         int ko;
+        /** true means the page is known to be the rightmost page in the tree, false means nothing */
         boolean right;
         public OpaquePage<PP> getPage() {
             OpaquePage<PP> op = new OpaquePage<>();
