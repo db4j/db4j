@@ -337,7 +337,6 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
     }
     /** traverse path, splitting each page if needed and insert the key/value pair in context */
     protected void insertPath(Path<PP> path,CC context) throws Pausable {
-        Path<PP> orig = path;
         PP left=null, right=null, page0, page1;
         for (; path != null && overcap(page0=path.page,context,right==null,left);
                 left=page0, right=page1, path=path.prev) {
@@ -346,7 +345,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         if (left != null) updateRight(path);
         if      (path  == null) setroot  (                  left,right,context);
         else if (right != null) setchilds(path.page,path.ko,left,right,context);
-        insert(orig.page,context,orig.ko);
+        else insert(path.page,context,path.ko);
     }
     static void updateRight(Path path) {
         // could minimally update, but it's safe and easy to brute force disable
