@@ -527,6 +527,9 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             public Float get2() { return Float.parseFloat(val); }
             public Data set(double key) { return set(key,-1f); }
             public float val() { return Float.parseFloat(val); }
+            public String format(int both) {
+                return String.format("%s" + (both==0 ?"":" --> %s"),key,val);
+            }
         }
         public Data context() { return new Data(); }
         protected int findLoop(Sheet page,int k1,int num,int step,Data context,boolean greater) {
@@ -649,17 +652,24 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                 db4j.shutdown();
             }
         }
+        
+        int stop = -1;
+        int jcheck = -100;
+        int step = 1;
+        int cstage = 2;
+        static class Box<TT> { TT val; Box(TT $val) { val = $val; } }
         public void stage(final int stage) {
             Db4j.Connection conn = db4j.connect();
             for (int ii = 0; ii < tc.nn; ii++) {
                 final int jj = ii;
                 final float v1 = 0.01f*jj;
-                final int jo = 1000000, step = 1;
-                final boolean chk = !nocheck && stage==2 && jj >= jo && (jj%step==0);
+                final boolean chk = !nocheck
+                        && (stage==cstage | cstage < 0)
+                        && (jcheck >= 0 & jj >= jcheck | -jj==jcheck)
+                        && (jj%step==0);
                 Db4j.Query task = new Db4j.Query() { public void task() throws Pausable {
                     DF2.Data context = lt.context().set(txn).set(keys[jj],stage==0 ? v1:-1f);
-                    if (jj==0 && stage==2) check(1,tc.nn,1);
-                    if (chk && stage==2)
+                    if (chk & (jj==stop | stop==-2))
                         Simple.nop();
                     if      (stage==0) lt.insert(context);
                     else if (stage==2) {
@@ -667,6 +677,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                         Simple.softAssert(context.match,"Mindir.remove.nomatch %d %f",jj,keys[jj]);
                     }
                     else {
+                        context.mode(Btree.modes.eq);
                         lt.findData(context);
                         boolean aok = true;
                         if (context.get2() != (stage==1 ? v1:-1f)) ok = aok = false;
@@ -676,14 +687,27 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
                     }
                     if (chk) {
                         check(0,tc.nn,1);
-                        System.out.format( "chk.2 completed -- %5d\n", jj );
+                        if (dbg) System.out.format( "chk.2 completed -- %5d\n", jj );
                     }
                 }
                 public void check(int ko,int nn,int delta) throws Pausable {
                     if (nocheck) return;
+                    int count = lt.getall(lt.context().set(txn)).count();
+                    int dc = stage==0 ? jj+1
+                            : stage==1 ? tc.nn
+                            : stage==2 ? tc.nn-jj-1
+                            : 0;
+                    if (count != dc)
+                        Simple.softAssert(false,"count mismatch: %d, %d, %d, %d\n",stage,jj,count,dc);
                     for (int kk = ko; kk < nn; kk += delta) {
-                        DF2.Data context = lt.context().set(txn).set(keys[kk],-1f).find(lt);
-                        float goal = (kk <= jj) ? -1f : 0.01f*kk;
+                        DF2.Data context = lt.context().set(txn).set(keys[kk],-1f);
+                        context.mode(Btree.modes.eq);
+                        lt.findData(context);
+                        boolean hit = false
+                                || stage==0 & kk <= jj
+                                || stage==1
+                                || stage==2 & kk > jj;
+                        float goal = !hit ? -1f : 0.01f*kk;
                         Float val = context.match ? context.get2() : -1f;
                         if (val != goal)
                             Simple.softAssert(false,"insert corrupted: %d, %d, %8.3f <> %8.3f\n",jj,kk,val,goal);
@@ -700,12 +724,13 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
             lt.clear();
             return ok;
         }
+        static int ann = 20000;
         public static void auto(int passes,int npp,TaskTimer.Runner ... runners) throws Exception {
             Long seed = null;
 //            seed = 8063614542396112692L;
             Rand.source.setSeed( seed, true );
             Simple.Scripts.cpufreqStash( 2300000 );
-            int nn = 20000;
+            int nn = ann;
             BtTests2.Config tc = new BtTests2.Config().set( nn);
             TaskTimer tt = new TaskTimer().config( tc ).init( npp, 0, true, false );
             tt.widths( 8, 3 );
@@ -714,7 +739,8 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         }
         public static void main(String [] args) throws Exception {
             Mindir2 mindir = new Mindir2();
-            if (args.length > 0) mindir.nocheck = false;
+            if (args.length > 0) try { ann = Integer.parseInt(args[0]); } catch (Exception ex) {}
+            if (args.length > 1) mindir.nocheck = false;
             auto(1,1,mindir);
         }
     }
