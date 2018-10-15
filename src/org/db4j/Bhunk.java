@@ -587,6 +587,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         float val, vo = 97f;
         double ko = 7.1;
         int nb = 0;
+        int mod;
         
         class PutTask extends Db4j.Query {
             double k1;
@@ -606,7 +607,7 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                     cc.set(txn).set(k1,-1f);
                     lt.findData(cc);
                     boolean bad = v1 != cc.val;
-                    if ((k1-ko)%10==0 || bad)
+                    if ((k1-ko)%mod==0 || bad)
                         System.out.format( "find: %8.3f --> %8.3f%s\n", cc.key, cc.val,
                                 bad ? "  ------bad------" : "" );
             };
@@ -617,9 +618,9 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
             };
         }
         
-        public void demo() {
+        public void demo(int nn) {
             db4j = new Db4j(name, null); // 1L << 32 );
-            int nn = 1347-7;
+            mod = Util.Scalar.bound(1,1000000,nn/20);
             lt = db4j.submit(txn -> txn.create(new DF(), PATH_MAP)).awaitb().val;
             Db4j.Connection conn = db4j.connect();
             // break out the final iter to allow tracing in the debugger
@@ -642,16 +643,20 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
                 tt.autoTimer(runners);
         }
         public static void main(String [] args) throws Exception {
-            if (true) {
+            if (args.length < 2) {
+                int num = 1000000;
+                try { num = Integer.parseInt(args[0]); } catch (Exception ex) {}
                 auto(2, 2,
-                        new Mindir(1000000,new DF())
+                        new Mindir(num,new DF())
                         );
 //                auto(1, 1, new Mindir(1000000));
 //                auto(1, 3, new Mindir(1000000));
                 return;
             }
+            int nn = 1347-7;
+            try { nn = Integer.parseInt(args[1]); } catch (Exception ex) {}
             Demo demo = new Demo();
-            demo.demo();
+            demo.demo(nn);
         }
     }
 }
