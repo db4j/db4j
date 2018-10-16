@@ -4,14 +4,10 @@ package org.db4j;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import org.srlutils.btree.BtTests2;
 import org.srlutils.btree.Btypes.Element;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
-import org.db4j.Db4j;
 import org.db4j.Db4j.Query;
 import org.db4j.Db4j.Transaction;
 import org.db4j.perf.DemoHunker;
@@ -27,6 +23,8 @@ import org.srlutils.btree.Btypes;
 import org.srlutils.btree.Btypes.ValsTuple;
 import org.srlutils.btree.Btypes.ValsVoid;
 import org.srlutils.btree.TestDF;
+import org.srlutils.btree.Butil.Consumer;
+import org.srlutils.btree.Butil.Function;
 
 
 /**
@@ -315,18 +313,37 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         remove(context);
         return context;
     }
+    static class Truth<CC> implements Function<CC,Boolean> {
+        public Boolean apply(CC cc) { return true; }
+    }
+    Truth<CC> truth = new Truth();
+    static class Edit<KK,VV,CC extends Bmeta.Context<KK,VV,CC>> implements Consumer<CC> {
+        Consumer<VV> edit;
+        Edit(Consumer<VV> edit) { this.edit = edit; }
+        public void accept(CC cc) { edit.accept(cc.val); }
+    }
+    static class Setter<KK,VV,CC extends Bmeta.Context<KK,VV,CC>> implements Consumer<CC> {
+        VV val;
+        Setter(VV val) { this.val = val; }
+        public void accept(CC cc) { cc.val = val; }
+    }
+
+    
     public CC update(Transaction txn,KK key,VV val) throws Pausable {
         CC context = context().set(txn).set(key,val);
         return update(context);
     }
     public CC update(Transaction txn,KK key,Consumer<VV> editor) throws Pausable {
-        return findPrefix(txn,key).first(cc -> true).set(cc -> editor.accept(cc.val)).update();
+        Edit<KK,VV,CC> edit = new Edit(editor);
+        return findPrefix(txn,key).first(truth).set(edit).update();
     }
     public CC update(Transaction txn,KK key,Function<CC,Boolean> filter,Consumer<VV> editor) throws Pausable {
-        return findPrefix(txn,key).first(filter).set(cc -> editor.accept(cc.val)).update();
+        Edit<KK,VV,CC> edit = new Edit(editor);
+        return findPrefix(txn,key).first(filter).set(edit).update();
     }
     public CC update(Transaction txn,KK key,Function<CC,Boolean> filter,VV val) throws Pausable {
-        return findPrefix(txn,key).first(filter).set(cc -> cc.val=val).update();
+        Setter<KK,VV,CC> setter = new Setter(val);
+        return findPrefix(txn,key).first(filter).set(setter).update();
     }
     // fixme - add upsert and preserve paths during splits and merges
     public final void insert(CC context) throws Pausable {
@@ -347,6 +364,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         insert(context);
         return context;
     }
+    // db4j and srlutils differ
     protected void free(Sheet page) { db4j.release(null,page.kpage); }
     int delete(Sheet page,int index) {
         prep(page);
@@ -418,6 +436,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
         return (Range) findPrefix(context().set( txn ).set(key, null));
     }
 
+    // this exists in db4j but not in srlutils.btree
     public ArrayList<Pair<KK,VV>> getall() {
         return getall(cc -> new Pair<>(cc.key,cc.val));
     }
@@ -427,6 +446,7 @@ public abstract class Bmeta<CC extends Bmeta.Context<KK,VV,CC>,KK,VV,EE extends 
     
     protected Range range() { return new Range(); }
 
+    // db4j and srlutils differ
     void toastPage(Path<Sheet> path,CC context) throws Pausable {
         for (int ii=0; ii < path.page.num; ii++)
             prepx(path.page,context,ii);

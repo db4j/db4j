@@ -4,9 +4,6 @@ package org.db4j;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import org.db4j.Db4j.Transaction;
 import org.srlutils.btree.Bpage.Sheet;
 import kilim.Pausable;
@@ -20,6 +17,7 @@ import org.srlutils.TaskTimer;
 import org.srlutils.Util;
 import org.srlutils.btree.Bstring;
 import org.srlutils.btree.TestDF;
+import org.srlutils.btree.Butil.Function;
 
 /**
  *  a hunkable btree
@@ -299,11 +297,6 @@ public abstract class Bhunk<CC extends Bhunk.Context<CC>> extends Btree<CC,Sheet
         public Pair<KK,VV> set(KK $key,VV $val) { key=$key; val=$val; return this; }
     }
 
-    public ArrayList getpairs(BiFunction<CC,Pair,Pair> mapping) {
-        Function<CC,Pair> map0 = cc -> mapping.apply(cc,new Pair(null,null));
-        return db4j.submit(txn -> getall(txn).getall(map0)).awaitb().val;
-    }
-    
     public <KK,VV> ArrayList<Pair<KK,VV>> getall(Function<CC,Pair<KK,VV>> mapping) {
         return db4j.submit(txn -> getall(txn).getall(mapping)).awaitb().val;
     }

@@ -4,8 +4,6 @@ package org.db4j;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import kilim.Fiber;
 import org.srlutils.Rand;
 import org.srlutils.Simple;
@@ -16,11 +14,12 @@ import org.srlutils.btree.Bpage.Sheet;
 import org.srlutils.DynArray;
 import org.srlutils.TaskTimer;
 import org.srlutils.btree.Butil;
+import org.srlutils.btree.Butil.Consumer;
+import org.srlutils.btree.Butil.Function;
 
 // can run either kilimized or kilim-free (comment out the following import)
 import kilim.Pausable;
 import org.db4j.Db4j.Transaction;
-import org.srlutils.btree.Bpage;
 
 /*
  * 
@@ -922,8 +921,6 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         return path;
     }
 
-    
-
     protected void  prepx(PP page,CC context,int ko) {}
     protected void getccx(PP page,CC context,int ko) throws Pausable { getcc(page,context,ko); }
     protected void setccx(PP page,CC context,int ko) throws Pausable { setcc(page,context,ko); }
@@ -1074,7 +1071,7 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         }
         public int [] getInfo() { return new int[] {depth, pages.size-kdels.size, zeroMerge}; }
 
-        // shim implementation of Hunkable
+        // shim implementation of Hunkable, db4j-only (ie not in srlutils)
         protected int create() { return 0; }
         protected void createCommit(long locBase) {}
         protected String name() { return null; }
