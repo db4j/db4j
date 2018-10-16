@@ -449,7 +449,6 @@ public abstract class Btree<CC extends Btree.Context,PP extends Page<PP>>
         }
     }
     void combine(Path<PP> path,CC context) throws Pausable {
-        Path<PP> po = path;
         boolean yes = true;
         int level = context.depth;
         for (; yes && path.prev != null; path = path.prev, level--)
