@@ -2,6 +2,7 @@
 
 package tutorial;
 
+import com.nqzero.orator.Orator;
 import kilim.Pausable;
 import java.io.Serializable;
 import java.util.List;
@@ -11,6 +12,7 @@ import org.db4j.Btrees;
 import org.db4j.Database;
 import org.db4j.HunkCount;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.db4j.Db4j;
 import static org.db4j.perf.DemoHunker.resolve;
 import org.srlutils.Rand;
 
@@ -49,10 +51,16 @@ public class Chat extends Database {
         }
         }).await().val;
     }
+    static Chat global;
+    public static Chat chat() { return global; }
+    public Db4j db4j() { return db4j; }
+    
     public static void main(String[] args) throws Exception {
         Chat chat = new Chat();
         chat.start(resolve("./db_files/chat.mmap"),args.length > 0);
         new kilim.http.HttpServer(8080, req -> chat.route(req.uriPath)+"\n");
+        global = chat;
+        new Orator().init(8081);
         System.in.read();
         System.exit(0);
     }
